@@ -1,0 +1,437 @@
+/**
+ * Master Data PT Galaxy Mandiri Perkasa
+ * Total Master Data:
+ * - Master Part: 121 Parts
+ * - Master Mesin: 29 Mesin
+ * - Master Jenis Defect: 33 Defect Types
+ */
+
+// =============================================================================
+// 1. MASTER PART (TOTAL: 121 PARTS)
+// =============================================================================
+export const MASTER_PARTS = [
+  // Lini Part 1000 Series - 30 Parts
+  { id: 1, partNumber: 'PT-1001', partName: 'Front Bracket A', line: 'Stamping' },
+  { id: 2, partNumber: 'PT-1002', partName: 'Rear Flange B', line: 'Stamping' },
+  { id: 3, partNumber: 'PT-1003', partName: 'Side Reinforce L', line: 'Stamping' },
+  { id: 4, partNumber: 'PT-1004', partName: 'Side Reinforce R', line: 'Stamping' },
+  { id: 5, partNumber: 'PT-1005', partName: 'Exhaust Hanger C', line: 'Welding' },
+  { id: 6, partNumber: 'PT-1006', partName: 'Main Stay Plate Upper', line: 'Stamping' },
+  { id: 7, partNumber: 'PT-1007', partName: 'Main Stay Plate Lower', line: 'Stamping' },
+  { id: 8, partNumber: 'PT-1008', partName: 'Battery Tray Bracket', line: 'Stamping' },
+  { id: 9, partNumber: 'PT-1009', partName: 'Seat Lock Bracket Inner', line: 'Welding' },
+  { id: 10, partNumber: 'PT-1010', partName: 'Seat Lock Bracket Outer', line: 'Welding' },
+  { id: 11, partNumber: 'PT-1011', partName: 'Footrest Hanger Left', line: 'Stamping' },
+  { id: 12, partNumber: 'PT-1012', partName: 'Footrest Hanger Right', line: 'Stamping' },
+  { id: 13, partNumber: 'PT-1013', partName: 'Muffler Stay Bracket', line: 'Welding' },
+  { id: 14, partNumber: 'PT-1014', partName: 'Engine Mount Bracket L', line: 'Stamping' },
+  { id: 15, partNumber: 'PT-1015', partName: 'Engine Mount Bracket R', line: 'Stamping' },
+  { id: 16, partNumber: 'PT-1016', partName: 'Fender Support Plate', line: 'Stamping' },
+  { id: 17, partNumber: 'PT-1017', partName: 'Center Stand Stopper', line: 'Welding' },
+  { id: 18, partNumber: 'PT-1018', partName: 'Side Stand Pivot Base', line: 'Stamping' },
+  { id: 19, partNumber: 'PT-1019', partName: 'Fuel Tank Stay Front', line: 'Stamping' },
+  { id: 20, partNumber: 'PT-1020', partName: 'Fuel Tank Stay Rear', line: 'Stamping' },
+  { id: 21, partNumber: 'PT-1021', partName: 'Air Cleaner Bracket', line: 'Stamping' },
+  { id: 22, partNumber: 'PT-1022', partName: 'Rear Grip Base Plate L', line: 'Stamping' },
+  { id: 23, partNumber: 'PT-1023', partName: 'Rear Grip Base Plate R', line: 'Stamping' },
+  { id: 24, partNumber: 'PT-1024', partName: 'Radiator Stay Plate Lower', line: 'Stamping' },
+  { id: 25, partNumber: 'PT-1025', partName: 'Ignition Coil Bracket', line: 'Stamping' },
+  { id: 26, partNumber: 'PT-1026', partName: 'Horn Mounting Stay', line: 'Stamping' },
+  { id: 27, partNumber: 'PT-1027', partName: 'Speedometer Stay Plate', line: 'Stamping' },
+  { id: 28, partNumber: 'PT-1028', partName: 'Headlight Support Frame', line: 'Welding' },
+  { id: 29, partNumber: 'PT-1029', partName: 'Taillight Base Mount', line: 'Stamping' },
+  { id: 30, partNumber: 'PT-1030', partName: 'License Plate Stay Rear', line: 'Stamping' },
+
+  // Lini Part 2000 Series - 25 Parts
+  { id: 31, partNumber: 'PT-2001', partName: 'Seat Cross Member Front', line: 'Stamping' },
+  { id: 32, partNumber: 'PT-2002', partName: 'Seat Cross Member Rear', line: 'Stamping' },
+  { id: 33, partNumber: 'PT-2003', partName: 'Floor Gusset Reinforce L', line: 'Stamping' },
+  { id: 34, partNumber: 'PT-2004', partName: 'Floor Gusset Reinforce R', line: 'Stamping' },
+  { id: 35, partNumber: 'PT-2005', partName: 'Center Pillar Inner Lower L', line: 'Stamping' },
+  { id: 36, partNumber: 'PT-2006', partName: 'Center Pillar Inner Lower R', line: 'Stamping' },
+  { id: 37, partNumber: 'PT-2007', partName: 'Front Bumper Reinforce Bar', line: 'Welding' },
+  { id: 38, partNumber: 'PT-2008', partName: 'Rear Bumper Corner Stay L', line: 'Stamping' },
+  { id: 39, partNumber: 'PT-2009', partName: 'Rear Bumper Corner Stay R', line: 'Stamping' },
+  { id: 40, partNumber: 'PT-2010', partName: 'Cowl Top Plate Inner', line: 'Stamping' },
+  { id: 41, partNumber: 'PT-2011', partName: 'Radiator Support Upper Cross', line: 'Welding' },
+  { id: 42, partNumber: 'PT-2012', partName: 'Radiator Support Lower Stay', line: 'Stamping' },
+  { id: 43, partNumber: 'PT-2013', partName: 'Hood Lock Stay Center', line: 'Stamping' },
+  { id: 44, partNumber: 'PT-2014', partName: 'Subframe Stiffener Plate L', line: 'Stamping' },
+  { id: 45, partNumber: 'PT-2015', partName: 'Subframe Stiffener Plate R', line: 'Stamping' },
+  { id: 46, partNumber: 'PT-2016', partName: 'Tunnel Reinforce Bracket', line: 'Stamping' },
+  { id: 47, partNumber: 'PT-2017', partName: 'Suspension Tower Cap L', line: 'Stamping' },
+  { id: 48, partNumber: 'PT-2018', partName: 'Suspension Tower Cap R', line: 'Stamping' },
+  { id: 49, partNumber: 'PT-2019', partName: 'Door Hinge Upper L', line: 'Stamping' },
+  { id: 50, partNumber: 'PT-2020', partName: 'Door Hinge Upper R', line: 'Stamping' },
+  { id: 51, partNumber: 'PT-2021', partName: 'Door Hinge Lower L', line: 'Stamping' },
+  { id: 52, partNumber: 'PT-2022', partName: 'Door Hinge Lower R', line: 'Stamping' },
+  { id: 53, partNumber: 'PT-2023', partName: 'Fuel Filler Pipe Guard', line: 'Stamping' },
+  { id: 54, partNumber: 'PT-2024', partName: 'Spare Tire Carrier Bracket', line: 'Welding' },
+  { id: 55, partNumber: 'PT-2025', partName: 'Towing Hook Rear Stay', line: 'Welding' },
+
+  // Lini Part 3000 Series - 25 Parts
+  { id: 56, partNumber: 'PT-3001', partName: 'Engine Mount Stay Left', line: 'Stamping' },
+  { id: 57, partNumber: 'PT-3002', partName: 'Engine Mount Stay Right', line: 'Stamping' },
+  { id: 58, partNumber: 'PT-3003', partName: 'Rear Axle Spring Seat L', line: 'Stamping' },
+  { id: 59, partNumber: 'PT-3004', partName: 'Rear Axle Spring Seat R', line: 'Stamping' },
+  { id: 60, partNumber: 'PT-3005', partName: 'Transmission Cross Plate', line: 'Stamping' },
+  { id: 61, partNumber: 'PT-3006', partName: 'Exhaust Heat Shield Front', line: 'Stamping' },
+  { id: 62, partNumber: 'PT-3007', partName: 'Exhaust Heat Shield Center', line: 'Stamping' },
+  { id: 63, partNumber: 'PT-3008', partName: 'Front Strut Bar Stay L', line: 'Stamping' },
+  { id: 64, partNumber: 'PT-3009', partName: 'Front Strut Bar Stay R', line: 'Stamping' },
+  { id: 65, partNumber: 'PT-3010', partName: 'Brake Hose Bracket Front L', line: 'Stamping' },
+  { id: 66, partNumber: 'PT-3011', partName: 'Brake Hose Bracket Front R', line: 'Stamping' },
+  { id: 67, partNumber: 'PT-3012', partName: 'Fuel Tank Strap Upper', line: 'Stamping' },
+  { id: 68, partNumber: 'PT-3013', partName: 'Fuel Tank Strap Lower', line: 'Stamping' },
+  { id: 69, partNumber: 'PT-3014', partName: 'Dash Panel Lower Stiffener', line: 'Stamping' },
+  { id: 70, partNumber: 'PT-3015', partName: 'Steering Column Support Plate', line: 'Welding' },
+  { id: 71, partNumber: 'PT-3016', partName: 'Pedal Bracket Base Assy', line: 'Welding' },
+  { id: 72, partNumber: 'PT-3017', partName: 'Door Check Link Plate L', line: 'Stamping' },
+  { id: 73, partNumber: 'PT-3018', partName: 'Door Check Link Plate R', line: 'Stamping' },
+  { id: 74, partNumber: 'PT-3019', partName: 'Door Striker Reinforce Base', line: 'Stamping' },
+  { id: 75, partNumber: 'PT-3020', partName: 'Quarter Inner Bracket L', line: 'Stamping' },
+  { id: 76, partNumber: 'PT-3021', partName: 'Quarter Inner Bracket R', line: 'Stamping' },
+  { id: 77, partNumber: 'PT-3022', partName: 'Back Door Lock Reinforce', line: 'Stamping' },
+  { id: 78, partNumber: 'PT-3023', partName: 'Roof Side Rail Gusset L', line: 'Stamping' },
+  { id: 79, partNumber: 'PT-3024', partName: 'Roof Side Rail Gusset R', line: 'Stamping' },
+  { id: 80, partNumber: 'PT-3025', partName: 'Jack Support Under Bracket', line: 'Stamping' },
+
+  // Lini Part 4000 Series - 20 Parts
+  { id: 81, partNumber: 'PT-4001', partName: 'Main Stay Plate Front', line: 'Stamping' },
+  { id: 82, partNumber: 'PT-4002', partName: 'Main Stay Plate Rear', line: 'Stamping' },
+  { id: 83, partNumber: 'PT-4003', partName: 'Radiator Cross Member Lower', line: 'Stamping' },
+  { id: 84, partNumber: 'PT-4004', partName: 'Radiator Side Stiffener L', line: 'Stamping' },
+  { id: 85, partNumber: 'PT-4005', partName: 'Radiator Side Stiffener R', line: 'Stamping' },
+  { id: 86, partNumber: 'PT-4006', partName: 'Stabilizer Bar Bracket Front', line: 'Stamping' },
+  { id: 87, partNumber: 'PT-4007', partName: 'Front Wheel Apron Gusset L', line: 'Stamping' },
+  { id: 88, partNumber: 'PT-4008', partName: 'Front Wheel Apron Gusset R', line: 'Stamping' },
+  { id: 89, partNumber: 'PT-4009', partName: 'Floor Side Member Inner L', line: 'Stamping' },
+  { id: 90, partNumber: 'PT-4010', partName: 'Floor Side Member Inner R', line: 'Stamping' },
+  { id: 91, partNumber: 'PT-4011', partName: 'Rear Spring Bumper Bracket', line: 'Stamping' },
+  { id: 92, partNumber: 'PT-4012', partName: 'Rear Shock Tower Plate L', line: 'Stamping' },
+  { id: 93, partNumber: 'PT-4013', partName: 'Rear Shock Tower Plate R', line: 'Stamping' },
+  { id: 94, partNumber: 'PT-4014', partName: 'Silencer Mounting Bracket', line: 'Welding' },
+  { id: 95, partNumber: 'PT-4015', partName: 'Wiper Motor Mount Base', line: 'Stamping' },
+  { id: 96, partNumber: 'PT-4016', partName: 'Instrument Panel Support L', line: 'Welding' },
+  { id: 97, partNumber: 'PT-4017', partName: 'Instrument Panel Support R', line: 'Welding' },
+  { id: 98, partNumber: 'PT-4018', partName: 'Center Console Fix Bracket', line: 'Stamping' },
+  { id: 99, partNumber: 'PT-4019', partName: 'Glove Box Hinge Plate', line: 'Stamping' },
+  { id: 100, partNumber: 'PT-4020', partName: 'Rear End Cross Plate Lower', line: 'Stamping' },
+
+  // Lini Part 5000 Series - 11 Parts
+  { id: 101, partNumber: 'PT-5001', partName: 'Front Side Member Extension L', line: 'Stamping' },
+  { id: 102, partNumber: 'PT-5002', partName: 'Front Side Member Extension R', line: 'Stamping' },
+  { id: 103, partNumber: 'PT-5003', partName: 'Subframe Front Plate Center', line: 'Stamping' },
+  { id: 104, partNumber: 'PT-5004', partName: 'Bumper Impact Box Upper L', line: 'Welding' },
+  { id: 105, partNumber: 'PT-5005', partName: 'Bumper Impact Box Upper R', line: 'Welding' },
+  { id: 106, partNumber: 'PT-5006', partName: 'Side Sill Outer Reinforce L', line: 'Stamping' },
+  { id: 107, partNumber: 'PT-5007', partName: 'Side Sill Outer Reinforce R', line: 'Stamping' },
+  { id: 108, partNumber: 'PT-5008', partName: 'Fuel Tank Heat Shield Upper', line: 'Stamping' },
+  { id: 109, partNumber: 'PT-5009', partName: 'Rear Floor Cross Stiffener', line: 'Stamping' },
+  { id: 110, partNumber: 'PT-5010', partName: 'Tailgate Lock Retainer Plate', line: 'Stamping' },
+  { id: 111, partNumber: 'PT-5011', partName: 'Spare Wheel Anchor Bracket', line: 'Welding' },
+
+  // Lini Part 6000 Series - 10 Parts
+  { id: 112, partNumber: 'PT-6001', partName: 'Cowl Cross Member Outer L', line: 'Stamping' },
+  { id: 113, partNumber: 'PT-6002', partName: 'Cowl Cross Member Outer R', line: 'Stamping' },
+  { id: 114, partNumber: 'PT-6003', partName: 'Battery Base Frame Member', line: 'Welding' },
+  { id: 115, partNumber: 'PT-6004', partName: 'Inverter Mounting Bracket', line: 'Stamping' },
+  { id: 116, partNumber: 'PT-6005', partName: 'Floor Tunnel Side Rail L', line: 'Stamping' },
+  { id: 117, partNumber: 'PT-6006', partName: 'Floor Tunnel Side Rail R', line: 'Stamping' },
+  { id: 118, partNumber: 'PT-6007', partName: 'Rear Floor Side Bracket L', line: 'Stamping' },
+  { id: 119, partNumber: 'PT-6008', partName: 'Rear Floor Side Bracket R', line: 'Stamping' },
+  { id: 120, partNumber: 'PT-6009', partName: 'High Voltage Cable Guard', line: 'Stamping' },
+  { id: 121, partNumber: 'PT-6010', partName: 'Underbody Aerodynamic Shield Plate', line: 'Stamping' },
+];
+
+// =============================================================================
+// 2. MASTER MESIN (TOTAL: 29 MESIN)
+// =============================================================================
+export const MASTER_MACHINES = [
+  // Stamping Line (13 Mesin Press)
+  { id: 1, name: 'Amada Press 01', line: 'Stamping', type: 'Mechanical Press 150 Ton' },
+  { id: 2, name: 'Amada Press 02', line: 'Stamping', type: 'Mechanical Press 110 Ton' },
+  { id: 3, name: 'Amada Press 03', line: 'Stamping', type: 'Mechanical Press 200 Ton' },
+  { id: 4, name: 'Komatsu Press 01', line: 'Stamping', type: 'C-Frame Press 80 Ton' },
+  { id: 5, name: 'Komatsu Press 02', line: 'Stamping', type: 'Mechanical Press 200 Ton' },
+  { id: 6, name: 'Komatsu Press 03', line: 'Stamping', type: 'Straight Side Press 300 Ton' },
+  { id: 7, name: 'Aida Press 01', line: 'Stamping', type: 'High Speed Press 110 Ton' },
+  { id: 8, name: 'Aida Press 02', line: 'Stamping', type: 'Mechanical Press 160 Ton' },
+  { id: 9, name: 'Aida Press 03', line: 'Stamping', type: 'Double Crank Press 250 Ton' },
+  { id: 10, name: 'Chin Fong Press 01', line: 'Stamping', type: 'Mechanical Press 160 Ton' },
+  { id: 11, name: 'Chin Fong Press 02', line: 'Stamping', type: 'Pneumatic Press 200 Ton' },
+  { id: 12, name: 'Seymour Hydraulic 01', line: 'Stamping', type: 'Deep Drawing Hydraulic 300T' },
+  { id: 13, name: 'Seymour Hydraulic 02', line: 'Stamping', type: 'Deep Drawing Hydraulic 500T' },
+
+  // Bending Line (4 Mesin Press Brake)
+  { id: 14, name: 'Press Brake Toyokoki 01', line: 'Bending', type: 'CNC Press Brake 80T / 2.5M' },
+  { id: 15, name: 'Press Brake Amada HFB 02', line: 'Bending', type: 'Hydraulic Press Brake 100T' },
+  { id: 16, name: 'Press Brake Komatsu PHS 03', line: 'Bending', type: 'Servo Press Brake 125T' },
+  { id: 17, name: 'Press Brake Accurpress 04', line: 'Bending', type: 'CNC Precision Bender 60T' },
+
+  // Welding Line (9 Robot & Spot Welding Station)
+  { id: 18, name: 'Welding Robot A', line: 'Welding', type: 'OTC Daihen 6-Axis MIG Robot' },
+  { id: 19, name: 'Welding Robot B', line: 'Welding', type: 'OTC Daihen 6-Axis CO2 Robot' },
+  { id: 20, name: 'Welding Robot C', line: 'Welding', type: 'Yaskawa Motoman Arc Robot' },
+  { id: 21, name: 'Welding Robot D', line: 'Welding', type: 'Fanuc ARC Mate 100iD Robot' },
+  { id: 22, name: 'Welding Spot 01', line: 'Welding', type: 'Pneumatic Spot Welder 35KVA' },
+  { id: 23, name: 'Welding Spot 02', line: 'Welding', type: 'Pneumatic Spot Welder 50KVA' },
+  { id: 24, name: 'Welding Spot 03', line: 'Welding', type: 'Medium Frequency Inverter Spot 75KVA' },
+  { id: 25, name: 'Projection Welder 01', line: 'Welding', type: 'Nut Projection Welder 100KVA' },
+  { id: 26, name: 'CO2 Manual Station 01', line: 'Welding', type: 'Panasonic Kr-II 350A Station' },
+
+  // Cutting & Finishing Line (3 Mesin)
+  { id: 27, name: 'Laser Cutting Bodor 01', line: 'Stamping', type: 'Fiber Laser Cutter 3kW' },
+  { id: 28, name: 'Shearing Machine Amada 01', line: 'Stamping', type: 'Hydraulic Guillotine Shear' },
+  { id: 29, name: 'ED Coating Conveyor 01', line: 'Painting', type: 'Continuous Dip ED Line' },
+];
+
+// =============================================================================
+// 3. MASTER JENIS DEFECT (TOTAL: 33 DEFECT TYPES)
+// =============================================================================
+export const MASTER_DEFECT_TYPES = [
+  // 1 - 10: Defect Stamping / Blanking / Piercing
+  {
+    id: 1,
+    name: 'Gompal',
+    proses: 'Blanking',
+    category: 'Critical',
+    description: 'Tepi plat sompal atau cuil akibat punch aus atau clearance die tidak presisi',
+  },
+  {
+    id: 2,
+    name: 'Burry',
+    proses: 'Blanking',
+    category: 'Medium',
+    description: 'Serpihan geram tajam di tepian potongan plat melebihi standar toleransi 0.05mm',
+  },
+  {
+    id: 3,
+    name: 'Dent',
+    proses: 'Blanking',
+    category: 'Medium',
+    description: 'Cacat cekung/lesung akibat serpihan scrap gram tertindih di permukaan die',
+  },
+  {
+    id: 4,
+    name: 'Baret (Scratch)',
+    proses: 'Blanking',
+    category: 'Minor',
+    description: 'Goresan permukaan plat akibat gesekan feeding material atau handling pallet',
+  },
+  {
+    id: 5,
+    name: 'Karat (Corrosion)',
+    proses: 'Blanking',
+    category: 'Critical',
+    description: 'Oksidasi bercak karat pada plat mentah akibat kelembaban gudang incoming',
+  },
+  {
+    id: 6,
+    name: 'Hole Miring',
+    proses: 'Piercing',
+    category: 'Major',
+    description: 'Pusat sumbu lubang pin/baut melenceng karena stopper die aus atau bergeser',
+  },
+  {
+    id: 7,
+    name: 'Pitch Hole Geser',
+    proses: 'Piercing',
+    category: 'Major',
+    description: 'Jarak center-to-center antar lubang piercing melebihi batas gambar kerja',
+  },
+  {
+    id: 8,
+    name: 'Deformasi Lubang',
+    proses: 'Piercing',
+    category: 'Medium',
+    description: 'Bentuk lubang piercing tertarik menjadi oval saat penarikan plat',
+  },
+  {
+    id: 9,
+    name: 'Double Punch',
+    proses: 'Blanking',
+    category: 'Critical',
+    description: 'Part tertekan punch dua kali pada posisi bergeser akibat operator miss-feed',
+  },
+  {
+    id: 10,
+    name: 'Setting Dimensi',
+    proses: 'Blanking',
+    category: 'Major',
+    description: 'Dimensi kontur luar part tidak sesuai drawing saat proses trial/setting awal',
+  },
+
+  // 11 - 20: Defect Bending / Press Brake
+  {
+    id: 11,
+    name: 'Tidak Flat',
+    proses: 'Bending',
+    category: 'Medium',
+    description: 'Permukaan plat melengkung atau bergelombang, stroke penekanan kurang turun',
+  },
+  {
+    id: 12,
+    name: 'Tinggi Sebelah',
+    proses: 'Bending',
+    category: 'Major',
+    description: 'Tinggi tekukan flange sisi kiri dan kanan tidak seimbang akibat stopper miring',
+  },
+  {
+    id: 13,
+    name: 'Variasi Sudut (Springback)',
+    proses: 'Bending',
+    category: 'Medium',
+    description: 'Sudut tekuk part meleset dari 90° akibat elastisitas springback material plat',
+  },
+  {
+    id: 14,
+    name: 'Visual Bending Crack',
+    proses: 'Bending',
+    category: 'Critical',
+    description: 'Retak mikro kasat mata pada radius tekuk luar akibat tekanan ejector berlebih',
+  },
+  {
+    id: 15,
+    name: 'Tidak Masuk JIG (Bending)',
+    proses: 'Bending',
+    category: 'Critical',
+    description: 'Part tidak dapat dipasang ke JIG inspeksi karena lower die pecah/aus',
+  },
+  {
+    id: 16,
+    name: 'Penyok Bending',
+    proses: 'Bending',
+    category: 'Major',
+    description: 'Deformasi cekung pada flange bending akibat scrap nyangkut di atas die',
+  },
+  {
+    id: 17,
+    name: 'Undercut Bending',
+    proses: 'Bending',
+    category: 'Medium',
+    description: 'Tepi tekukan terlalu mepet ke die sehingga tergores atau tergerus parah',
+  },
+  {
+    id: 18,
+    name: 'Flange Keriting',
+    proses: 'Bending',
+    category: 'Major',
+    description: 'Ujung flange bergelombang tidak rata akibat clearance bending punch tidak seragam',
+  },
+  {
+    id: 19,
+    name: 'Burr Bending',
+    proses: 'Bending',
+    category: 'Minor',
+    description: 'Bekas serpihan tajam pada ujung tekukan plat yang belum di-deburring',
+  },
+  {
+    id: 20,
+    name: 'Jumping Proses',
+    proses: 'Bending',
+    category: 'Critical',
+    description: 'Langkah proses bending terlewat oleh operator karena tidak mematuhi urutan SOP',
+  },
+
+  // 21 - 30: Defect Welding Spot, Robot, & Manual
+  {
+    id: 21,
+    name: 'Overheat Spot',
+    proses: 'Welding Spot',
+    category: 'Medium',
+    description: 'Tanda gosong kebiruan berlebih pada titik las akibat arus parameter terlalu tinggi',
+  },
+  {
+    id: 22,
+    name: 'Underheat Spot',
+    proses: 'Welding Spot',
+    category: 'Critical',
+    description: 'Kekuatan nugget las kurang, torsi gagal lolos uji chisel test / torque test',
+  },
+  {
+    id: 23,
+    name: 'Keropos (Porosity)',
+    proses: 'Welding Robot',
+    category: 'Critical',
+    description: 'Rongga udara dalam sambungan las akibat aliran gas argon/CO2 terhambat spatter',
+  },
+  {
+    id: 24,
+    name: 'Nut Miring',
+    proses: 'Welding Spot',
+    category: 'Critical',
+    description: 'Posisi nut projection tidak tegak lurus akibat JIG proses pengunci sudah aus',
+  },
+  {
+    id: 25,
+    name: 'Salah Nut (Mix Nut)',
+    proses: 'Welding Spot',
+    category: 'Critical',
+    description: 'Jenis atau pitch ulir nut tertukar dengan part tipe lain dari lot berbeda',
+  },
+  {
+    id: 26,
+    name: 'Nut Lepas (Poor Fusion)',
+    proses: 'Welding Spot',
+    category: 'Critical',
+    description: 'Nut copot dari plat saat dilakukan uji push-out force pada torquemeter',
+  },
+  {
+    id: 27,
+    name: 'Spatter Berlebih',
+    proses: 'Welding Manual',
+    category: 'Medium',
+    description: 'Percikan butiran terak las menempel tebal pada permukaan part atau ulir nut',
+  },
+  {
+    id: 28,
+    name: 'Tidak Masuk JIG (Welding)',
+    proses: 'Welding Robot',
+    category: 'Critical',
+    description: 'Distorsi panas berlebih membuat geometri assembly melintir di luar toleransi JIG',
+  },
+  {
+    id: 29,
+    name: 'Penetrasi Kurang (Incomplete Fusion)',
+    proses: 'Welding Manual',
+    category: 'Critical',
+    description: 'Logam kawat las tidak menyatu tembus ke base metal plat bawah',
+  },
+  {
+    id: 30,
+    name: 'NG Setting (Getok)',
+    proses: 'Welding Spot',
+    category: 'Medium',
+    description: 'Bekas palu atau paksaan fixture saat operator melakukan alignment part awal',
+  },
+
+  // 31 - 33: Defect Drawing & Finishing
+  {
+    id: 31,
+    name: 'Retak Tarik (Tear)',
+    proses: 'Drawing',
+    category: 'Critical',
+    description: 'Robekan plat pada radius mangkok drawing akibat tekanan blankholder berlebih',
+  },
+  {
+    id: 32,
+    name: 'Gelombang (Wrinkle)',
+    proses: 'Drawing',
+    category: 'Major',
+    description: 'Kerutan bergelombang pada flange plat akibat tekanan cushion hidrolik kurang',
+  },
+  {
+    id: 33,
+    name: 'Kontaminasi Minyak/Oli',
+    proses: 'Drawing',
+    category: 'Minor',
+    description: 'Lapisan residu oli drawing menumpuk tebal dan mengganggu proses painting ED',
+  },
+];
+
+export default {
+  parts: MASTER_PARTS,
+  machines: MASTER_MACHINES,
+  defectTypes: MASTER_DEFECT_TYPES,
+};

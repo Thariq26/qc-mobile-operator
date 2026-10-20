@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "QC Defect Monitoring App",
+    "slug": "qc-defect-monitoring-app",
+    "owner": "thariiqs-team",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gmp.qcdefectmonitoring"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0B0F17"
+      },
+      "package": "com.gmp.qcdefectmonitoring",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Aplikasi membutuhkan izin akses galeri untuk mengunggah foto bukti cacat QC.",
+          "cameraPermission": "Aplikasi membutuhkan izin akses kamera untuk memotret cacat produk di lini perakitan."
+        }
+      ],
+      "expo-asset",
+      "expo-font",
+      "expo-secure-store",
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "418622cf-eb5e-4647-a6b7-23159edb0aa4"
+      }
+    }
+  }
+}
