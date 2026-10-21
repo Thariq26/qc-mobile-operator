@@ -6,17 +6,14 @@ import { authService } from '../api/services/authService';
 
 const TOKEN_KEY = '@qc_auth_token';
 const USER_KEY = '@qc_auth_user';
-const SHIFT_KEY = '@qc_active_shift';
 
 export const AuthContext = createContext({
   user: null,
   token: null,
   isAuthenticated: false,
   isLoading: true,
-  currentShift: 'Shift 1',
   login: async () => {},
   logout: async () => {},
-  setShift: async () => {},
 });
 
 // Storage helper with fallback between SecureStore and AsyncStorage
@@ -59,18 +56,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentShift, setCurrentShift] = useState('Shift 1');
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const storedToken = await storage.getItem(TOKEN_KEY);
         const storedUser = await storage.getItem(USER_KEY);
-        const storedShift = await storage.getItem(SHIFT_KEY);
-
-        if (storedShift) {
-          setCurrentShift(storedShift);
-        }
 
         if (storedToken && storedUser) {
           setToken(storedToken);
@@ -125,15 +116,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const setShift = async (shift) => {
-    try {
-      setCurrentShift(shift);
-      await storage.setItem(SHIFT_KEY, shift);
-    } catch (err) {
-      console.warn('Failed to save shift:', err);
-    }
-  };
-
   const changePassword = async (newPassword, oldPassword) => {
     try {
       const res = await authService.changePassword(
@@ -156,10 +138,8 @@ export const AuthProvider = ({ children }) => {
         token,
         isAuthenticated: !!token,
         isLoading,
-        currentShift,
         login,
         logout,
-        setShift,
         changePassword,
       }}
     >

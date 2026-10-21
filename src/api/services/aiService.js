@@ -124,7 +124,7 @@ export const aiService = {
   /**
    * AI Chatbot Service (Google Gemini API -> n8n Webhook -> Offline QC Copilot Engine)
    */
-  sendN8nChatMessage: async ({ sessionId, operatorName, message, currentShift }) => {
+  sendN8nChatMessage: async ({ sessionId, operatorName, message }) => {
     // 1. Try Google Gemini API directly if API key is configured
     const geminiKey = getGeminiApiKey();
     if (geminiKey) {
@@ -175,7 +175,6 @@ export const aiService = {
           sessionId: sessionId || 'qc_session_01',
           operatorName: operatorName || 'Budi Santoso',
           message,
-          currentShift: currentShift || 'Shift 1',
         },
         {
           timeout: 3500,

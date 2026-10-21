@@ -33,7 +33,7 @@ import { OperatorProfileModal } from './OperatorProfileModal';
  */
 export const AppHeader = ({ isOffline = false }) => {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { user, currentShift } = useAuth();
+  const { user } = useAuth();
 
   // Modal States
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
@@ -106,7 +106,7 @@ export const AppHeader = ({ isOffline = false }) => {
         <Pressable
           onPress={() => setProfileModalVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Buka Profil Operator dan Pilihan Shift"
+          accessibilityLabel="Buka Profil Operator"
           style={({ pressed }) => [
             styles.brandContainer,
             pressed && { opacity: 0.8 },
@@ -131,7 +131,7 @@ export const AppHeader = ({ isOffline = false }) => {
                 style={[styles.operatorText, { color: colors.textSecondary }]}
                 numberOfLines={1}
               >
-                {user?.fullName || 'Budi Santoso'} • {currentShift || 'Shift 1'}
+                {user?.fullName || 'Budi Santoso'} • {user?.role || 'QC Inspector'}
               </Text>
               <ChevronDown size={13} color={colors.textMuted} style={{ marginLeft: 2 }} />
             </View>

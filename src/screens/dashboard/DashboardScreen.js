@@ -29,10 +29,11 @@ import { dashboardService } from '../../api/services/dashboardService';
 import { aiService } from '../../api/services/aiService';
 import { typography } from '../../theme/typography';
 import { useObserve } from 'expo-observe';
+import { useFocusEffect } from '@react-navigation/native';
 
 export const DashboardScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
-  const { user, currentShift } = useAuth();
+  const { user } = useAuth();
   const { markInteractive } = useObserve();
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN' || user?.username?.toLowerCase() === 'admin';
 
@@ -76,9 +77,12 @@ export const DashboardScreen = ({ navigation }) => {
     }
   }, [paretoPeriod, user?.username, user?.role]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+  // Auto re-fetch dashboard metrics whenever user focuses/returns to this tab
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+    }, [fetchDashboardData])
+  );
 
   useEffect(() => {
     if (!loading && markInteractive) {
@@ -135,7 +139,7 @@ export const DashboardScreen = ({ navigation }) => {
             RINGKASAN METRIK KUALITAS
           </Text>
           <Text style={[styles.sectionMeta, { color: colors.textSecondary }]}>
-            {isAdmin ? 'Pabrik Global • Live Synchronized' : `${currentShift || 'Shift 1'} • Operator Scoped`}
+            {isAdmin ? 'Pabrik Global • Live Synchronized' : `${user?.role || 'QC Inspector'} • Operator Scoped`}
           </Text>
         </View>
 

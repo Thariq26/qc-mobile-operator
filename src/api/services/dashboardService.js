@@ -106,17 +106,23 @@ export const dashboardService = {
         if (kpiData.totalProduction !== undefined && kpiData.totalProduction !== null) {
           totalProd = kpiData.totalProduction;
         } else if (prodList.length > 0) {
-          totalProd = prodList.reduce((acc, p) => acc + (p.producedQuantity || 0), 0);
+          totalProd = prodList.reduce((acc, p) => acc + (Number(p.producedQuantity) || Number(p.produced) || 0), 0);
+        } else {
+          totalProd = FALLBACK_SUMMARY.totalProduction;
         }
 
         if (kpiData.totalNg !== undefined && kpiData.totalNg !== null) {
           totalNg = kpiData.totalNg;
         } else if (defectList.length > 0) {
-          totalNg = defectList.reduce((acc, d) => acc + (d.quantity || 0), 0);
+          totalNg = defectList.reduce((acc, d) => acc + (Number(d.quantity) || 0), 0);
+        } else {
+          totalNg = FALLBACK_SUMMARY.totalNg;
         }
 
         if (compData.totalComplaints !== undefined && compData.totalComplaints !== null) {
           totalComplaints = compData.totalComplaints;
+        } else {
+          totalComplaints = FALLBACK_SUMMARY.totalComplaints;
         }
       }
 
@@ -198,23 +204,33 @@ export const dashboardService = {
       if (!isAdmin) {
         // First check production records belonging to operator
         try {
-          const userProdList = await productionService.getProductionList(username);
+          const userProdList = await productionService.getProductionList(username, role);
           if (Array.isArray(userProdList) && userProdList.length > 0) {
-            const freshItems = userProdList.slice(0, 6).map((item, idx) => ({
-              id: `prod-${item.id || idx}`,
-              machineName: item.machineName,
-              process: `${item.line || 'Line'} • ${item.processName || 'Produksi'}`,
-              target: item.targetQuantity,
-              produced: item.producedQuantity,
-              variance: item.producedQuantity - item.targetQuantity,
-              efficiency: Math.round(item.efficiency || (item.producedQuantity / item.targetQuantity) * 100),
-              status: item.status,
-            }));
+            const freshItems = userProdList.slice(0, 8).map((item, idx) => {
+              const target = Number(item.targetQuantity ?? item.target ?? 0);
+              const produced = Number(item.producedQuantity ?? item.produced ?? 0);
+              const variance = produced - target;
+              const efficiency = target > 0 ? Math.round((produced / target) * 100) : 100;
+              const status = item.status || (produced >= target ? 'On Target' : 'Below Target');
+
+              return {
+                id: `prod-${item.id || idx}`,
+                machineName: item.machineName || 'Mesin Produksi',
+                process: `${item.line || 'Line'} • ${item.processName || 'Produksi'}`,
+                target,
+                produced,
+                variance,
+                efficiency,
+                status,
+              };
+            });
             return freshItems;
           }
-        } catch {}
+        } catch (e) {
+          console.warn('Error mapping operator production list:', e);
+        }
 
-        return [];
+        return FALLBACK_DAILY_PROD;
       }
 
       // Admin gets global daily production from backend
@@ -226,11 +242,11 @@ export const dashboardService = {
           id: idx + 1,
           machineName: item.machineName || (item.shift ? `Shift ${item.shift} Line` : `Mesin #${idx + 1}`),
           process: item.processName || item.day || 'Produksi',
-          target: item.target || item.targetQuantity || 5000,
-          produced: item.produced || item.producedQuantity || 4800,
-          variance: item.variance || ((item.produced || item.producedQuantity || 0) - (item.target || item.targetQuantity || 0)),
-          efficiency: item.efficiency || Math.round(((item.produced || item.producedQuantity || 4800) / (item.target || item.targetQuantity || 5000)) * 100),
-          status: item.status || ((item.produced || item.producedQuantity || 0) >= (item.target || item.targetQuantity || 0) ? 'On Target' : 'Below Target'),
+          target: Number(item.target || item.targetQuantity || 5000),
+          produced: Number(item.produced || item.producedQuantity || 4800),
+          variance: item.variance || (Number(item.produced || item.producedQuantity || 0) - Number(item.target || item.targetQuantity || 0)),
+          efficiency: item.efficiency || Math.round((Number(item.produced || item.producedQuantity || 4800) / Number(item.target || item.targetQuantity || 5000)) * 100),
+          status: item.status || (Number(item.produced || item.producedQuantity || 0) >= Number(item.target || item.targetQuantity || 0) ? 'On Target' : 'Below Target'),
         }));
       } else {
         list = FALLBACK_DAILY_PROD;
@@ -238,11 +254,7 @@ export const dashboardService = {
       return list;
     } catch (error) {
       console.warn('Backend daily production unavailable:', error?.message);
-      const isAdmin = (role && role.toUpperCase() === 'ADMIN') || (username && username.toLowerCase() === 'admin');
-      if (isAdmin) {
-        return FALLBACK_DAILY_PROD;
-      }
-      return [];
+      return FALLBACK_DAILY_PROD;
     }
   },
 };

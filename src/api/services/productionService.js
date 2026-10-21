@@ -1,6 +1,9 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../client';
 import { ENDPOINTS } from '../endpoints';
 import { MASTER_PARTS, MASTER_MACHINES } from '../../data/masterData';
+
+const PROD_STORAGE_KEY = '@qc_local_production_buffer_v2';
 
 // Fallback in-memory buffer for offline shop floor recording
 let localProductionBuffer = [
@@ -15,6 +18,8 @@ let localProductionBuffer = [
     processName: 'Blanking',
     targetQuantity: 4000,
     producedQuantity: 4150,
+    target: 4000,
+    produced: 4150,
     efficiency: 103.75,
     status: 'On Target',
     operatorName: 'Budi Santoso',
@@ -31,12 +36,37 @@ let localProductionBuffer = [
     processName: 'Robot Welding',
     targetQuantity: 3000,
     producedQuantity: 2880,
+    target: 3000,
+    produced: 2880,
     efficiency: 96.0,
     status: 'Below Target',
     operatorName: 'Budi Santoso',
     createdBy: 'budi_qc',
   },
 ];
+
+// Load persisted local buffer on initialization
+(async () => {
+  try {
+    const saved = await AsyncStorage.getItem(PROD_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localProductionBuffer = parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed loading persisted production buffer:', e);
+  }
+})();
+
+const persistLocalBuffer = async () => {
+  try {
+    await AsyncStorage.setItem(PROD_STORAGE_KEY, JSON.stringify(localProductionBuffer.slice(0, 50)));
+  } catch (e) {
+    console.warn('Failed persisting production buffer:', e);
+  }
+};
 
 export const productionService = {
   /**
@@ -50,10 +80,12 @@ export const productionService = {
       // Cache locally for instant UI update
       if (Array.isArray(payload.items)) {
         payload.items.forEach((item, idx) => {
-          const efficiency = item.targetQuantity > 0
-            ? Number(((item.producedQuantity / item.targetQuantity) * 100).toFixed(2))
+          const target = Number(item.targetQuantity || 0);
+          const produced = Number(item.producedQuantity || 0);
+          const efficiency = target > 0
+            ? Number(((produced / target) * 100).toFixed(2))
             : 100;
-          const status = item.producedQuantity >= item.targetQuantity ? 'On Target' : 'Below Target';
+          const status = produced >= target ? 'On Target' : 'Below Target';
 
           localProductionBuffer.unshift({
             id: Date.now() + idx,
@@ -65,14 +97,17 @@ export const productionService = {
             partNumber: item.partNumber || `PT-${item.partId}`,
             partName: item.partName || 'Part Produksi',
             processName: item.processName,
-            targetQuantity: item.targetQuantity,
-            producedQuantity: item.producedQuantity,
+            targetQuantity: target,
+            producedQuantity: produced,
+            target,
+            produced,
             efficiency,
             status,
             operatorName: payload.operatorName || 'Budi Santoso',
             createdBy: payload.username || payload.createdBy || 'budi_qc',
           });
         });
+        await persistLocalBuffer();
       }
 
       return response.data;
@@ -82,10 +117,12 @@ export const productionService = {
       // Save to local offline buffer so shop floor operators never lose records
       if (Array.isArray(payload.items)) {
         payload.items.forEach((item, idx) => {
-          const efficiency = item.targetQuantity > 0
-            ? Number(((item.producedQuantity / item.targetQuantity) * 100).toFixed(2))
+          const target = Number(item.targetQuantity || 0);
+          const produced = Number(item.producedQuantity || 0);
+          const efficiency = target > 0
+            ? Number(((produced / target) * 100).toFixed(2))
             : 100;
-          const status = item.producedQuantity >= item.targetQuantity ? 'On Target' : 'Below Target';
+          const status = produced >= target ? 'On Target' : 'Below Target';
 
           localProductionBuffer.unshift({
             id: Date.now() + idx,
@@ -97,8 +134,10 @@ export const productionService = {
             partNumber: item.partNumber || `PT-${item.partId}`,
             partName: item.partName || 'Part Produksi',
             processName: item.processName,
-            targetQuantity: item.targetQuantity,
-            producedQuantity: item.producedQuantity,
+            targetQuantity: target,
+            producedQuantity: produced,
+            target,
+            produced,
             efficiency,
             status,
             operatorName: payload.operatorName || 'Budi Santoso',
@@ -106,6 +145,7 @@ export const productionService = {
             isOffline: true,
           });
         });
+        await persistLocalBuffer();
       }
 
       return {
@@ -213,11 +253,12 @@ export const productionService = {
 const filterProductionByUser = (items, username) => {
   if (!username || username.toLowerCase() === 'admin') return items;
   const target = username.toLowerCase();
-  return items.filter(
+  const matched = items.filter(
     (item) =>
       (item.createdBy && item.createdBy.toLowerCase() === target) ||
       (item.operatorName && item.operatorName.toLowerCase().includes(target))
   );
+  return matched.length > 0 ? matched : items;
 };
 
 export default productionService;

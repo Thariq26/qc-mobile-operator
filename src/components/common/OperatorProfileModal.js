@@ -15,7 +15,6 @@ import {
   Sun,
   ShieldCheck,
   Building2,
-  Clock,
   X,
   BadgeCheck,
 } from 'lucide-react-native';
@@ -33,9 +32,7 @@ export const OperatorProfileModal = ({
   onOpenLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { user, currentShift, setShift } = useAuth();
-
-  const shifts = ['Shift 1', 'Shift 2', 'Shift 3'];
+  const { user } = useAuth();
 
   return (
     <Modal
@@ -109,48 +106,6 @@ export const OperatorProfileModal = ({
                   PT Galaxy Mandiri Perkasa
                 </Text>
               </View>
-            </View>
-          </View>
-
-          {/* Shift Selection Pills */}
-          <View style={styles.sectionBlock}>
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
-              PILIHAN SHIFT AKTIF
-            </Text>
-            <View style={styles.shiftsGrid}>
-              {shifts.map((s) => {
-                const isActive = currentShift === s;
-                return (
-                  <Pressable
-                    key={s}
-                    onPress={() => setShift(s)}
-                    style={({ pressed }) => [
-                      styles.shiftPill,
-                      {
-                        backgroundColor: isActive
-                          ? colors.primary
-                          : colors.cardSubtle,
-                        borderColor: isActive ? colors.primary : colors.border,
-                      },
-                      pressed && { opacity: 0.8 },
-                    ]}
-                  >
-                    <Clock
-                      size={14}
-                      color={isActive ? '#FFFFFF' : colors.textSecondary}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text
-                      style={[
-                        styles.shiftPillText,
-                        { color: isActive ? '#FFFFFF' : colors.textPrimary },
-                      ]}
-                    >
-                      {s}
-                    </Text>
-                  </Pressable>
-                );
-              })}
             </View>
           </View>
 
@@ -362,23 +317,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.6,
     marginBottom: 8,
-  },
-  shiftsGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  shiftPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  shiftPillText: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '700',
   },
   menuItem: {
     flexDirection: 'row',

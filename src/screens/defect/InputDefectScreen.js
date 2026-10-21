@@ -25,6 +25,7 @@ import {
   Package,
   Factory,
   Cog,
+  Clock,
   X,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -48,9 +49,12 @@ const PRODUCTION_PROCESSES = [
   { id: 'Final Visual Check', name: 'Final Visual Check', line: 'QC Final', desc: 'Inspeksi visual akhir sebelum packing' },
 ];
 
+const SHIFTS = ['Shift 1', 'Shift 2', 'Shift 3'];
+
 /**
  * InputDefectScreen: Catat Cacat Produk (NG) Handheld Form
  * Features:
+ * - Manual Shift selection (Shift 1, Shift 2, Shift 3)
  * - 100% Drop Down Lists: Part Number (All parts), Jenis Cacat (All defects), Proses Produksi (All processes), Mesin
  * - Glove-friendly tactile stepper for quantity
  * - Photo capture & gallery picker with compression
@@ -58,7 +62,7 @@ const PRODUCTION_PROCESSES = [
  */
 export const InputDefectScreen = ({ navigation }) => {
   const { colors } = useTheme();
-  const { user, currentShift } = useAuth();
+  const { user } = useAuth();
 
   // Master Data
   const [parts, setParts] = useState([]);
@@ -66,6 +70,7 @@ export const InputDefectScreen = ({ navigation }) => {
   const [machines, setMachines] = useState([]);
 
   // Form State
+  const [selectedShift, setSelectedShift] = useState('Shift 1');
   const [selectedPart, setSelectedPart] = useState(null);
   const [partSearchQuery, setPartSearchQuery] = useState('');
 
@@ -184,7 +189,7 @@ export const InputDefectScreen = ({ navigation }) => {
         remarks: remarks.trim() || 'Pemeriksaan visual rutin lantai produksi',
         photoUrl: uploadedFileName,
         defectDate: new Date().toISOString().split('T')[0],
-        shift: currentShift || 'Shift 1',
+        shift: selectedShift,
         namaMesin: selectedMachine,
       };
 
@@ -245,6 +250,53 @@ export const InputDefectScreen = ({ navigation }) => {
           <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
             Formulir inspeksi kualitas real-time lini perakitan PT Galaxy Mandiri
           </Text>
+        </View>
+
+        {/* ========================================================================= */}
+        {/* PILIHAN SHIFT KERJA MANUAL (SHIFT 1, SHIFT 2, SHIFT 3)                    */}
+        {/* ========================================================================= */}
+        <View style={styles.formSection}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+            PILIH SHIFT KERJA OPERASIONAL *
+          </Text>
+          <View style={styles.shiftGrid}>
+            {SHIFTS.map((shiftItem) => {
+              const isSelected = selectedShift === shiftItem;
+              return (
+                <Pressable
+                  key={shiftItem}
+                  onPress={() => setSelectedShift(shiftItem)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Pilih ${shiftItem}`}
+                  style={({ pressed }) => [
+                    styles.shiftButton,
+                    {
+                      backgroundColor: isSelected ? colors.primary : colors.card,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                    pressed && { opacity: 0.8 },
+                  ]}
+                >
+                  <Clock
+                    size={15}
+                    color={isSelected ? '#FFFFFF' : colors.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.shiftButtonText,
+                      {
+                        color: isSelected ? '#FFFFFF' : colors.textPrimary,
+                        fontWeight: isSelected ? '800' : '600',
+                      },
+                    ]}
+                  >
+                    {shiftItem}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* ========================================================================= */}
@@ -930,6 +982,22 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
     marginBottom: 6,
+  },
+  shiftGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  shiftButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  shiftButtonText: {
+    fontSize: typography.sizes.body,
   },
   dropdownSelector: {
     flexDirection: 'row',

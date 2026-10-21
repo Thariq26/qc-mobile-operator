@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   UserCheck,
   Building2,
-  Clock,
   X,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -27,7 +26,7 @@ import { typography } from '../../theme/typography';
  */
 export const LogoutConfirmModal = ({ visible, onClose }) => {
   const { colors } = useTheme();
-  const { user, currentShift, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleConfirmLogout = async () => {
@@ -101,7 +100,7 @@ export const LogoutConfirmModal = ({ visible, onClose }) => {
             Konfirmasi Logout
           </Text>
           <Text style={[styles.description, { color: colors.textSecondary }]}>
-            Apakah Anda yakin ingin mengakhiri sesi kerja handheld QC pada shift ini?
+            Apakah Anda yakin ingin mengakhiri sesi kerja handheld QC saat ini?
           </Text>
 
           {/* Active Session Info Box */}
@@ -117,14 +116,7 @@ export const LogoutConfirmModal = ({ visible, onClose }) => {
             <View style={styles.sessionItem}>
               <UserCheck size={16} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={[styles.sessionText, { color: colors.textPrimary }]}>
-                Operator: <Text style={{ fontWeight: '800' }}>{user?.fullName || 'Budi Santoso'}</Text>
-              </Text>
-            </View>
-
-            <View style={styles.sessionItem}>
-              <Clock size={16} color={colors.warning} style={{ marginRight: 8 }} />
-              <Text style={[styles.sessionText, { color: colors.textPrimary }]}>
-                Shift Aktif: <Text style={{ fontWeight: '800' }}>{currentShift || 'Shift 1'}</Text>
+                Operator: <Text style={{ fontWeight: '800' }}>{user?.fullName || 'Budi Santoso'} ({user?.role || 'QC Inspector'})</Text>
               </Text>
             </View>
 

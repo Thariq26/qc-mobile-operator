@@ -30,7 +30,7 @@ const QUICK_PROMPTS = [
 
 export const AiChatScreen = ({ route }) => {
   const { colors, isDark } = useTheme();
-  const { user, currentShift } = useAuth();
+  const { user } = useAuth();
 
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,7 +74,6 @@ export const AiChatScreen = ({ route }) => {
         sessionId: `qc_${user?.username || 'operator'}_session`,
         operatorName: user?.fullName || 'Budi Santoso',
         message: textToSend.trim(),
-        currentShift: currentShift || 'Shift 1',
       });
 
       const aiMsg = {
