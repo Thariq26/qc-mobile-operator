@@ -21,6 +21,10 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -52,6 +56,12 @@
       "eas": {
         "projectId": "418622cf-eb5e-4647-a6b7-23159edb0aa4"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/418622cf-eb5e-4647-a6b7-23159edb0aa4"
     }
   }
 }

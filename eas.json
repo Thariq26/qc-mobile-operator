@@ -5,7 +5,11 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development",
+      "ios": {
+        "simulator": true
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -14,7 +18,8 @@
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "preview"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "uploadSourceMaps": true,
@@ -23,7 +28,8 @@
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
