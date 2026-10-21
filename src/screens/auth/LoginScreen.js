@@ -8,9 +8,8 @@ import {
   ScrollView,
   Platform,
   Pressable,
-  Alert,
 } from 'react-native';
-import { ShieldCheck, Lock, User, Eye, EyeOff, Sun, Moon, Check, Sparkles, ArrowRight } from 'lucide-react-native';
+import { ShieldCheck, Lock, User, Eye, EyeOff, Sun, Moon } from 'lucide-react-native';
 import { useObserve } from 'expo-observe';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -19,19 +18,18 @@ import { typography } from '../../theme/typography';
 
 export const LoginScreen = () => {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { login, loginAsDemo } = useAuth();
+  const { login } = useAuth();
   const { markInteractive } = useObserve();
 
   useEffect(() => {
     markInteractive();
   }, [markInteractive]);
 
-  const [username, setUsername] = useState('budi_qc');
-  const [password, setPassword] = useState('password123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
@@ -47,29 +45,11 @@ export const LoginScreen = () => {
       await login(username.trim(), password);
     } catch (err) {
       setErrorMessage(
-        err.message || 'Gagal terhubung ke server database. Anda dapat menggunakan tombol Mode Demo di bawah untuk uji coba.'
+        err.message || 'Gagal masuk. Periksa kembali username dan kata sandi.'
       );
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLoginDemo = async (role = 'OPERATOR') => {
-    setErrorMessage('');
-    setDemoLoading(true);
-    try {
-      await loginAsDemo(role);
-    } catch (err) {
-      setErrorMessage('Gagal masuk mode demo: ' + err.message);
-    } finally {
-      setDemoLoading(false);
-    }
-  };
-
-  const handleFillCredentials = (u, p) => {
-    setUsername(u);
-    setPassword(p);
-    setErrorMessage('');
   };
 
   return (
@@ -207,56 +187,6 @@ export const LoginScreen = () => {
             onPress={handleLogin}
             style={{ width: '100%', marginTop: 12 }}
           />
-
-          {/* Quick Credential Badges */}
-          <View style={{ marginTop: 16 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textAlign: 'center', marginBottom: 8, letterSpacing: 0.5 }}>
-              AKUN RESMI DATABASE PABRIK:
-            </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-              <Pressable
-                onPress={() => handleFillCredentials('budi_qc', 'password123')}
-                style={({ pressed }) => [
-                  styles.quickAccountChip,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text style={[styles.quickAccountText, { color: colors.primary }]}>👤 budi_qc (Operator)</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleFillCredentials('admin', 'admin123')}
-                style={({ pressed }) => [
-                  styles.quickAccountChip,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text style={[styles.quickAccountText, { color: colors.primary }]}>🛡️ admin (Supervisor)</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textMuted }]}>ATAU</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
-          {/* Demo Mode Button for Respondents / Examiners */}
-          <SpringButton
-            title="Masuk Mode Demo (Uji Responden)"
-            variant="outline"
-            size="large"
-            loading={demoLoading}
-            onPress={() => handleLoginDemo('OPERATOR')}
-            icon={<Sparkles size={18} color={colors.primary} />}
-            style={{ width: '100%' }}
-          />
-          <Text style={{ fontSize: 11, color: colors.textMuted, textAlign: 'center', marginTop: 6 }}>
-            Akses instan seluruh fitur di HP apa pun tanpa bergantung laptop
-          </Text>
         </View>
 
         {/* Footer info */}
@@ -364,45 +294,6 @@ const styles = StyleSheet.create({
   },
   eyeBtn: {
     padding: 6,
-  },
-  demoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  demoText: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '700',
-  },
-  quickAccountChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  quickAccountText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 18,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   footer: {
     alignItems: 'center',

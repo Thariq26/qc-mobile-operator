@@ -111,29 +111,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginAsDemo = async (role = 'OPERATOR') => {
-    setIsLoading(true);
-    try {
-      const demoUser = {
-        username: role === 'ADMIN' ? 'admin' : 'budi_qc',
-        fullName: role === 'ADMIN' ? 'Admin Supervisor (Demo)' : 'Budi Santoso (Demo Responden)',
-        role: role,
-        isDemo: true,
-      };
-      const demoToken = 'demo-jwt-token-qc-operator-gmp';
-      await storage.setItem(TOKEN_KEY, demoToken);
-      await storage.setItem(USER_KEY, JSON.stringify(demoUser));
-      setToken(demoToken);
-      setUser(demoUser);
-      return { success: true, user: demoUser };
-    } catch (err) {
-      console.warn('Demo login error:', err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -181,7 +158,6 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         currentShift,
         login,
-        loginAsDemo,
         logout,
         setShift,
         changePassword,
