@@ -1,7 +1,7 @@
 # QC Mobile Operator — Handheld Quality Control & Production Monitoring
 
 [![React Native](https://img.shields.io/badge/React%20Native-0.86.3-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo&logoColor=white)](https://expo.dev/)
+[![Expo](https://img.shields.io/badge/Expo-SDK%2058-000020?logo=expo&logoColor=white)](https://expo.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Design System](https://img.shields.io/badge/Design%20System-Modern%20Industrial%20Slate-3B82F6)](./DESIGN.md)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
