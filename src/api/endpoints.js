@@ -91,6 +91,8 @@ export const ENDPOINTS = {
 
   // User Profile & Security
   UPDATE_PROFILE: '/users/update-profile',
+  USERS_OPERATORS: '/users/operators',
+  USERS: '/users',
 };
 
 export default ENDPOINTS;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,59 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
-import { ShieldCheck, Lock, User, Eye, EyeOff, Sun, Moon } from 'lucide-react-native';
-import { useObserve } from 'expo-observe';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { ShieldCheck, Lock, User, Eye, EyeOff, Sun, Moon, Check } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { SpringButton } from '../../components/common/SpringButton';
+import { LoginErrorModal } from '../../components/common/LoginErrorModal';
+import { getApiHost } from '../../api/endpoints';
 import { typography } from '../../theme/typography';
+
+const REMEMBER_KEY = '@qc_remember_me';
+const USERNAME_KEY = '@qc_remember_username';
+const PASSWORD_KEY = '@qc_remember_password';
+
+// Storage helper terenkripsi untuk menyimpan kredensial operator
+const secureSave = async (key, value) => {
+  try {
+    if (Platform.OS !== 'web') {
+      await SecureStore.setItemAsync(key, value);
+    } else {
+      await AsyncStorage.setItem(key, value);
+    }
+  } catch {
+    await AsyncStorage.setItem(key, value);
+  }
+};
+
+const secureGet = async (key) => {
+  try {
+    if (Platform.OS !== 'web') {
+      const val = await SecureStore.getItemAsync(key);
+      if (val !== null && val !== undefined) return val;
+    }
+    return await AsyncStorage.getItem(key);
+  } catch {
+    return await AsyncStorage.getItem(key);
+  }
+};
+
+const secureDelete = async (key) => {
+  try {
+    if (Platform.OS !== 'web') {
+      await SecureStore.deleteItemAsync(key);
+    }
+    await AsyncStorage.removeItem(key);
+  } catch {
+    await AsyncStorage.removeItem(key);
+  }
+};
 
 export const LoginScreen = () => {
   const { colors, isDark, toggleTheme } = useTheme();
   const { login } = useAuth();
-  const { markInteractive } = useObserve();
-
-  useEffect(() => {
-    markInteractive();
-  }, [markInteractive]);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -31,10 +69,74 @@ export const LoginScreen = () => {
   const [focusedField, setFocusedField] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Error Pop-up Modal State
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorData, setErrorData] = useState(null);
+
+  // Input Refs for smooth auto-focus upon closing error modal
+  const usernameInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+
+  // Muat kredensial tersimpan saat pertama kali membuka aplikasi
+  useEffect(() => {
+    const loadSavedCredentials = async () => {
+      try {
+        const isRemembered = await secureGet(REMEMBER_KEY);
+        if (isRemembered === 'true' || isRemembered === null) {
+          // Default aktif atau jika user sebelumnya memilih Ingat Saya
+          setRememberMe(true);
+          const savedUser = await secureGet(USERNAME_KEY);
+          const savedPass = await secureGet(PASSWORD_KEY);
+          if (savedUser) setUsername(savedUser);
+          if (savedPass) setPassword(savedPass);
+        } else {
+          setRememberMe(false);
+        }
+      } catch (err) {
+        console.warn('Gagal memuat kredensial tersimpan:', err);
+      }
+    };
+
+    loadSavedCredentials();
+  }, []);
+
+  const showError = (payload) => {
+    setErrorData(payload);
+    setErrorModalVisible(true);
+    setErrorMessage(payload.message || payload.title || 'Gagal masuk');
+  };
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      setErrorMessage('Harap masukkan Username dan Password!');
+    // 1. Validasi form kosong di sisi klien sebelum menembak jaringan
+    const trimmedUser = username.trim();
+    const trimmedPass = password.trim();
+
+    if (!trimmedUser && !trimmedPass) {
+      showError({
+        type: 'EMPTY_FIELDS',
+        title: 'Kredensial Belum Lengkap',
+        message: 'Username dan kata sandi operator wajib diisi sebelum masuk ke terminal QC.',
+      });
+      return;
+    }
+
+    if (!trimmedUser) {
+      showError({
+        type: 'EMPTY_USERNAME',
+        title: 'Username Belum Diisi',
+        message: 'Harap masukkan Username Operator sebelum melanjutkan.',
+      });
+      return;
+    }
+
+    if (!trimmedPass) {
+      showError({
+        type: 'EMPTY_PASSWORD',
+        title: 'Kata Sandi Belum Diisi',
+        message: 'Harap masukkan kata sandi akun operator Anda.',
+      });
       return;
     }
 
@@ -42,11 +144,27 @@ export const LoginScreen = () => {
     setLoading(true);
 
     try {
-      await login(username.trim(), password);
+      await login(trimmedUser, password);
+
+      // Simpan atau hapus kredensial berdasarkan pilihan Ingat Saya
+      if (rememberMe) {
+        await secureSave(REMEMBER_KEY, 'true');
+        await secureSave(USERNAME_KEY, trimmedUser);
+        await secureSave(PASSWORD_KEY, password);
+      } else {
+        await secureSave(REMEMBER_KEY, 'false');
+        await secureDelete(USERNAME_KEY);
+        await secureDelete(PASSWORD_KEY);
+      }
     } catch (err) {
-      setErrorMessage(
-        err.message || 'Gagal masuk. Periksa kembali username dan kata sandi.'
-      );
+      showError({
+        type: err.type || 'GENERAL',
+        title: err.title || 'Gagal Masuk',
+        message: err.message || 'Kredensial tidak valid di database. Periksa kembali username dan kata sandi.',
+        host: err.host || getApiHost(),
+        username: trimmedUser,
+        status: err.status,
+      });
     } finally {
       setLoading(false);
     }
@@ -98,13 +216,15 @@ export const LoginScreen = () => {
 
         {/* Error Alert Banner */}
         {errorMessage ? (
-          <View style={[styles.errorBanner, { backgroundColor: colors.critical + '1A', borderColor: colors.critical }]}>
+          <Pressable
+            onPress={() => setErrorModalVisible(true)}
+            style={[styles.errorBanner, { backgroundColor: colors.critical + '1A', borderColor: colors.critical }]}
+          >
             <Text style={[styles.errorText, { color: colors.critical }]}>
               {errorMessage}
             </Text>
-          </View>
+          </Pressable>
         ) : null}
-
 
         {/* Input Form */}
         <View style={styles.formContainer}>
@@ -124,10 +244,13 @@ export const LoginScreen = () => {
             >
               <User size={20} color={focusedField === 'username' ? colors.primary : colors.textMuted} style={styles.fieldIcon} />
               <TextInput
+                ref={usernameInputRef}
                 value={username}
                 onChangeText={setUsername}
                 onFocus={() => setFocusedField('username')}
                 onBlur={() => setFocusedField(null)}
+                onSubmitEditing={() => passwordInputRef.current?.focus()}
+                returnKeyType="next"
                 placeholder="Username"
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
@@ -153,10 +276,13 @@ export const LoginScreen = () => {
             >
               <Lock size={20} color={focusedField === 'password' ? colors.primary : colors.textMuted} style={styles.fieldIcon} />
               <TextInput
+                ref={passwordInputRef}
                 value={password}
                 onChangeText={setPassword}
                 onFocus={() => setFocusedField('password')}
                 onBlur={() => setFocusedField(null)}
+                onSubmitEditing={handleLogin}
+                returnKeyType="go"
                 placeholder="Masukkan kata sandi"
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry={!showPassword}
@@ -177,15 +303,42 @@ export const LoginScreen = () => {
             </View>
           </View>
 
+          {/* Remember Me Checklist / Checkbox */}
+          <Pressable
+            onPress={() => setRememberMe((prev) => !prev)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.rememberMeContainer}
+            accessible={true}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: rememberMe }}
+            accessibilityLabel="Ingat Akun Saya"
+          >
+            <View
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: rememberMe ? colors.primary : colors.border,
+                  backgroundColor: rememberMe ? colors.primary : colors.card,
+                },
+              ]}
+            >
+              {rememberMe ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
+            </View>
+            <View style={styles.rememberMeTextWrapper}>
+              <Text style={[styles.rememberMeTitle, { color: colors.textPrimary }]}>
+                Ingat Akun Saya
+              </Text>
+            </View>
+          </Pressable>
 
           {/* Submit Spring Button */}
           <SpringButton
-            title="Masuk ke Terminal QC"
+            title="Masuk ke Terminal"
             variant="primary"
             size="large"
             loading={loading}
             onPress={handleLogin}
-            style={{ width: '100%', marginTop: 12 }}
+            style={{ width: '100%', marginTop: 8 }}
           />
         </View>
 
@@ -196,6 +349,25 @@ export const LoginScreen = () => {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Pop-up Modal Khusus Error Login Handheld */}
+      <LoginErrorModal
+        visible={errorModalVisible}
+        onClose={() => {
+          setErrorModalVisible(false);
+          if (errorData?.type === 'EMPTY_USERNAME' || errorData?.type === 'USER_NOT_FOUND') {
+            usernameInputRef.current?.focus();
+          } else if (errorData?.type === 'EMPTY_PASSWORD' || errorData?.type === 'WRONG_CREDENTIALS') {
+            passwordInputRef.current?.focus();
+          }
+        }}
+        errorData={errorData}
+        onShowPassword={() => {
+          setShowPassword(true);
+          passwordInputRef.current?.focus();
+        }}
+        onRetry={handleLogin}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -294,6 +466,36 @@ const styles = StyleSheet.create({
   },
   eyeBtn: {
     padding: 6,
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+    marginBottom: 8,
+    marginTop: 2,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    borderWidth: 1.8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  rememberMeTextWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  rememberMeTitle: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  rememberMeSubtitle: {
+    fontSize: typography.sizes.micro,
+    marginTop: 1,
   },
   footer: {
     alignItems: 'center',

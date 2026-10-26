@@ -153,6 +153,10 @@ export const ComplaintsScreen = () => {
     );
   };
 
+  const activeCount = complaints.filter(
+    (c) => !c.status?.toLowerCase().includes('closed')
+  ).length;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader />
@@ -160,18 +164,18 @@ export const ComplaintsScreen = () => {
       {/* Header Awareness Banner */}
       <View style={[styles.banner, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={styles.bannerRow}>
-          <View>
-            <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
-              VISIBILITAS KOMPLAIN CUSTOMER
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <Text style={[styles.bannerTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+              KOMPLAIN CUSTOMER
             </Text>
-            <Text style={[styles.bannerSubtitle, { color: colors.textSecondary }]}>
-              Customer Awareness • Lini Perakitan PT GMP
+            <Text style={[styles.bannerSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+              Customer Awareness & Mutu • Lini PT GMP
             </Text>
           </View>
 
           <View style={[styles.countBadge, { backgroundColor: colors.purple + '20', borderColor: colors.purple }]}>
             <Text style={[styles.countText, { color: colors.purple }]}>
-              {complaints.length} Kasus Aktif
+              {activeCount} Kasus Aktif
             </Text>
           </View>
         </View>
@@ -191,8 +195,19 @@ export const ComplaintsScreen = () => {
           data={complaints}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderComplaintItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, complaints.length === 0 && { flexGrow: 1 }]}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={[styles.emptyContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <CheckCircle2 size={44} color={colors.success} style={{ marginBottom: 12 }} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                Tidak Ada Komplain Customer
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                Saat ini belum ada catatan komplain customer yang aktif. Kualitas produk dalam kondisi prima!
+              </Text>
+            </View>
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -358,6 +373,25 @@ const styles = StyleSheet.create({
   metaVal: {
     fontSize: typography.sizes.caption,
     fontWeight: '700',
+  },
+  emptyContainer: {
+    padding: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  emptyTitle: {
+    fontSize: typography.sizes.screenHeading,
+    fontWeight: '800',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: typography.sizes.body,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

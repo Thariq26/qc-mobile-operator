@@ -26,15 +26,45 @@ import {
   Factory,
   Cog,
   Clock,
+  Calendar,
+  CalendarClock,
+  Info,
   X,
+  User,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SpringButton } from '../../components/common/SpringButton';
 import { PhotoModal } from '../../components/common/PhotoModal';
+import { CalendarDateModal } from '../../components/common/CalendarDateModal';
+import { ConfirmDefectModal } from '../../components/common/ConfirmDefectModal';
 import { defectService } from '../../api/services/defectService';
+import { getLocalDateString, formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
+
+// Helper to get standard YYYY-MM-DD string N days ago
+const getDateNDaysAgo = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Format label ringkas untuk tanggal kustom pada pill tanggal ke-3
+ */
+const getShortCustomDateLabel = (dateStr) => {
+  if (!dateStr) return 'Pilih Tanggal';
+  const parts = dateStr.split('-').map(Number);
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+  const formatted = `${parts[2]} ${shortMonths[parts[1] - 1]}`;
+  if (dateStr === getDateNDaysAgo(2)) return `${formatted} (H-2)`;
+  if (dateStr === getDateNDaysAgo(3)) return `${formatted} (H-3)`;
+  return formatted;
+};
 
 // Standard Industrial Production Processes at PT Galaxy Mandiri Perkasa
 const PRODUCTION_PROCESSES = [
@@ -49,12 +79,12 @@ const PRODUCTION_PROCESSES = [
   { id: 'Final Visual Check', name: 'Final Visual Check', line: 'QC Final', desc: 'Inspeksi visual akhir sebelum packing' },
 ];
 
-const SHIFTS = ['Shift 1', 'Shift 2', 'Shift 3'];
+const SHIFTS = ['Shift 1', 'Shift 2'];
 
 /**
  * InputDefectScreen: Catat Cacat Produk (NG) Handheld Form
  * Features:
- * - Manual Shift selection (Shift 1, Shift 2, Shift 3)
+ * - Manual Shift selection (Shift 1, Shift 2)
  * - 100% Drop Down Lists: Part Number (All parts), Jenis Cacat (All defects), Proses Produksi (All processes), Mesin
  * - Glove-friendly tactile stepper for quantity
  * - Photo capture & gallery picker with compression
@@ -68,9 +98,13 @@ export const InputDefectScreen = ({ navigation }) => {
   const [parts, setParts] = useState([]);
   const [defectTypes, setDefectTypes] = useState([]);
   const [machines, setMachines] = useState([]);
+  const [operators, setOperators] = useState([]);
 
   // Form State
   const [selectedShift, setSelectedShift] = useState('Shift 1');
+  const [operatorName, setOperatorName] = useState('');
+  const [selectedOperator, setSelectedOperator] = useState(null);
+  const [operatorSearchQuery, setOperatorSearchQuery] = useState('');
   const [selectedPart, setSelectedPart] = useState(null);
   const [partSearchQuery, setPartSearchQuery] = useState('');
 
@@ -81,11 +115,76 @@ export const InputDefectScreen = ({ navigation }) => {
   const [remarks, setRemarks] = useState('');
   const [photoUri, setPhotoUri] = useState(null);
 
-  // Active Dropdown Accordion State ('part' | 'defect' | 'process' | 'machine' | null)
+  // Date State & Backdate Rules (Maksimal 3 hari ke belakang)
+  const [defectDate, setDefectDate] = useState(getLocalDateString());
+  const [dateError, setDateError] = useState('');
+  const [datePickerModalVisible, setDatePickerModalVisible] = useState(false);
+
+  const todayStr = getLocalDateString();
+  const yesterdayStr = getDateNDaysAgo(1);
+  const isToday = defectDate === todayStr;
+  const isYesterday = defectDate === yesterdayStr;
+  const isCustomDate = !isToday && !isYesterday;
+
+  const getDateCardSubtitle = (dateStr) => {
+    if (dateStr === todayStr) return 'Tanggal hari ini (Real-time)';
+    if (dateStr === yesterdayStr) return 'Laporan mundur: Kemarin (H-1)';
+    if (dateStr === getDateNDaysAgo(2)) return 'Laporan mundur: 2 Hari Lalu (H-2)';
+    if (dateStr === getDateNDaysAgo(3)) return 'Laporan mundur: 3 Hari Lalu (H-3)';
+    return `Laporan mundur: ${dateStr}`;
+  };
+
+  const getDateCardBadge = (dateStr) => {
+    if (dateStr === todayStr) return 'Hari Ini';
+    if (dateStr === yesterdayStr) return 'Kemarin';
+    if (dateStr === getDateNDaysAgo(2)) return 'Backdate H-2';
+    if (dateStr === getDateNDaysAgo(3)) return 'Backdate H-3';
+    return 'Backdate';
+  };
+
+  // Validate backdate rules: cannot be future, cannot be older than 3 days
+  const validateAndSetDate = (dateString) => {
+    setDateError('');
+    const todayStr = getLocalDateString();
+    const minAllowedDate = getDateNDaysAgo(3);
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateString)) {
+      setDateError('Format tanggal harus YYYY-MM-DD!');
+      return false;
+    }
+
+    const dateObj = new Date(dateString);
+    if (isNaN(dateObj.getTime())) {
+      setDateError('Tanggal tidak valid!');
+      return false;
+    }
+
+    if (dateString > todayStr) {
+      setDateError('Tidak boleh memilih tanggal di masa depan!');
+      Alert.alert('Peringatan Audit Mutu', 'Tanggal temuan cacat tidak boleh lebih dari hari ini!');
+      return false;
+    }
+
+    if (dateString < minAllowedDate) {
+      setDateError('Batas pelaporan backdate maksimal 3 hari ke belakang!');
+      Alert.alert(
+        'Aturan Integritas Audit Mutu',
+        'Pelaporan temuan cacat (NG) backdate maksimal 3 hari ke belakang. Temuan lebih dari 3 hari lalu tidak diperkenankan demi kepatuhan audit!'
+      );
+      return false;
+    }
+
+    setDefectDate(dateString);
+    return true;
+  };
+
+  // Active Dropdown Accordion State ('operator' | 'part' | 'defect' | 'process' | 'machine' | null)
   const [openDropdown, setOpenDropdown] = useState(null);
 
   // UI State
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -96,15 +195,17 @@ export const InputDefectScreen = ({ navigation }) => {
   // Load master data on mount
   useEffect(() => {
     const loadMasterData = async () => {
-      const [partsList, defectsList, machinesList] = await Promise.all([
+      const [partsList, defectsList, machinesList, operatorsList] = await Promise.all([
         defectService.getParts(),
         defectService.getDefectTypes(),
         defectService.getMachines(),
+        defectService.getOperators(),
       ]);
 
       setParts(partsList);
       setDefectTypes(defectsList);
       setMachines(machinesList);
+      setOperators(operatorsList);
 
       // Default selection for seamless factory floor flow
       if (partsList.length > 0) {
@@ -119,10 +220,25 @@ export const InputDefectScreen = ({ navigation }) => {
       if (machinesList.length > 0) {
         setSelectedMachine(machinesList[0].name);
       }
+      if (operatorsList.length > 0) {
+        const initialOp = operatorsList.find((op) => op.shift === 'Shift 1') || operatorsList[0];
+        setSelectedOperator(initialOp);
+        setOperatorName(initialOp.fullName);
+      }
     };
 
     loadMasterData();
   }, []);
+
+  const handleShiftChange = (shiftItem) => {
+    setSelectedShift(shiftItem);
+  };
+
+  const handleSelectOperator = (op) => {
+    setSelectedOperator(op);
+    setOperatorName(op.fullName);
+    setOpenDropdown(null);
+  };
 
   const handleSelectPart = (part) => {
     setSelectedPart(part);
@@ -151,7 +267,15 @@ export const InputDefectScreen = ({ navigation }) => {
   const incrementQty = () => setQuantity((prev) => prev + 1);
   const decrementQty = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
-  const handleSubmit = async () => {
+  // 1. Validasi input sebelum membuka modal konfirmasi
+  const handlePressSubmit = () => {
+    if (!operatorName || !operatorName.trim()) {
+      Alert.alert(
+        'Perhatian',
+        'Harap pilih Nama Operator Lini Produksi untuk kebutuhan Mampu Telusur (Traceability Audit ISO 9001)!'
+      );
+      return;
+    }
     if (!selectedPart) {
       Alert.alert('Perhatian', 'Harap pilih Part Number yang diinspeksi!');
       return;
@@ -169,6 +293,27 @@ export const InputDefectScreen = ({ navigation }) => {
       return;
     }
 
+    // Validate backdate 3 days limit
+    const todayStr = getLocalDateString();
+    const minAllowedDate = getDateNDaysAgo(3);
+    if (defectDate > todayStr) {
+      Alert.alert('Peringatan Audit Mutu', 'Tanggal temuan cacat tidak boleh di masa depan!');
+      return;
+    }
+    if (defectDate < minAllowedDate) {
+      Alert.alert(
+        'Aturan Integritas Audit Mutu',
+        'Pelaporan temuan cacat (NG) backdate maksimal 3 hari ke belakang. Temuan lebih dari 3 hari lalu tidak diperkenankan!'
+      );
+      return;
+    }
+
+    // Buka dialog konfirmasi
+    setConfirmModalVisible(true);
+  };
+
+  // 2. Eksekusi simpan ke backend setelah user menyetujui di pop-up modal konfirmasi
+  const handleConfirmSubmit = async () => {
     setSubmitting(true);
     try {
       let uploadedFileName = null;
@@ -184,17 +329,18 @@ export const InputDefectScreen = ({ navigation }) => {
         defectName: selectedDefect.name,
         proses: selectedProcess,
         quantity: Number(quantity),
-        operatorName: user?.fullName || 'Budi Santoso',
-        username: user?.username || 'budi_qc',
+        operatorName: operatorName.trim(),
+        username: user?.username || '',
         remarks: remarks.trim() || 'Pemeriksaan visual rutin lantai produksi',
         photoUrl: uploadedFileName,
-        defectDate: new Date().toISOString().split('T')[0],
+        defectDate: defectDate,
         shift: selectedShift,
         namaMesin: selectedMachine,
       };
 
       await defectService.saveDefect(payload);
 
+      setConfirmModalVisible(false);
       setSubmitSuccess(true);
       setTimeout(() => {
         setSubmitSuccess(false);
@@ -202,6 +348,11 @@ export const InputDefectScreen = ({ navigation }) => {
         setQuantity(1);
         setRemarks('');
         setPhotoUri(null);
+        if (operators.length > 0) {
+          const resetOp = operators.find((op) => op.shift === selectedShift) || operators[0];
+          setSelectedOperator(resetOp);
+          setOperatorName(resetOp.fullName);
+        }
         Alert.alert(
           'Sukses Dicatat',
           `Data cacat ${payload.quantity} pcs ${payload.defectName} (${payload.proses}) berhasil disimpan ke database!`,
@@ -217,6 +368,17 @@ export const InputDefectScreen = ({ navigation }) => {
       setSubmitting(false);
     }
   };
+
+  // Filter operators if query provided, else show ALL operators
+  const displayedOperators = operatorSearchQuery.trim()
+    ? operators.filter(
+        (op) =>
+          op.fullName.toLowerCase().includes(operatorSearchQuery.toLowerCase()) ||
+          (op.line && op.line.toLowerCase().includes(operatorSearchQuery.toLowerCase())) ||
+          (op.username && op.username.toLowerCase().includes(operatorSearchQuery.toLowerCase())) ||
+          (op.shift && op.shift.toLowerCase().includes(operatorSearchQuery.toLowerCase()))
+      )
+    : operators;
 
   // Filter parts if query provided, else show ALL parts
   const displayedParts = partSearchQuery.trim()
@@ -253,7 +415,171 @@ export const InputDefectScreen = ({ navigation }) => {
         </View>
 
         {/* ========================================================================= */}
-        {/* PILIHAN SHIFT KERJA MANUAL (SHIFT 1, SHIFT 2, SHIFT 3)                    */}
+        {/* PILIHAN TANGGAL TEMUAN CACAT (BACKDATE MAKSIMAL 3 HARI)                    */}
+        {/* ========================================================================= */}
+        <View style={styles.formSection}>
+          <View style={styles.dateHeaderRow}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginBottom: 0, flex: 1, marginRight: 8 }]} numberOfLines={1}>
+              TANGGAL TEMUAN CACAT (BACKDATE) *
+            </Text>
+            <View style={styles.dateInfoBadge}>
+              <Info size={11} color={colors.primary} style={{ marginRight: 3 }} />
+              <Text style={[styles.dateInfoBadgeText, { color: colors.primary }]}>
+                Maks. 3 Hari Lalu
+              </Text>
+            </View>
+          </View>
+
+          {/* Segmented Date Selector: Hari Ini | Kemarin | Pilih Tanggal */}
+          <View
+            style={[
+              styles.dateSegmentedTrack,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            {/* 1. Hari Ini */}
+            <Pressable
+              onPress={() => validateAndSetDate(todayStr)}
+              accessibilityRole="button"
+              accessibilityLabel="Pilih Tanggal Hari Ini"
+              style={({ pressed }) => [
+                styles.dateSegmentedPill,
+                isToday && [
+                  styles.dateSegmentedPillActive,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                ],
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.dateSegmentedPillText,
+                  {
+                    color: isToday ? '#FFFFFF' : colors.textPrimary,
+                    fontWeight: isToday ? '800' : '600',
+                  },
+                ]}
+              >
+                Hari Ini
+              </Text>
+            </Pressable>
+
+            {/* 2. Kemarin */}
+            <Pressable
+              onPress={() => validateAndSetDate(yesterdayStr)}
+              accessibilityRole="button"
+              accessibilityLabel="Pilih Tanggal Kemarin"
+              style={({ pressed }) => [
+                styles.dateSegmentedPill,
+                isYesterday && [
+                  styles.dateSegmentedPillActive,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                ],
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.dateSegmentedPillText,
+                  {
+                    color: isYesterday ? '#FFFFFF' : colors.textPrimary,
+                    fontWeight: isYesterday ? '800' : '600',
+                  },
+                ]}
+              >
+                Kemarin
+              </Text>
+            </Pressable>
+
+            {/* 3. Pilih Tanggal (Pop-up Modal) */}
+            <Pressable
+              onPress={() => setDatePickerModalVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Buka Kalender Pilih Tanggal"
+              style={({ pressed }) => [
+                styles.dateSegmentedPill,
+                isCustomDate && [
+                  styles.dateSegmentedPillActive,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                ],
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Calendar
+                  size={14}
+                  color={isCustomDate ? '#FFFFFF' : colors.primary}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.dateSegmentedPillText,
+                    {
+                      color: isCustomDate ? '#FFFFFF' : colors.textPrimary,
+                      fontWeight: isCustomDate ? '800' : '600',
+                    },
+                  ]}
+                >
+                  {isCustomDate ? getShortCustomDateLabel(defectDate) : 'Pilih Tanggal'}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* Active Date Card with Detailed Context & Badge */}
+          <View style={[styles.dateActiveCard, { backgroundColor: colors.card, borderColor: dateError ? colors.critical : colors.border }]}>
+            <View style={styles.dateActiveLeft}>
+              <View style={[styles.dateIconWrapper, { backgroundColor: colors.primary + '15' }]}>
+                <Calendar size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dateActiveText, { color: colors.textPrimary }]}>
+                  {formatIndonesianDate(defectDate)}
+                </Text>
+                <Text style={[styles.dateActiveSub, { color: colors.textSecondary }]}>
+                  {getDateCardSubtitle(defectDate)}
+                </Text>
+              </View>
+            </View>
+            <View
+              style={[
+                styles.dateStatusPill,
+                {
+                  backgroundColor: isToday
+                    ? colors.success + '20'
+                    : isYesterday
+                    ? colors.warning + '25'
+                    : colors.primary + '25',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.dateStatusPillText,
+                  {
+                    color: isToday
+                      ? colors.success
+                      : isYesterday
+                      ? colors.warning
+                      : colors.primary,
+                  },
+                ]}
+              >
+                {getDateCardBadge(defectDate)}
+              </Text>
+            </View>
+          </View>
+
+          {dateError ? (
+            <Text style={{ color: colors.critical, fontSize: 11, fontWeight: '700', marginTop: 4 }}>
+              ⚠️ {dateError}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* ========================================================================= */}
+        {/* PILIHAN SHIFT KERJA MANUAL (SHIFT 1, SHIFT 2)                             */}
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
@@ -265,7 +591,7 @@ export const InputDefectScreen = ({ navigation }) => {
               return (
                 <Pressable
                   key={shiftItem}
-                  onPress={() => setSelectedShift(shiftItem)}
+                  onPress={() => handleShiftChange(shiftItem)}
                   accessibilityRole="button"
                   accessibilityLabel={`Pilih ${shiftItem}`}
                   style={({ pressed }) => [
@@ -297,6 +623,182 @@ export const InputDefectScreen = ({ navigation }) => {
               );
             })}
           </View>
+        </View>
+
+        {/* ========================================================================= */}
+        {/* NAMA OPERATOR LINI PRODUKSI (MAMPU TELUSUR AUDIT ISO 9001:2015)           */}
+        {/* ========================================================================= */}
+        <View style={styles.formSection}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary, flex: 1, marginRight: 8, marginBottom: 0 }]} numberOfLines={1}>
+              OPERATOR LINI PRODUKSI * ({operators.length} USER)
+            </Text>
+            <View
+              style={[
+                styles.traceabilityBadge,
+                {
+                  backgroundColor: colors.primary + '14',
+                  borderColor: colors.primary + '30',
+                },
+              ]}
+            >
+              <Text style={[styles.traceabilityBadgeText, { color: colors.primary }]}>
+                Traceability
+              </Text>
+            </View>
+          </View>
+
+          {/* Trigger Selector Accordion */}
+          <Pressable
+            onPress={() => toggleDropdown('operator')}
+            accessibilityRole="button"
+            accessibilityLabel="Pilih Nama Operator Produksi"
+            style={[
+              styles.dropdownSelector,
+              {
+                backgroundColor: colors.card,
+                borderColor: openDropdown === 'operator' ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <View style={[styles.selectorIconBadge, { backgroundColor: colors.primary + '18' }]}>
+              <User size={18} color={colors.primary} />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]}>
+                {selectedOperator ? `${selectedOperator.fullName} (@${selectedOperator.username})` : (operatorName || 'Pilih Operator Produksi')}
+              </Text>
+              <Text style={[styles.optionMetaText, { color: colors.textSecondary }]}>
+                Role: {selectedOperator?.role || 'OPERATOR_PRODUKSI'} • {selectedOperator?.line || 'Lini Produksi'}
+              </Text>
+            </View>
+
+            {openDropdown === 'operator' ? (
+              <ChevronUp size={20} color={colors.primary} />
+            ) : (
+              <ChevronDown size={20} color={colors.textSecondary} />
+            )}
+          </Pressable>
+
+          {/* Drop Down List Content (Menampilkan SEMUA Operator Produksi) */}
+          {openDropdown === 'operator' && (
+            <View
+              style={[
+                styles.dropdownContainer,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              {/* Quick Search inside Dropdown */}
+              <View
+                style={[
+                  styles.dropdownSearchBar,
+                  { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+                ]}
+              >
+                <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  value={operatorSearchQuery}
+                  onChangeText={setOperatorSearchQuery}
+                  placeholder={`Cari dari ${operators.length} nama operator...`}
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.dropdownSearchInput, { color: colors.textPrimary }]}
+                  autoCapitalize="words"
+                />
+                {operatorSearchQuery.length > 0 && (
+                  <Pressable onPress={() => setOperatorSearchQuery('')} hitSlop={8}>
+                    <X size={16} color={colors.textMuted} />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Counter Strip */}
+              <View
+                style={[
+                  styles.dropdownCounterStrip,
+                  { backgroundColor: colors.cardSubtle, borderBottomColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.dropdownCounterText, { color: colors.textSecondary }]}>
+                  {displayedOperators.length} Operator Lini Tersedia (Role: OPERATOR_PRODUKSI & ADMIN)
+                </Text>
+              </View>
+
+              {/* Scrollable Operators List */}
+              <ScrollView
+                nestedScrollEnabled={true}
+                style={styles.dropdownScrollView}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+              >
+                {displayedOperators.length === 0 ? (
+                  <View style={styles.emptyDropdownState}>
+                    <Text style={{ color: colors.textMuted, fontSize: typography.sizes.caption }}>
+                      Operator tidak ditemukan dengan kata kunci "{operatorSearchQuery}"
+                    </Text>
+                  </View>
+                ) : (
+                  displayedOperators.map((op) => {
+                    const isSelected = selectedOperator?.id === op.id || operatorName === op.fullName;
+
+                    return (
+                      <Pressable
+                        key={op.id || op.username}
+                        onPress={() => handleSelectOperator(op)}
+                        style={({ pressed }) => [
+                          styles.dropdownItem,
+                          {
+                            borderBottomColor: colors.border,
+                            backgroundColor: isSelected ? colors.primary + '14' : 'transparent',
+                          },
+                          pressed && { backgroundColor: colors.cardSubtle },
+                        ]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <Text
+                              style={[
+                                styles.dropdownDefectName,
+                                { color: colors.textPrimary, fontWeight: isSelected ? '800' : '600' },
+                              ]}
+                            >
+                              {op.fullName}
+                            </Text>
+                            {op.username ? (
+                              <View
+                                style={{
+                                  backgroundColor: colors.primary + '18',
+                                  paddingHorizontal: 6,
+                                  paddingVertical: 1,
+                                  borderRadius: 6,
+                                  marginLeft: 6,
+                                }}
+                              >
+                                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
+                                  @{op.username}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                          <Text style={[styles.itemSubText, { color: colors.textSecondary, marginTop: 2 }]}>
+                            Role: {op.role || 'OPERATOR_PRODUKSI'} • {op.line || 'Lini Produksi'}
+                          </Text>
+                        </View>
+
+                        {isSelected && (
+                          <CheckCircle2 size={18} color={colors.primary} style={{ marginLeft: 8 }} />
+                        )}
+                      </Pressable>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          )}
+
+          <Text style={[styles.fieldHintText, { color: colors.textSecondary }]}>
+            Pilih nama operator lini bertugas untuk kebutuhan mampu telusur riwayat kerja mesin (ISO 9001:2015).
+          </Text>
         </View>
 
         {/* ========================================================================= */}
@@ -650,7 +1152,7 @@ export const InputDefectScreen = ({ navigation }) => {
           {/* B. Mesin / Line Drop Down */}
           <View style={{ flex: 1, marginLeft: 6 }}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              MESIN / LINE * ({machines.length || 29} MESIN TERSEDIA)
+              MESIN / LINE
             </Text>
 
             <Pressable
@@ -938,7 +1440,7 @@ export const InputDefectScreen = ({ navigation }) => {
             loading={submitting}
             disabled={submitting || submitSuccess}
             icon={submitSuccess ? <CheckCircle2 size={20} color="#FFFFFF" /> : undefined}
-            onPress={handleSubmit}
+            onPress={handlePressSubmit}
             style={styles.submitButton}
           />
         </View>
@@ -949,6 +1451,36 @@ export const InputDefectScreen = ({ navigation }) => {
         visible={photoModalVisible}
         onClose={() => setPhotoModalVisible(false)}
         onImageSelected={(uri) => setPhotoUri(uri)}
+      />
+
+      {/* Pop-up Modal Kalender Pemilihan Tanggal Tunggal */}
+      <CalendarDateModal
+        visible={datePickerModalVisible}
+        onClose={() => setDatePickerModalVisible(false)}
+        onSelectDate={(newDate) => validateAndSetDate(newDate)}
+        currentDate={defectDate}
+        maxDaysAgo={3}
+      />
+
+      {/* Pop-up Modal Konfirmasi Sebelum Simpan Laporan Defect */}
+      <ConfirmDefectModal
+        visible={confirmModalVisible}
+        onClose={() => setConfirmModalVisible(false)}
+        onConfirm={handleConfirmSubmit}
+        submitting={submitting}
+        data={{
+          defectDate,
+          selectedShift,
+          selectedOperator,
+          operatorName,
+          selectedPart,
+          selectedDefect,
+          selectedProcess,
+          selectedMachine,
+          quantity,
+          remarks,
+          hasPhoto: !!photoUri,
+        }}
       />
     </KeyboardAvoidingView>
   );
@@ -983,6 +1515,43 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 6,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  traceabilityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  traceabilityBadgeText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  operatorInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 56,
+  },
+  operatorTextInput: {
+    flex: 1,
+    fontSize: typography.sizes.body,
+    fontWeight: '600',
+    paddingVertical: 0,
+  },
+  fieldHintText: {
+    fontSize: typography.sizes.micro,
+    marginTop: 6,
+    marginLeft: 4,
+  },
   shiftGrid: {
     flexDirection: 'row',
     gap: 8,
@@ -1016,12 +1585,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectedOptionText: {
-    fontSize: typography.sizes.body + 1,
+    fontSize: typography.sizes.cardHeading,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
   optionMetaText: {
-    fontSize: typography.sizes.caption - 0.5,
+    fontSize: typography.sizes.caption,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -1039,7 +1608,7 @@ const styles = StyleSheet.create({
   dropdownSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
+    height: 48,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
   },
@@ -1071,7 +1640,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   dropdownItem: {
-    padding: 12,
+    padding: 14,
     borderBottomWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1103,7 +1672,7 @@ const styles = StyleSheet.create({
   dropdownDefectDesc: {
     fontSize: typography.sizes.caption,
     marginTop: 2,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   rightBadgeContainer: {
     alignItems: 'flex-end',
@@ -1116,7 +1685,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   severityTagText: {
-    fontSize: typography.sizes.micro - 1,
+    fontSize: typography.sizes.micro,
     fontWeight: '800',
   },
   dualFieldRow: {
@@ -1126,26 +1695,26 @@ const styles = StyleSheet.create({
   compactDropdownSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
     borderRadius: 14,
     borderWidth: 1.5,
     minHeight: 56,
   },
   compactIconBadge: {
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
   },
   compactSelectedText: {
-    fontSize: typography.sizes.body - 0.5,
+    fontSize: typography.sizes.body,
     fontWeight: '800',
   },
   compactMetaText: {
-    fontSize: typography.sizes.micro - 0.5,
-    marginTop: 1,
+    fontSize: typography.sizes.micro,
+    marginTop: 2,
     fontWeight: '500',
   },
   stepperContainer: {
@@ -1154,13 +1723,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: 16,
     borderWidth: 1.5,
-    padding: 8,
-    minHeight: 64,
+    padding: 10,
+    minHeight: 68,
   },
   stepButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1244,6 +1813,94 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
+    minHeight: 52,
+  },
+  // Date & Backdate Picker Styles
+  dateHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dateInfoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  dateInfoBadgeText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '700',
+  },
+  dateActiveCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 8,
+  },
+  dateActiveLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  dateIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dateActiveText: {
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  dateActiveSub: {
+    fontSize: typography.sizes.micro,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  dateStatusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  dateStatusPillText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '800',
+  },
+  dateSegmentedTrack: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    padding: 4,
+    gap: 6,
+    minHeight: 46,
+    marginBottom: 10,
+  },
+  dateSegmentedPill: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    minHeight: 38,
+    borderRadius: 9,
+  },
+  dateSegmentedPillActive: {
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dateSegmentedPillText: {
+    fontSize: 13,
+    textAlign: 'center',
   },
 });
 

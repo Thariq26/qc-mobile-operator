@@ -41,12 +41,23 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+let onUnauthorizedHandler = null;
+
+export const setOnUnauthorized = (handler) => {
+  onUnauthorizedHandler = handler;
+};
+
 // Response Interceptor for Error Handling
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      console.warn('Session expired or unauthorized request');
+    // Only trigger auto logout on 401 if request is NOT login
+    const isLoginRequest = error.config?.url && error.config.url.includes('/api/auth/login');
+    if (error.response?.status === 401 && !isLoginRequest) {
+      console.warn('Session expired or unauthorized request (401)');
+      if (typeof onUnauthorizedHandler === 'function') {
+        onUnauthorizedHandler();
+      }
     }
     return Promise.reject(error);
   }

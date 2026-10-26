@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QC Defect Monitoring Mobile App - PT Galaxy Mandiri Perkasa</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color-primary: #2563EB;
+            --color-primary-light: #60A5FA;
+            --color-primary-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+            --color-accent-gradient: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            --color-success: #10B981;
+            --color-warning: #F59E0B;
+            --color-danger: #EF4444;
+            --color-purple: #8B5CF6;
+            --color-bg-dark: #0B0F19;
+            --color-card-dark: #131B2E;
+            --color-card-border: #1E293B;
+            --color-card-hover: #1E2942;
+            --color-text-main: #F8FAFC;
+            --color-text-muted: #94A3B8;
+            --font-heading: 'Space Grotesk', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--color-bg-dark);
+            color: var(--color-text-main);
+            font-family: var(--font-body);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            user-select: none;
+        }
+
+        /* 16:9 Slide Deck Aspect Ratio Container */
+        .slide-deck {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        @media (min-width: 769px) {
+            .slide-deck {
+                max-width: calc(100vh * 16 / 9);
+                max-height: calc(100vw * 9 / 16);
+                margin: auto;
+                position: absolute;
+                inset: 0;
+                box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                background: var(--color-bg-dark);
+            }
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 50px 60px 75px 60px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            transform: scale(0.98);
+            background: radial-gradient(circle at 80% 20%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+                        var(--color-bg-dark);
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        /* Slide Header */
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 14px;
+        }
+
+        .brand-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-primary-light);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .brand-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10B981;
+        }
+
+        .topic-tag {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--color-text-muted);
+        }
+
+        /* Slide Content Area */
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .slide-title {
+            font-size: clamp(28px, 3.8vw, 44px);
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-subtitle {
+            font-size: clamp(14px, 1.4vw, 17px);
+            color: var(--color-text-muted);
+            margin-bottom: 24px;
+            font-weight: 400;
+            max-width: 850px;
+            line-height: 1.5;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        /* Modern Glass Cards */
+        .card {
+            background: var(--color-card-dark);
+            border: 1px solid var(--color-card-border);
+            border-radius: 14px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(96, 165, 250, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #FFFFFF;
+        }
+
+        .card-desc {
+            font-size: 13.5px;
+            color: var(--color-text-muted);
+            line-height: 1.55;
+        }
+
+        .card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .icon-blue { background: rgba(37, 99, 235, 0.15); color: #60A5FA; border: 1px solid rgba(37, 99, 235, 0.3); }
+        .icon-green { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .icon-purple { background: rgba(139, 92, 246, 0.15); color: #A78BFA; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .icon-red { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .icon-amber { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        /* Metric Highlight Bento */
+        .metric-card {
+            background: rgba(19, 27, 46, 0.7);
+            border: 1px solid var(--color-card-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .metric-value {
+            font-family: var(--font-heading);
+            font-size: 32px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.5px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .metric-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            align-self: flex-start;
+            margin-top: 6px;
+        }
+
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+        .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+
+        /* Feature Pill List */
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13.5px;
+            color: #CBD5E1;
+            line-height: 1.45;
+        }
+
+        .feature-bullet {
+            color: #10B981;
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        /* Hero Slide Specifics */
+        .hero-slide {
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .hero-title {
+            font-size: clamp(38px, 5.2vw, 62px);
+            background: linear-gradient(135deg, #FFFFFF 20%, #60A5FA 60%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: #94A3B8;
+            max-width: 720px;
+            margin: 0 auto 32px auto;
+            line-height: 1.6;
+        }
+
+        .hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 30px;
+            font-size: 13px;
+            color: #93C5FD;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        /* Navigation Controls */
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 9999;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2563EB, #8B5CF6);
+            width: 10%;
+            transition: width 0.3s ease;
+        }
+
+        .nav-controls {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 8px 18px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            z-index: 9999;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .slide-counter {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            min-width: 65px;
+            text-align: center;
+        }
+
+        .kb-hint {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            padding-left: 12px;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Progress Bar -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- 16:9 Slide Deck Container -->
+    <div class="slide-deck">
+
+        <!-- SLIDE 1: Title & Hero -->
+        <div class="slide active hero-slide">
+            <div class="slide-header" style="border: none; position: absolute; top: 35px; width: calc(100% - 120px);">
+                <div class="brand-badge">
+                    <span class="brand-dot"></span>
+                    PT Galaxy Mandiri Perkasa
+                </div>
+                <div class="topic-tag">INDUSTRIAL DIGITALIZATION 4.0</div>
+            </div>
+
+            <div class="slide-body" style="align-items: center;">
+                <div class="hero-pill">
+                    📱 Mobile QC System • Manufacturing Execution
+                </div>
+                <h1 class="hero-title">QC Defect Monitoring<br>Mobile Application</h1>
+                <p class="hero-subtitle">
+                    Sistem pemantauan kualitas terintegrasi untuk inspeksi cacat *real-time*, pencatatan output mesin otomatis, peringatan dini komplain customer, dan asistensi kecerdasan buatan (AI) di lantai produksi.
+                </p>
+
+                <div class="grid-4" style="width: 100%; max-width: 900px; margin-top: 10px;">
+                    <div class="metric-card">
+                        <div class="metric-value">Real-Time</div>
+                        <div class="metric-label">Sinkronisasi Data</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">Offline-1st</div>
+                        <div class="metric-label">Ketahanan Sinyal</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">AI Assist</div>
+                        <div class="metric-label">Random Forest + Gemini</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">ISO 9001</div>
+                        <div class="metric-label">Standar Mutu Otomotif</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Latar Belakang & Masalah Konvensional -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">01 • LATAR BELAKANG MASALAH</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Tantangan Kualitas di Lantai Produksi</h2>
+                <p class="slide-subtitle">Sistem manual berbasis kertas (checksheet fisik) menghambat respon cepat penanganan cacat dan menimbulkan risiko klaim garansi dari customer otomotif.</p>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon icon-red">⏳</div>
+                        <div class="card-title">Keterlambatan Data (Delay)</div>
+                        <div class="card-desc">
+                            Data defect baru direkap di akhir shift atau esok hari melalui Excel, sehingga mesin yang bermasalah terus mencetak part cacat tanpa intervensi langsung.
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon icon-amber">📑</div>
+                        <div class="card-title">Human Error Checksheet</div>
+                        <div class="card-desc">
+                            Formulir kertas rentan hilang, robek, kotor terkena oli mesin, atau salah tulis kuantitas produksi oleh operator di lini stamping & welding.
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon icon-purple">⚠️</div>
+                        <div class="card-title">Respon Komplain Lambat</div>
+                        <div class="card-desc">
+                            Keluhan mutu dari pelanggan (Astra Honda Motor, Toyota, Suzuki) tidak terdistribusi langsung ke operator mesin pembuat part tersebut.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Solusi Arsitektur Sistem Terintegrasi -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">02 • ARSITEKTUR SOLUSI</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Arsitektur Ekosistem QC Modern</h2>
+                <p class="slide-subtitle">Aplikasi mobile terhubung mulus dengan server backend terpusat dan engine analitik prediktif berbasis machine learning.</p>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon icon-blue">📱</div>
+                        <div class="card-title">Mobile Operator App</div>
+                        <div class="card-desc">
+                            Dibangun dengan <strong>React Native Expo</strong>, desain industrial high-contrast, dukungan kamera inspeksi, dan penyimpanan lokal <em>AsyncStorage</em>.
+                        </div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><span class="feature-bullet">✓</span> Berjalan di Android & iOS</li>
+                            <li class="feature-item"><span class="feature-bullet">✓</span> Mode Offline-First tangguh</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon icon-green">⚡</div>
+                        <div class="card-title">Java Spring Boot API</div>
+                        <div class="card-desc">
+                            Server backend enterprise dengan <strong>Spring Security & JWT</strong>, database relasional MySQL, dan manajemen role multi-user (Operator & Admin).
+                        </div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><span class="feature-bullet">✓</span> Database relasional ACID</li>
+                            <li class="feature-item"><span class="feature-bullet">✓</span> REST API berkinerja tinggi</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon icon-purple">🧠</div>
+                        <div class="card-title">Dual AI Engine</div>
+                        <div class="card-desc">
+                            Kombinasi <strong>Random Forest ML</strong> untuk rekomendasi SOP perbaikan instan dan <strong>Gemini AI</strong> untuk konsultasi interaktif pemecahan masalah mesin.
+                        </div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><span class="feature-bullet">✓</span> Prediksi akar masalah cacat</li>
+                            <li class="feature-item"><span class="feature-bullet">✓</span> Tanya jawab SOP 24/7</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Fitur Utama 1 - Dashboard KPI Real-Time -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">03 • FITUR APLIKASI</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Dashboard Kualitas & Metrik KPI</h2>
+                <p class="slide-subtitle">Visibilitas menyeluruh indikator performa utama kualitas dalam tata letak Bento Grid yang responsif dan informatif.</p>
+
+                <div class="grid-2">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div class="metric-card" style="border-left: 4px solid #10B981;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="metric-value">Total Produksi</div>
+                                    <div class="metric-label">Jumlah output fisik per shift</div>
+                                </div>
+                                <span class="metric-badge badge-green">Pcs Output</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card" style="border-left: 4px solid #EF4444;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="metric-value">Total NG (Cacat)</div>
+                                    <div class="metric-label">Akumulasi produk gagal lolos uji</div>
+                                </div>
+                                <span class="metric-badge" style="background: rgba(239, 68, 68, 0.15); color: #EF4444;">Pcs Reject</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card" style="border-left: 4px solid #F59E0B;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="metric-value">Defect Rate (%)</div>
+                                    <div class="metric-label">(Total NG ÷ Total Produksi) × 100%</div>
+                                </div>
+                                <span class="metric-badge" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">Standar &lt; 2.0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+                        <div class="card-title">📊 Top 5 Defect (Diagram Pareto)</div>
+                        <div class="card-desc" style="margin-bottom: 12px;">
+                            Mengidentifikasi 20% jenis cacat utama yang menyebabkan 80% kerugian mutu (Prinsip Pareto).
+                        </div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Filter Fleksibel:</strong> Pilihan rentang Harian, Mingguan, dan Bulanan.</li>
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Warna Tingkat Bahaya:</strong> Badge kritis (Merah) dan peringatan (Kuning).</li>
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Direct AI Hook:</strong> Satu klik untuk memanggil rekomendasi Random Forest.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Fitur Utama 2 - Form Input Produksi & Live Achievement -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">04 • FITUR APLIKASI</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Input Produksi & Live Achievement Meter</h2>
+                <p class="slide-subtitle">Mencatat output banyak mesin dalam 1 shift dengan kalkulasi efisiensi instan (ISO 9001:2015).</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">⚙️ Alur Batch Multi-Mesin</div>
+                        <div class="card-desc">
+                            Operator lantai produksi dapat mencatat lebih dari 1 mesin yang dioperasikannya dalam satu kali kirim.
+                        </div>
+                        <ul class="feature-list" style="margin-top: 14px;">
+                            <li class="feature-item"><span class="feature-bullet">1.</span> <strong>Pilih Shift & Tanggal:</strong> Otomatis menyesuaikan jam kerja lokal WIB.</li>
+                            <li class="feature-item"><span class="feature-bullet">2.</span> <strong>Selector Mesin & Part:</strong> Pencarian cepat dengan modal filter lini.</li>
+                            <li class="feature-item"><span class="feature-bullet">3.</span> <strong>Rekomendasi Proses:</strong> Saran proses otomatis sesuai lini mesin.</li>
+                            <li class="feature-item"><span class="feature-bullet">4.</span> <strong>Input Bersih (2 Kolom):</strong> TARGET (pcs) vs HASIL AKTUAL (pcs).</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(180deg, #131B2E 0%, rgba(16, 185, 129, 0.05) 100%);">
+                        <div class="card-title">🎯 Live Achievement Meter</div>
+                        <div class="card-desc">
+                            Kalkulator pencapaian dinamis yang bergerak secara realtime saat operator mengetikkan angka.
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 14px; margin-top: 14px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                                <span>Efisiensi Produksi:</span>
+                                <strong style="color: #10B981;">100% (On Target)</strong>
+                            </div>
+                            <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: 100%; background: #10B981;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94A3B8; margin-top: 8px;">
+                                <span>Target: 4.000 pcs</span>
+                                <span>Aktual: 4.000 pcs</span>
+                            </div>
+                        </div>
+                        <div class="card-desc" style="margin-top: 12px; font-size: 12.5px;">
+                            Memberikan umpan balik visual seketika: Badge <strong>✓ On Target</strong> (Hijau) jika aktual &ge; target, atau <strong>⚠ Below Target</strong> (Merah) jika output kurang.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Fitur Utama 3 - Form Catat NG & Inspeksi Visual -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">05 • FITUR APLIKASI</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Catat NG & Bukti Foto Cacat</h2>
+                <p class="slide-subtitle">Formulir pelaporan defect cepat di lini perakitan lengkap dengan dokumentasi visual langsung dari kamera smartphone.</p>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon icon-amber">🔍</div>
+                        <div class="card-title">Spesifikasi Detail</div>
+                        <div class="card-desc">
+                            Pemilihan terstruktur: Nomor Part, Nama Mesin, Lini Kerja, Jenis Cacat (Gompal, Penyok, Burry, dll.), dan Proses spesifik tempat cacat muncul.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon icon-blue">📷</div>
+                        <div class="card-title">Kamera & Kompresi Foto</div>
+                        <div class="card-desc">
+                            Ambil foto bukti cacat langsung di mesin. Sistem secara cerdas melakukan kompresi ukuran gambar untuk menghemat kuota dan mempercepat upload.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon icon-green">💾</div>
+                        <div class="card-title">Auto-Persist Offline</div>
+                        <div class="card-desc">
+                            Jika sinyal Wi-Fi pabrik terputus, laporan otomatis tersimpan di memori lokal HP (AsyncStorage) dan siap disinkronkan saat online kembali.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Fitur Utama 4 - Visibilitas Komplain Customer -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">06 • FITUR APLIKASI</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Visibilitas Komplain Customer</h2>
+                <p class="slide-subtitle">Early Warning System: Menjembatani umpan balik pelanggan langsung ke kesadaran (awareness) operator mesin.</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">🚨 Customer Awareness Banner</div>
+                        <div class="card-desc">
+                            Operator QC dapat melihat part mana saja yang sedang diklaim oleh pelanggan eksternal (PT Astra Honda Motor, PT Toyota Motor, PT Suzuki Indomobil).
+                        </div>
+                        <ul class="feature-list" style="margin-top: 14px;">
+                            <li class="feature-item"><span class="feature-bullet">✓</span> <strong>Badge Tingkat Keparahan:</strong> Open / High Priority, Under Investigation, dan Closed.</li>
+                            <li class="feature-item"><span class="feature-bullet">✓</span> <strong>Pelacakan Lot Pengiriman:</strong> Memeriksa nomor lot produksi yang bermasalah.</li>
+                            <li class="feature-item"><span class="feature-bullet">✓</span> <strong>Counter Kasus Aktif:</strong> Filter cerdas yang hanya menghitung kasus yang belum tuntas.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">🛠️ Transparansi Rencana Aksi (Action Plan)</div>
+                        <div class="card-desc">
+                            Operator mesin dapat membaca langsung instruksi perbaikan dari tim QA & Tooling agar tidak mengulangi kesalahan yang sama.
+                        </div>
+                        <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 12px; margin-top: 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #A78BFA; text-transform: uppercase;">Contoh Action Plan QA:</div>
+                            <div style="font-size: 12.5px; color: #E2E8F0; margin-top: 4px;">
+                                "Pemasangan dowel pin tambahan pada jig bender & kalibrasi ulang stroke press Amada 01 setiap awal shift."
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Fitur Utama 5 - Tanya AI (Asisten Pintar QC) -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">07 • FITUR APLIKASI</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Asisten Cerdas QC: Tanya AI</h2>
+                <p class="slide-subtitle">Solusi interaktif 24/7 di lantai produksi berbasis Random Forest Model & Google Gemini AI.</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">🤖 Random Forest AI Rekomendasi</div>
+                        <div class="card-desc">
+                            Model prediktif yang dilatih dengan data historis cacat pabrik untuk memberikan rekomendasi SOP secara instan.
+                        </div>
+                        <ul class="feature-list" style="margin-top: 14px;">
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Tingkat Keyakinan (Confidence):</strong> Menyertakan skor probabilitas (misal: 95.2%).</li>
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Identifikasi Akar Masalah:</strong> Mendiagnosa keausan clearance die, arus las spot, dll.</li>
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Rujukan SOP Resmi:</strong> Menyebutkan kode dokumen (misal: SOP-STAMP-004 Rev 3).</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">💬 Chat Konsultasi Gemini AI</div>
+                        <div class="card-desc">
+                            Ruang konsultasi bebas di mana operator dapat menanyakan cara penanganan kendala mesin yang belum ada di buku manual.
+                        </div>
+                        <ul class="feature-list" style="margin-top: 14px;">
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Quick Prompts:</strong> Tombol pintas untuk pertanyaan teknis paling sering diajukan.</li>
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Bahasa Indonesia Natural:</strong> Penjelasan teknis mudah dipahami operator lapangan.</li>
+                            <li class="feature-item"><span class="feature-bullet">•</span> <strong>Fallback Cerdas:</strong> Bekerja secara otomatis bahkan jika server eksternal offline.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 9: Keandalan Arsitektur & Perbaikan Kritis -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">08 • RELIABILITAS & AUDIT TEKNIS</div>
+            </div>
+            <div class="slide-body">
+                <h2 class="slide-title">Ketahanan Sistem & Integritas Data</h2>
+                <p class="slide-subtitle">Hasil audit mendalam dan penyempurnaan logika program untuk menjamin keandalan operasional pabrik.</p>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon icon-blue">🌐</div>
+                        <div class="card-title">WIB Local Timezone Fix</div>
+                        <div class="card-desc">
+                            Mencegah bug rollover UTC pada Shift Malam (23.00 - 07.00). Data tanggal produksi kini 100% akurat sesuai kalender lokal Indonesia.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon icon-green">🔄</div>
+                        <div class="card-title">Auto-Sync Queue</div>
+                        <div class="card-desc">
+                            Antrean offline kini tersimpan di <em>AsyncStorage</em> dan secara otomatis terkirim (*silent sync*) ke MySQL saat koneksi internet aktif kembali.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon icon-purple">🔐</div>
+                        <div class="card-title">Auto-Logout on 401</div>
+                        <div class="card-desc">
+                            Mencegah aplikasi macet (*zombie state*) jika token JWT kadaluarsa. Sistem langsung me-reset sesi dan mengarahkan pengguna ke layar Login.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 10: Dampak & Kesimpulan -->
+        <div class="slide hero-slide">
+            <div class="slide-header" style="border: none; position: absolute; top: 35px; width: calc(100% - 120px);">
+                <div class="brand-badge"><span class="brand-dot"></span>PT Galaxy Mandiri Perkasa</div>
+                <div class="topic-tag">09 • KESIMPULAN & ROADMAP</div>
+            </div>
+
+            <div class="slide-body" style="align-items: center;">
+                <h2 class="hero-title" style="font-size: clamp(34px, 4.5vw, 52px);">Menuju Standar Mutu Zero Defect</h2>
+                <p class="hero-subtitle">
+                    Digitalisasi lantai produksi dengan aplikasi mobile QC Defect Monitoring menghadirkan transparansi kualitas, mempercepat penanganan masalah mesin, dan memperkuat kepuasan pelanggan manufaktur.
+                </p>
+
+                <div class="grid-3" style="width: 100%; max-width: 900px; margin-top: 10px;">
+                    <div class="metric-card" style="text-align: center;">
+                        <div class="metric-value" style="color: #10B981;">&darr; 85%</div>
+                        <div class="metric-label">Waktu Rekap Pelaporan Mutu</div>
+                    </div>
+                    <div class="metric-card" style="text-align: center;">
+                        <div class="metric-value" style="color: #60A5FA;">100%</div>
+                        <div class="metric-label">Pelacakan Cacat Real-Time</div>
+                    </div>
+                    <div class="metric-card" style="text-align: center;">
+                        <div class="metric-value" style="color: #A78BFA;">&lt; 5 Menit</div>
+                        <div class="metric-label">Respon Intervensi Tooling Mesin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.slide-deck -->
+
+    <!-- Navigation Controls -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()" title="Slide Sebelumnya (Panah Kiri)">←</button>
+        <span class="slide-counter"><span id="current">1</span> / <span id="total">10</span></span>
+        <button class="nav-btn" onclick="nextSlide()" title="Slide Berikutnya (Panah Kanan / Spasi)">→</button>
+        <span class="kb-hint">Gunakan Tombol Panah Keyboard / Klik Layar</span>
+    </div>
+
+    <!-- Presentation Controller Script -->
+    <script>
+        let current = 1;
+        const slides = document.querySelectorAll('.slide');
+        const total = slides.length;
+        document.getElementById('total').textContent = total;
+
+        function showSlide(n) {
+            if (n < 1) n = 1;
+            if (n > total) n = total;
+            current = n;
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === n - 1);
+            });
+            document.getElementById('current').textContent = n;
+            document.getElementById('progressBar').style.width = (n / total * 100) + '%';
+        }
+
+        function nextSlide() { showSlide(current + 1); }
+        function prevSlide() { showSlide(current - 1); }
+
+        // Keyboard Navigation Support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                e.preventDefault();
+                nextSlide();
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                e.preventDefault();
+                prevSlide();
+            }
+            if (e.key === 'Home') {
+                e.preventDefault();
+                showSlide(1);
+            }
+            if (e.key === 'End') {
+                e.preventDefault();
+                showSlide(total);
+            }
+        });
+
+        // Click to Advance
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.nav-controls') && !e.target.closest('button')) {
+                nextSlide();
+            }
+        });
+
+        showSlide(1);
+    </script>
+</body>
+</html>

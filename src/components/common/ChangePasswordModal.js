@@ -168,7 +168,7 @@ export const ChangePasswordModal = ({ visible, onClose }) => {
                   Ubah Kata Sandi
                 </Text>
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Akun: {user?.fullName || 'Budi Santoso'}
+                  Akun: {user?.fullName || user?.username || 'User'}
                 </Text>
               </View>
             </View>

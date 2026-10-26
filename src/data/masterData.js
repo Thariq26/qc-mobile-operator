@@ -430,8 +430,45 @@ export const MASTER_DEFECT_TYPES = [
   },
 ];
 
+// =============================================================================
+// 4. MASTER OPERATOR PRODUKSI (OPERATOR STANDAR LANTAI PRODUKSI)
+// =============================================================================
+export const MASTER_OPERATORS = [
+  { id: 4, username: 'fauziiifau', fullName: 'Aliva Fauzi Octavian', role: 'ADMIN', line: 'Lini Stamping', shift: 'Shift 1' },
+  { id: 8, username: 'Thariq', fullName: 'Muhammad Thariq Alwan Hafizh', role: 'OPERATOR_PRODUKSI', line: 'Stamping Press', shift: 'Shift 1' },
+  { id: 10, username: 'Thariiq', fullName: 'Thariiq', role: 'OPERATOR_PRODUKSI', line: 'Welding Spot', shift: 'Shift 2' },
+  { id: 12, username: 'Operataor_1', fullName: 'Operator Lantai Produksi', role: 'OPERATOR_PRODUKSI', line: 'Press Brake (Bending)', shift: 'Shift 1' },
+  { id: 5, username: 'Agus B', fullName: 'Agus Botak', role: 'OPERATOR_PRODUKSI', line: 'Drawing & Finishing', shift: 'Shift 2' },
+];
+
+
+// =============================================================================
+// 5. MASTER SHIFTS & PROCESSES (STANDAR LANTAI PRODUKSI)
+// =============================================================================
+export const MASTER_SHIFTS = [
+  { id: 'Shift 1', label: 'Shift 1 (07:00 - 15:30)', time: '07:00 - 15:30', name: 'Shift 1' },
+  { id: 'Shift 2', label: 'Shift 2 (15:30 - 23:00)', time: '15:30 - 23:00', name: 'Shift 2' },
+  { id: 'Shift 3', label: 'Shift 3 (23:00 - 07:00)', time: '23:00 - 07:00', name: 'Shift 3' },
+];
+
+export const MASTER_PROCESSES = [
+  'Blanking',
+  'Piercing',
+  'Bending',
+  'Stamping',
+  'Welding',
+  'Spot Welding',
+  'Drawing',
+  'Die Casting',
+  'Assembly',
+  'Machining',
+];
+
 export default {
   parts: MASTER_PARTS,
   machines: MASTER_MACHINES,
   defectTypes: MASTER_DEFECT_TYPES,
+  operators: MASTER_OPERATORS,
+  shifts: MASTER_SHIFTS,
+  processes: MASTER_PROCESSES,
 };

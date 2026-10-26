@@ -32,7 +32,7 @@ export const OperatorProfileModal = ({
   onOpenLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
 
   return (
     <Modal
@@ -61,7 +61,11 @@ export const OperatorProfileModal = ({
           {/* Header */}
           <View style={styles.headerRow}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              PROFIL OPERATOR QC
+              {isOperatorProduksi
+                ? 'PROFIL OPERATOR PRODUKSI'
+                : isStaffQc
+                ? 'PROFIL STAFF QC'
+                : 'PROFIL PENGGUNA'}
             </Text>
             <Pressable
               onPress={onClose}
@@ -87,18 +91,25 @@ export const OperatorProfileModal = ({
             ]}
           >
             <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>QC</Text>
+              <Text style={styles.avatarText}>
+                {isOperatorProduksi ? 'OP' : isAdmin ? 'AD' : 'QC'}
+              </Text>
             </View>
 
             <View style={styles.profileDetails}>
               <View style={styles.nameRow}>
                 <Text style={[styles.operatorName, { color: colors.textPrimary }]}>
-                  {user?.fullName || 'Budi Santoso'}
+                  {user?.fullName || user?.username || 'User'}
                 </Text>
                 <BadgeCheck size={16} color={colors.primary} style={{ marginLeft: 4 }} />
               </View>
               <Text style={[styles.roleSubtitle, { color: colors.textSecondary }]}>
-                QC Inspector • {user?.username || 'budi_qc'}
+                {isOperatorProduksi
+                  ? 'Operator Produksi'
+                  : isStaffQc
+                  ? 'Staff QC Inspector'
+                  : user?.role || 'QC Inspector'}{' '}
+                • {user?.username || '-'}
               </Text>
               <View style={styles.plantRow}>
                 <Building2 size={13} color={colors.textMuted} style={{ marginRight: 4 }} />

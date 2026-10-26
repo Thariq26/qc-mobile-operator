@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { authService } from '../api/services/authService';
+import { setOnUnauthorized } from '../api/client';
 
 const TOKEN_KEY = '@qc_auth_token';
 const USER_KEY = '@qc_auth_user';
@@ -58,14 +59,28 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Listen for 401 Unauthorized responses to gracefully reset session
+    setOnUnauthorized(async () => {
+      console.warn('Session expired, logging out automatically');
+      try {
+        await storage.removeItem(TOKEN_KEY);
+        await storage.removeItem(USER_KEY);
+      } catch (e) {
+        console.warn('Error clearing expired token:', e);
+      }
+      setToken(null);
+      setUser(null);
+    });
+
     const initializeAuth = async () => {
       try {
         const storedToken = await storage.getItem(TOKEN_KEY);
         const storedUser = await storage.getItem(USER_KEY);
 
         if (storedToken && storedUser) {
+          const parsed = JSON.parse(storedUser);
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          setUser(parsed);
         }
       } catch (err) {
         console.warn('Auth initialization error:', err);
@@ -82,10 +97,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login(username, password);
       const jwtToken = response.token;
+
+      // Role diambil langsung dan murni dari tabel database users
+      const dbRole = response.role || 'OPERATOR_PRODUKSI';
+
       const userData = {
         username: response.username,
-        fullName: response.fullName || 'Budi Santoso',
-        role: response.role || 'OPERATOR',
+        fullName: response.fullName || response.username,
+        role: dbRole,
       };
 
       await storage.setItem(TOKEN_KEY, jwtToken);
@@ -131,6 +150,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Evaluasi hak akses secara ketat dari kolom role database
+  const userRole = (user?.role || '').toUpperCase();
+  const isOperatorProduksi = userRole === 'OPERATOR_PRODUKSI';
+  const isStaffQc = userRole === 'STAFF_QC' || userRole === 'INSPECTOR';
+  const isAdmin = userRole === 'ADMIN';
+
   return (
     <AuthContext.Provider
       value={{
@@ -138,6 +163,9 @@ export const AuthProvider = ({ children }) => {
         token,
         isAuthenticated: !!token,
         isLoading,
+        isOperatorProduksi,
+        isStaffQc,
+        isAdmin,
         login,
         logout,
         changePassword,

@@ -8,18 +8,22 @@ import { typography } from '../../theme/typography';
  * AchievementMeter: 21st.dev Component Pattern for Live Target vs Actual Calculation
  * Features:
  * - Spring-interpolated progress width as numbers are typed in realtime
- * - Glowing achievement badge (On Target vs Below Target)
+ * - Glowing achievement badge (On Target vs Below Target based on Net OK parts)
  * - Industrial shop floor high contrast visual feedback
+ * - Strict Net Good Parts Only (ISO 9001:2015) variance & efficiency calculation
  */
-export const AchievementMeter = ({ target = 0, actual = 0 }) => {
+export const AchievementMeter = ({ target = 0, actual = 0, ngQuantity = 0 }) => {
   const { colors, isDark } = useTheme();
 
   const numTarget = Math.max(0, Number(target) || 0);
-  const numActual = Math.max(0, Number(actual) || 0);
+  const numGross = Math.max(0, Number(actual) || 0);
+  const numNg = Math.max(0, Number(ngQuantity) || 0);
+  const hasNg = numNg > 0;
+  const numNetOk = hasNg ? Math.max(0, numGross - numNg) : numGross;
 
-  const percentage = numTarget > 0 ? (numActual / numTarget) * 100 : 0;
-  const variance = numActual - numTarget;
-  const isOnTarget = numTarget > 0 && numActual >= numTarget;
+  const percentage = numTarget > 0 ? (numNetOk / numTarget) * 100 : 0;
+  const variance = numNetOk - numTarget;
+  const isOnTarget = numTarget > 0 && numNetOk >= numTarget;
 
   // Spring animated width for bar fill
   const widthAnim = useRef(new Animated.Value(0)).current;
@@ -58,12 +62,12 @@ export const AchievementMeter = ({ target = 0, actual = 0 }) => {
       <View style={styles.headerRow}>
         <View style={styles.titleWithIcon}>
           {isOnTarget ? (
-            <TrendingUp size={16} color={colors.success} style={{ marginRight: 6 }} />
+            <TrendingUp size={15} color={colors.success} style={{ marginRight: 6 }} />
           ) : (
-            <TrendingDown size={16} color={colors.critical} style={{ marginRight: 6 }} />
+            <TrendingDown size={15} color={colors.critical} style={{ marginRight: 6 }} />
           )}
           <Text style={[styles.titleText, { color: colors.textSecondary }]}>
-            PENCAPAIAN TARGET PRODUKSI
+            {hasNg ? 'TARGET EFISIENSI (NET OK)' : 'PENCAPAIAN TARGET'}
           </Text>
         </View>
 
@@ -84,8 +88,8 @@ export const AchievementMeter = ({ target = 0, actual = 0 }) => {
             )}
             <Text style={[styles.badgeText, { color: activeColor }]}>
               {isOnTarget
-                ? `✓ ON TARGET (${variance >= 0 ? `+${variance}` : variance} pcs)`
-                : `⚠ BELOW TARGET (${variance} pcs)`}
+                ? `ON TARGET (${variance >= 0 ? `+${variance}` : variance})`
+                : `BELOW TARGET (${variance})`}
             </Text>
           </View>
         )}
@@ -105,17 +109,66 @@ export const AchievementMeter = ({ target = 0, actual = 0 }) => {
           <Text style={[styles.percentValue, { color: activeColor }]}>
             {percentage.toFixed(1)}%
           </Text>
-          <Text style={[styles.percentSub, { color: colors.textMuted }]}>Efisiensi</Text>
+          <Text style={[styles.percentSub, { color: colors.textMuted }]}>
+            {hasNg ? 'Efisiensi Bersih' : 'Efisiensi'}
+          </Text>
         </View>
 
         <View style={[styles.statGroup, { alignItems: 'flex-end' }]}>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>AKTUAL JADI</Text>
+          <Text style={[styles.statLabel, { color: isOnTarget ? colors.success : colors.critical }]}>
+            {hasNg ? 'PRODUK OK (BERSIH)' : 'HASIL AKTUAL'}
+          </Text>
           <Text style={[styles.statValue, { color: activeColor }]}>
-            {numActual.toLocaleString('id-ID')}
+            {numNetOk.toLocaleString('id-ID')}
             <Text style={[styles.statUnit, { color: colors.textMuted }]}> pcs</Text>
           </Text>
         </View>
       </View>
+
+      {/* Industrial Transparency Breakdown: Gross - NG = Net OK (Only shown if NG entered) */}
+      {hasNg && (
+        <View
+          style={[
+            styles.breakdownCard,
+            {
+              backgroundColor: isDark ? colors.background : '#F8FAFC',
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View style={styles.breakdownCol}>
+            <Text style={[styles.breakdownSubLabel, { color: colors.textMuted }]}>Gross Cetak</Text>
+            <Text style={[styles.breakdownSubVal, { color: colors.textPrimary }]}>
+              {numGross.toLocaleString('id-ID')} pcs
+            </Text>
+          </View>
+
+          <Text style={[styles.breakdownSymbol, { color: colors.textMuted }]}>−</Text>
+
+          <View style={styles.breakdownCol}>
+            <Text style={[styles.breakdownSubLabel, { color: colors.critical }]}>Reject (NG)</Text>
+            <Text
+              style={[
+                styles.breakdownSubVal,
+                { color: numNg > 0 ? colors.critical : colors.textMuted, fontWeight: '700' },
+              ]}
+            >
+              {numNg.toLocaleString('id-ID')} pcs
+            </Text>
+          </View>
+
+          <Text style={[styles.breakdownSymbol, { color: colors.textMuted }]}>=</Text>
+
+          <View style={styles.breakdownCol}>
+            <Text style={[styles.breakdownSubLabel, { color: isOnTarget ? colors.success : colors.critical }]}>
+              Net OK Part
+            </Text>
+            <Text style={[styles.breakdownSubVal, { color: activeColor, fontWeight: '900' }]}>
+              {numNetOk.toLocaleString('id-ID')} pcs
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Progress Bar Track & Spring Interpolated Fill */}
       <View style={[styles.progressBarTrack, { backgroundColor: isDark ? '#1E293B' : '#E2E8F0' }]}>
@@ -133,10 +186,10 @@ export const AchievementMeter = ({ target = 0, actual = 0 }) => {
       {/* Explanatory subtitle */}
       <Text style={[styles.hintText, { color: colors.textMuted }]}>
         {numTarget === 0
-          ? 'Masukkan target dan aktual untuk melihat estimasi persentase efisiensi.'
+          ? 'Masukkan target dan hasil aktual produksi untuk melihat persentase pencapaian.'
           : isOnTarget
-          ? 'Performa mesin optimal melampaui target standar shift!'
-          : `Kekurangan ${Math.abs(variance)} pcs untuk mencapai target harian line.`}
+          ? `✓ Output produksi (${numGross.toLocaleString('id-ID')} pcs) telah memenuhi target shift!`
+          : `⚠ Kekurangan ${Math.abs(variance).toLocaleString('id-ID')} pcs untuk mencapai target harian line.`}
       </Text>
     </View>
   );
@@ -148,16 +201,21 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     padding: 14,
     marginVertical: 10,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
     marginBottom: 10,
   },
   titleWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
+    marginRight: 4,
   },
   titleText: {
     fontSize: typography.sizes.micro,
@@ -171,6 +229,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
+    flexShrink: 1,
+    alignSelf: 'flex-start',
   },
   badgeText: {
     fontSize: typography.sizes.micro - 1,
@@ -212,6 +272,34 @@ const styles = StyleSheet.create({
   percentSub: {
     fontSize: typography.sizes.micro - 1,
     fontWeight: '600',
+  },
+  breakdownCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  breakdownCol: {
+    alignItems: 'center',
+  },
+  breakdownSubLabel: {
+    fontSize: typography.sizes.micro - 2,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  breakdownSubVal: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '700',
+  },
+  breakdownSymbol: {
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
   },
   progressBarTrack: {
     height: 10,

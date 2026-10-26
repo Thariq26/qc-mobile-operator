@@ -5,36 +5,57 @@ import {
   FlatList,
   StyleSheet,
   Pressable,
+  TextInput,
   Image,
   RefreshControl,
   Modal,
   Dimensions,
 } from 'react-native';
 import {
+  Factory,
+  Search,
   CheckCircle2,
+  AlertTriangle,
   Clock,
   Layers,
   Sparkles,
   X,
   Calendar,
   AlertCircle,
-  FileCheck2,
+  WifiOff,
+  ClipboardCheck,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { defectService } from '../../api/services/defectService';
+import { ProductionHistoryScreen } from '../production/ProductionHistoryScreen';
+import { formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
 
 const { width } = Dimensions.get('window');
 
-export const MyHistoryScreen = () => {
+/**
+ * MyHistoryScreen: Riwayat Temuan Cacat NG
+ * Tampilan distandarisasi 100% selaras dengan Riwayat Produksi:
+ * - Admin Dual-History Switcher ([Produksi] vs [Cacat NG])
+ * - Screen Header Bar (Judul & Subjudul)
+ * - Segmented Filter Bar (Hari Ini | 7 Hari Terakhir | Semua Rekaman)
+ * - Search Bar Pencarian Realtime
+ * - KPI Mini Summary Ribbon (Total NG, Kasus, Kritis, Mesin Terdampak)
+ * - Industrial Card Standard (Header Mesin, Part & Proses, Grid Metrik 3 Kolom, Remarks, Meta Footer)
+ */
+export const MyHistoryScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+
+  // Mode Riwayat khusus Admin: 'production' | 'defect'
+  const [adminTab, setAdminTab] = useState('production');
 
   const [historyList, setHistoryList] = useState([]);
   const [filterPeriod, setFilterPeriod] = useState('today'); // 'today' | 'week' | 'all'
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -44,7 +65,7 @@ export const MyHistoryScreen = () => {
   const fetchHistory = useCallback(async () => {
     try {
       const data = await defectService.getHistory(filterPeriod, user?.username, user?.role);
-      setHistoryList(data);
+      setHistoryList(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn('History fetch error:', err);
     } finally {
@@ -62,11 +83,37 @@ export const MyHistoryScreen = () => {
     fetchHistory();
   };
 
-  const totalNgCount = historyList.reduce((acc, item) => acc + (item.quantity || 0), 0);
+  // Filter historyList by search query
+  const filteredHistoryList = historyList.filter((item) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchMachine = (item.namaMesin || item.machineName || '').toLowerCase().includes(q);
+      const matchPartNum = (item.partNumber || '').toLowerCase().includes(q);
+      const matchPartName = (item.partName || '').toLowerCase().includes(q);
+      const matchDefect = (item.defectName || '').toLowerCase().includes(q);
+      const matchProcess = (item.proses || item.processName || '').toLowerCase().includes(q);
+      const matchShift = (item.shift || '').toLowerCase().includes(q);
+      if (!matchMachine && !matchPartNum && !matchPartName && !matchDefect && !matchProcess && !matchShift) {
+        return false;
+      }
+    }
+    return true;
+  });
 
-  const renderHistoryItem = ({ item, index }) => {
+  // Summary Metrics dari data yang terfilter
+  const totalNgCount = filteredHistoryList.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
+  const criticalCount = filteredHistoryList
+    .filter((item) => item.defectName === 'Gompal' || item.defectName === 'Keropos' || item.defectName === 'Retak Tarik')
+    .reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
+  const affectedMachines = new Set(
+    filteredHistoryList.map((item) => item.namaMesin || item.machineName).filter(Boolean)
+  );
+  const affectedMachinesCount = affectedMachines.size;
+
+  const renderHistoryItem = ({ item }) => {
     const isCritical =
       item.defectName === 'Gompal' || item.defectName === 'Keropos' || item.defectName === 'Retak Tarik';
+    const formattedDate = item.defectDate ? formatIndonesianDate(item.defectDate) : 'Hari Ini';
 
     return (
       <View
@@ -78,88 +125,148 @@ export const MyHistoryScreen = () => {
           },
         ]}
       >
-        {/* Card Header: Part Number + Cloud Status */}
+        {/* Card Header: Machine Name + Line Badge + Sync Badge */}
         <View style={styles.cardHeader}>
-          <View style={styles.partInfoRow}>
-            <View style={[styles.partBadge, { backgroundColor: colors.primary + '1A', borderColor: colors.primary + '40' }]}>
-              <Text style={[styles.partBadgeText, { color: colors.primary }]}>
-                {item.partNumber}
-              </Text>
-            </View>
-            <Text style={[styles.partNameText, { color: colors.textPrimary }]}>
-              {item.partName}
+          <View style={styles.machineTitleRow}>
+            <Factory size={18} color={colors.warning} style={{ marginRight: 6 }} />
+            <Text style={[styles.machineName, { color: colors.textPrimary }]} numberOfLines={1}>
+              {item.namaMesin || item.machineName || 'Amada Press 01'}
             </Text>
+            {(item.line || item.machineLine) && (
+              <View style={[styles.lineBadge, { backgroundColor: colors.warning + '18' }]}>
+                <Text style={[styles.lineBadgeText, { color: colors.warning }]}>
+                  {item.line || item.machineLine}
+                </Text>
+              </View>
+            )}
           </View>
 
-          <View style={[styles.cloudStatusPill, { backgroundColor: colors.success + '1A' }]}>
-            <CheckCircle2 size={12} color={colors.success} style={{ marginRight: 4 }} />
-            <Text style={[styles.cloudStatusText, { color: colors.success }]}>
-              Cloud
+          <View style={styles.headerRight}>
+            {item.isOffline ? (
+              <View style={[styles.syncBadge, { backgroundColor: colors.warning + '18' }]}>
+                <WifiOff size={11} color={colors.warning} style={{ marginRight: 3 }} />
+                <Text style={[styles.syncText, { color: colors.warning }]}>Lokal</Text>
+              </View>
+            ) : (
+              <View style={[styles.syncBadge, { backgroundColor: colors.success + '18' }]}>
+                <CheckCircle2 size={11} color={colors.success} style={{ marginRight: 3 }} />
+                <Text style={[styles.syncText, { color: colors.success }]}>Cloud</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Part Info & Process Info */}
+        <View style={styles.partRow}>
+          <View style={[styles.partPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+            <Text style={[styles.partNumText, { color: colors.primary }]}>
+              {item.partNumber || 'PT-1001'}
+            </Text>
+            <Text style={[styles.partNameText, { color: colors.textPrimary }]} numberOfLines={1}>
+              {item.partName || 'Part Komponen'}
+            </Text>
+          </View>
+          <View style={[styles.processPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+            <Text style={[styles.processText, { color: colors.textSecondary }]}>
+              {item.proses || item.processName || 'Stamping'}
             </Text>
           </View>
         </View>
 
-        {/* Card Body: Defect, Process, Qty */}
-        <View style={styles.cardBody}>
-          <View style={styles.defectTagRow}>
+        {/* 3 Metrics Columns: Jenis Cacat, Jumlah NG, Foto Bukti */}
+        <View style={[styles.metricsGrid, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
+          <View style={[styles.metricCol, { flex: 1.3 }]}>
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Jenis Cacat</Text>
             <View
               style={[
-                styles.defectNameBadge,
+                styles.defectBadgeSmall,
                 {
-                  backgroundColor: isCritical ? colors.critical + '1A' : colors.warning + '1A',
+                  backgroundColor: isCritical ? colors.critical + '18' : colors.warning + '18',
                   borderColor: isCritical ? colors.critical + '40' : colors.warning + '40',
                 },
               ]}
             >
               <Text
                 style={[
-                  styles.defectNameText,
+                  styles.defectBadgeSmallText,
                   { color: isCritical ? colors.critical : colors.warning },
                 ]}
+                numberOfLines={1}
               >
                 {item.defectName}
               </Text>
             </View>
-            <Text style={[styles.processText, { color: colors.textSecondary }]}>
-              {item.proses} • {item.namaMesin || 'Amada Press 01'}
-            </Text>
           </View>
 
-          <View style={styles.quantityBox}>
-            <Text style={[styles.qtyNumber, { color: colors.critical }]}>
-              {item.quantity}
+          <View style={styles.metricCol}>
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Jumlah NG</Text>
+            <Text style={[styles.metricVal, { color: colors.critical, fontWeight: '900' }]}>
+              {item.quantity ? `-${item.quantity}` : '0'}
             </Text>
-            <Text style={[styles.qtyUnit, { color: colors.textSecondary }]}>pcs NG</Text>
+            <Text style={[styles.metricUnit, { color: colors.critical }]}>pcs</Text>
+          </View>
+
+          <View style={[styles.metricCol, { flex: 1.1 }]}>
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Bukti Foto</Text>
+            {item.photoUrl ? (
+              <Pressable
+                onPress={() => setPreviewImageUri(item.photoUrl)}
+                hitSlop={6}
+                style={[styles.photoPillBtn, { backgroundColor: colors.primary + '18', borderColor: colors.primary }]}
+              >
+                <Image source={{ uri: item.photoUrl }} style={styles.photoMiniThumb} />
+                <Text style={[styles.photoPillText, { color: colors.primary }]}>Foto</Text>
+              </Pressable>
+            ) : (
+              <Text style={[styles.metricVal, { color: colors.textMuted, fontSize: 13, marginTop: 4 }]}>
+                Tanpa Foto
+              </Text>
+            )}
           </View>
         </View>
 
-        {/* Remarks / Location */}
+        {/* Remarks / Catatan Analis jika ada */}
         {item.remarks ? (
-          <View style={[styles.remarksBox, { backgroundColor: colors.cardSubtle }]}>
+          <View style={[styles.remarksBox, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
             <Text style={[styles.remarksText, { color: colors.textSecondary }]}>
               "{item.remarks}"
             </Text>
           </View>
         ) : null}
 
-        {/* Card Footer: Timestamp, Shift, Photo Thumbnail */}
-        <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
-          <View style={styles.metaRow}>
-            <Clock size={13} color={colors.textMuted} style={{ marginRight: 4 }} />
-            <Text style={[styles.timeText, { color: colors.textMuted }]}>
-              {item.defectDate} • {item.time} ({item.shift})
-            </Text>
+        {/* Card Meta Footer: Tanggal, Shift, Operator/QC, Jam */}
+        <View style={[styles.cardMetaFooter, { borderTopColor: colors.border }]}>
+          <View style={styles.footerRow}>
+            <View style={styles.footerDateGroup}>
+              <Calendar size={13} color={colors.primary} style={{ marginRight: 5 }} />
+              <Text style={[styles.footerDateText, { color: colors.textPrimary }]}>
+                {formattedDate}
+              </Text>
+            </View>
+
+            <View style={[styles.footerShiftPill, { backgroundColor: colors.primary + '18' }]}>
+              <Clock size={11} color={colors.primary} style={{ marginRight: 4 }} />
+              <Text style={[styles.footerShiftText, { color: colors.primary }]}>
+                {item.shift || 'Shift 1'}
+              </Text>
+            </View>
           </View>
 
-          {item.photoUrl ? (
-            <Pressable
-              onPress={() => setPreviewImageUri(item.photoUrl)}
-              style={[styles.photoThumbnailBtn, { borderColor: colors.primary }]}
-            >
-              <Image source={{ uri: item.photoUrl }} style={styles.photoThumbnail} />
-              <Text style={[styles.photoLabel, { color: colors.primary }]}>Foto</Text>
-            </Pressable>
-          ) : null}
+          <View style={[styles.footerRow, { marginTop: 6 }]}>
+            <Text style={[styles.metaOperatorText, { color: colors.textMuted }]}>
+              Pelapor:{' '}
+              <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>
+                {item.operatorName || user?.fullName || 'Staff QC'}
+              </Text>
+            </Text>
+
+            <Text style={[styles.metaTimeText, { color: colors.textMuted }]}>
+              Jam:{' '}
+              <Text style={{ color: colors.textSecondary, fontWeight: '700' }}>
+                {item.time ? `${item.time} WIB` : '10:15 WIB'}
+              </Text>
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -169,125 +276,237 @@ export const MyHistoryScreen = () => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader />
 
-      {/* History Summary Header Banner */}
-      <View style={[styles.summaryBanner, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.summaryTopRow}>
-          <View>
-            <Text style={[styles.screenHeading, { color: colors.textPrimary }]}>
-              RIWAYAT INPUT SAYA
-            </Text>
-            <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-              Operator: {user?.fullName || 'Budi Santoso'}
-            </Text>
-          </View>
-
-          <View style={[styles.statBadge, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.statBadgeLabel, { color: colors.textMuted }]}>TOTAL CACAT</Text>
-            <Text style={[styles.statBadgeValue, { color: colors.critical }]}>
-              {totalNgCount} pcs
-            </Text>
-          </View>
-        </View>
-
-        {/* Filter Pills */}
-        <View style={styles.filterPillsContainer}>
-          {[
-            { id: 'today', label: 'Hari Ini' },
-            { id: 'week', label: '7 Hari Terakhir' },
-            { id: 'all', label: 'Semua Riwayat' },
-          ].map((tab) => {
-            const isSelected = filterPeriod === tab.id;
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => setFilterPeriod(tab.id)}
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor: isSelected ? colors.primary : colors.cardSubtle,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    {
-                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                      fontWeight: isSelected ? '800' : '600',
-                    },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* List / Loading / Empty States */}
-      {loading ? (
-        <View style={styles.loaderContainer}>
-          <SkeletonLoader height={140} borderRadius={16} style={{ marginBottom: 12 }} />
-          <SkeletonLoader height={140} borderRadius={16} style={{ marginBottom: 12 }} />
-          <SkeletonLoader height={140} borderRadius={16} />
-        </View>
-      ) : (
-        <FlatList
-          data={historyList}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderHistoryItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
+      {/* Admin Dual-History Switcher (Produksi vs Cacat NG) */}
+      {isAdmin && (
+        <View
+          style={[
+            styles.adminSegmentWrapper,
+            { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+          ]}
+        >
+          <Pressable
+            onPress={() => setAdminTab('production')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: adminTab === 'production' }}
+            style={[
+              styles.adminSegmentBtn,
+              adminTab === 'production' && [
+                styles.adminSegmentBtnActive,
+                { backgroundColor: colors.primary, borderColor: colors.primary },
+              ],
+            ]}
+          >
+            <Factory
+              size={16}
+              color={adminTab === 'production' ? '#FFFFFF' : colors.textSecondary}
+              style={{ marginRight: 6 }}
             />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <View style={[styles.emptyIconCircle, { backgroundColor: colors.success + '1A', borderColor: colors.success + '40' }]}>
-                <FileCheck2 size={44} color={colors.success} />
-              </View>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                Belum ada catatan cacat pada periode ini
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                Lini perakitan berjalan sempurna tanpa cacat produk. Pertahankan standar kualitas zero-defect!
-              </Text>
-            </View>
-          }
-        />
+            <Text
+              style={[
+                styles.adminSegmentText,
+                {
+                  color: adminTab === 'production' ? '#FFFFFF' : colors.textSecondary,
+                  fontWeight: adminTab === 'production' ? '800' : '600',
+                },
+              ]}
+            >
+              Produksi
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setAdminTab('defect')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: adminTab === 'defect' }}
+            style={[
+              styles.adminSegmentBtn,
+              adminTab === 'defect' && [
+                styles.adminSegmentBtnActive,
+                { backgroundColor: colors.critical, borderColor: colors.critical },
+              ],
+            ]}
+          >
+            <AlertTriangle
+              size={16}
+              color={adminTab === 'defect' ? '#FFFFFF' : colors.textSecondary}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.adminSegmentText,
+                {
+                  color: adminTab === 'defect' ? '#FFFFFF' : colors.textSecondary,
+                  fontWeight: adminTab === 'defect' ? '800' : '600',
+                },
+              ]}
+            >
+              Cacat NG
+            </Text>
+          </Pressable>
+        </View>
       )}
 
-      {/* Fullscreen Image Preview Modal */}
-      <Modal
-        visible={!!previewImageUri}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPreviewImageUri(null)}
-      >
-        <View style={styles.imageModalRoot}>
-          <Pressable
-            onPress={() => setPreviewImageUri(null)}
-            style={styles.modalCloseButton}
-            hitSlop={12}
-          >
-            <X size={26} color="#FFFFFF" />
-          </Pressable>
-          {previewImageUri ? (
-            <Image
-              source={{ uri: previewImageUri }}
-              style={styles.fullImage}
-              resizeMode="contain"
+      {/* Konten Riwayat: Produksi (Khusus Admin Tab Produksi) vs Cacat NG */}
+      {isAdmin && adminTab === 'production' ? (
+        <ProductionHistoryScreen navigation={navigation} hideHeader={true} />
+      ) : (
+        <View style={styles.content}>
+          {/* Top Header Bar (Identik dengan Produksi) */}
+          <View style={styles.screenHeader}>
+            <View>
+              <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+                {isAdmin ? 'RIWAYAT CACAT (NG) PRODUK' : 'RIWAYAT TEMUAN CACAT'}
+              </Text>
+              <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+                {isAdmin
+                  ? 'Rekap seluruh temuan cacat part, parameter mesin, dan foto inspeksi QC'
+                  : 'Catatan temuan cacat dan foto inspeksi kualitas produk Anda'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Period Selector Tabs: Hari Ini | 7 Hari | Semua (Identik dengan Produksi) */}
+          <View style={[styles.filterBar, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+            {[
+              { id: 'today', label: 'Hari Ini' },
+              { id: 'week', label: '7 Hari Terakhir' },
+              { id: 'all', label: 'Semua Rekaman' },
+            ].map((tab) => {
+              const isSelected = filterPeriod === tab.id;
+              return (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => setFilterPeriod(tab.id)}
+                  style={[
+                    styles.filterTab,
+                    isSelected && { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterTabText,
+                      {
+                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                        fontWeight: isSelected ? '800' : '600',
+                      },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Search Bar (Identik dengan Produksi) */}
+          <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Search size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <TextInput
+              placeholder="Cari mesin, nomor part, jenis cacat, shift..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={[styles.searchInput, { color: colors.textPrimary }]}
             />
-          ) : null}
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <X size={16} color={colors.textMuted} />
+              </Pressable>
+            )}
+          </View>
+
+          {/* KPI Mini Summary Ribbon (Identik dengan Produksi) */}
+          <View style={styles.summaryRibbon}>
+            <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+              <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Total NG</Text>
+              <Text style={[styles.summaryPillVal, { color: colors.critical }]}>
+                {totalNgCount.toLocaleString('id-ID')} pcs
+              </Text>
+            </View>
+            <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+              <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Kasus</Text>
+              <Text style={[styles.summaryPillVal, { color: colors.textPrimary }]}>
+                {filteredHistoryList.length} lot
+              </Text>
+            </View>
+            <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+              <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Kritis</Text>
+              <Text style={[styles.summaryPillVal, { color: colors.critical }]}>
+                {criticalCount.toLocaleString('id-ID')} pcs
+              </Text>
+            </View>
+            <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+              <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Mesin</Text>
+              <Text style={[styles.summaryPillVal, { color: colors.textPrimary }]}>
+                {affectedMachinesCount} Mesin
+              </Text>
+            </View>
+          </View>
+
+          {/* List Content */}
+          {loading ? (
+            <View style={{ gap: 12, marginTop: 12 }}>
+              <SkeletonLoader height={140} borderRadius={16} />
+              <SkeletonLoader height={140} borderRadius={16} />
+              <SkeletonLoader height={140} borderRadius={16} />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredHistoryList}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderHistoryItem}
+              contentContainerStyle={styles.listContainer}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
+              ListEmptyComponent={
+                <View style={[styles.emptyBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Layers size={36} color={colors.textSecondary} style={{ marginBottom: 10 }} />
+                  <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                    Belum Ada Data Temuan Cacat
+                  </Text>
+                  <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+                    {searchQuery
+                      ? 'Tidak ada rekaman cacat yang sesuai dengan kata kunci pencarian.'
+                      : 'Lini perakitan berjalan sempurna tanpa cacat produk pada periode ini. Pertahankan standar kualitas zero-defect!'}
+                  </Text>
+                </View>
+              }
+            />
+          )}
+
+          {/* Fullscreen Image Preview Modal */}
+          <Modal
+            visible={!!previewImageUri}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setPreviewImageUri(null)}
+          >
+            <View style={styles.imageModalRoot}>
+              <Pressable
+                onPress={() => setPreviewImageUri(null)}
+                style={styles.modalCloseButton}
+                hitSlop={12}
+              >
+                <X size={26} color="#FFFFFF" />
+              </Pressable>
+              {previewImageUri ? (
+                <Image
+                  source={{ uri: previewImageUri }}
+                  style={styles.fullImage}
+                  resizeMode="contain"
+                />
+              ) : null}
+            </View>
+          </Modal>
         </View>
-      </Modal>
+      )}
     </View>
   );
 };
@@ -296,66 +515,119 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  summaryBanner: {
+  adminSegmentWrapper: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 4,
+    padding: 4,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    gap: 6,
+  },
+  adminSegmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  adminSegmentBtnActive: {
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  adminSegmentText: {
+    fontSize: typography.sizes.body,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  content: {
+    flex: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
   },
-  summaryTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  screenHeader: {
+    marginBottom: 10,
   },
-  screenHeading: {
-    fontSize: typography.sizes.screenHeading,
+  screenTitle: {
+    fontSize: typography.sizes.cardHeading,
     fontWeight: '800',
+    letterSpacing: 0.4,
   },
   screenSubtitle: {
     fontSize: typography.sizes.caption,
     marginTop: 2,
   },
-  statBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'flex-end',
-  },
-  statBadgeLabel: {
-    fontSize: typography.sizes.micro - 2,
-    fontWeight: '800',
-  },
-  statBadgeValue: {
-    fontSize: typography.sizes.cardHeading,
-    fontWeight: '900',
-  },
-  filterPillsContainer: {
+  filterBar: {
     flexDirection: 'row',
-    gap: 8,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    padding: 4,
+    marginBottom: 12,
+    minHeight: 50,
   },
-  filterPill: {
+  filterTab: {
+    flex: 1,
+    paddingVertical: 10,
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
+  filterTabText: {
+    fontSize: typography.sizes.body,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    height: 48,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: typography.sizes.body,
+    paddingVertical: 0,
+  },
+  summaryRibbon: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  summaryPill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
+    minHeight: 50,
+    justifyContent: 'center',
   },
-  filterPillText: {
-    fontSize: typography.sizes.micro + 1,
+  summaryPillLabel: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '700',
   },
-  listContent: {
-    padding: 16,
-    paddingBottom: 32,
+  summaryPillVal: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '800',
+    marginTop: 2,
   },
-  loaderContainer: {
-    padding: 16,
+  listContainer: {
+    paddingBottom: 24,
+    gap: 12,
   },
   card: {
     borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -363,145 +635,204 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  partInfoRow: {
+  machineTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  partBadge: {
+  machineName: {
+    fontSize: typography.sizes.cardHeading,
+    fontWeight: '800',
+  },
+  lineBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    borderWidth: 1,
-    marginRight: 8,
+    marginLeft: 8,
   },
-  partBadgeText: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '800',
-  },
-  partNameText: {
-    fontSize: typography.sizes.body + 1,
+  lineBadgeText: {
+    fontSize: typography.sizes.micro,
     fontWeight: '700',
   },
-  cloudStatusPill: {
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  syncBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  cloudStatusText: {
+  syncText: {
     fontSize: typography.sizes.micro,
-    fontWeight: '800',
+    fontWeight: '700',
   },
-  cardBody: {
+  partRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 12,
   },
-  defectTagRow: {
+  partPill: {
     flex: 1,
-  },
-  defectNameBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    marginBottom: 4,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  defectNameText: {
+  partNumText: {
     fontSize: typography.sizes.caption,
     fontWeight: '800',
+    marginRight: 6,
+  },
+  partNameText: {
+    fontSize: typography.sizes.caption,
+    flex: 1,
+    fontWeight: '600',
+  },
+  processPill: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   processText: {
     fontSize: typography.sizes.caption,
-    fontWeight: '500',
+    fontWeight: '700',
   },
-  quantityBox: {
-    alignItems: 'flex-end',
+  metricsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    marginBottom: 12,
   },
-  qtyNumber: {
-    fontSize: 24,
-    fontWeight: '900',
+  metricCol: {
+    alignItems: 'center',
+    flex: 1,
   },
-  qtyUnit: {
+  metricLabel: {
     fontSize: typography.sizes.micro,
     fontWeight: '700',
   },
+  metricVal: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+  metricUnit: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '600',
+  },
+  defectBadgeSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginTop: 3,
+    alignSelf: 'center',
+  },
+  defectBadgeSmallText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '800',
+  },
+  photoPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginTop: 3,
+  },
+  photoMiniThumb: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    marginRight: 4,
+  },
+  photoPillText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '800',
+  },
   remarksBox: {
-    padding: 8,
     borderRadius: 8,
-    marginBottom: 10,
+    padding: 8,
+    borderWidth: 1,
+    marginBottom: 12,
   },
   remarksText: {
     fontSize: typography.sizes.caption,
     fontStyle: 'italic',
   },
-  cardFooter: {
+  cardMetaFooter: {
+    marginTop: 2,
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
-    paddingTop: 10,
   },
-  metaRow: {
+  footerDateGroup: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  timeText: {
-    fontSize: typography.sizes.caption,
+  footerDateText: {
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
-  photoThumbnailBtn: {
+  footerShiftPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 6,
   },
-  photoThumbnail: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    marginRight: 4,
-  },
-  photoLabel: {
+  footerShiftText: {
     fontSize: typography.sizes.micro,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  emptyContainer: {
-    padding: 32,
+  metaOperatorText: {
+    fontSize: typography.sizes.caption,
+  },
+  metaTimeText: {
+    fontSize: typography.sizes.caption,
+  },
+  emptyBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 40,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginTop: 20,
   },
   emptyTitle: {
-    fontSize: typography.sizes.cardHeading,
+    fontSize: typography.sizes.body + 1,
     fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 6,
   },
-  emptySubtitle: {
-    fontSize: typography.sizes.body,
+  emptyDesc: {
+    fontSize: typography.sizes.caption,
     textAlign: 'center',
+    marginTop: 6,
     lineHeight: 18,
   },
   imageModalRoot: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
   },
   modalCloseButton: {
     position: 'absolute',
@@ -509,10 +840,13 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 10,
     padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   fullImage: {
-    width: width * 0.92,
+    width: width - 32,
     height: width * 1.2,
+    borderRadius: 12,
   },
 });
 

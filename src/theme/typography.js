@@ -7,15 +7,18 @@ export const typography = {
     default: 'sans-serif',
   }),
 
-  // Font sizes in px
+  // Font sizes in px - Optimized for factory workers & presbyopia readability (no micro fonts < 12px)
   sizes: {
-    kpi: 22,
-    screenHeading: 16,
-    cardHeading: 14,
-    body: 12,
-    caption: 11,
-    micro: 10,
-    tabLabel: 9,
+    kpi: 28,            // Hero numbers (e.g. 1.250 pcs, 98.4%) - clearly visible from arm's length
+    h1: 22,             // Top page titles
+    h2: 19,             // Section headers
+    h3: 17,             // Card headings & prominent subheaders
+    screenHeading: 19,  // Screen headers
+    cardHeading: 16,    // Machine names, card titles
+    body: 14,           // Standard readable body text, form values
+    caption: 13,        // Subtitles, secondary notes, dates, filters
+    micro: 12,          // Badges, chips, indicators (NO font under 12px!)
+    tabLabel: 12,       // Nav/tab labels
   },
 
   // Font weights
@@ -30,61 +33,64 @@ export const typography = {
 
   // Line heights
   lineHeights: {
-    kpi: 28,
-    screenHeading: 22,
-    cardHeading: 20,
-    body: 18,
-    caption: 16,
-    micro: 14,
-    tabLabel: 12,
+    kpi: 34,
+    h1: 28,
+    h2: 24,
+    h3: 22,
+    screenHeading: 24,
+    cardHeading: 22,
+    body: 20,
+    caption: 18,
+    micro: 16,
+    tabLabel: 16,
   },
 
   // Pre-composed typography styles
   styles: {
     displayKpi: {
-      fontSize: 22,
-      lineHeight: 28,
+      fontSize: 28,
+      lineHeight: 34,
       fontWeight: '900',
       letterSpacing: -0.5,
     },
     headingScreen: {
+      fontSize: 19,
+      lineHeight: 24,
+      fontWeight: '700',
+      letterSpacing: 0.1,
+    },
+    headingCard: {
       fontSize: 16,
       lineHeight: 22,
       fontWeight: '700',
       letterSpacing: 0.1,
     },
-    headingCard: {
+    bodyRegular: {
       fontSize: 14,
       lineHeight: 20,
-      fontWeight: '600',
-      letterSpacing: 0.1,
-    },
-    bodyRegular: {
-      fontSize: 12,
-      lineHeight: 18,
       fontWeight: '400',
       letterSpacing: 0.2,
     },
     bodyBold: {
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: 14,
+      lineHeight: 20,
       fontWeight: '700',
     },
     captionBold: {
-      fontSize: 11,
-      lineHeight: 16,
+      fontSize: 13,
+      lineHeight: 18,
       fontWeight: '700',
       letterSpacing: 0.3,
     },
     microBadge: {
-      fontSize: 10,
-      lineHeight: 14,
+      fontSize: 12,
+      lineHeight: 16,
       fontWeight: '700',
       letterSpacing: 0.4,
     },
     tabLabel: {
-      fontSize: 9,
-      lineHeight: 12,
+      fontSize: 12,
+      lineHeight: 16,
       fontWeight: '600',
       letterSpacing: 0.3,
     },

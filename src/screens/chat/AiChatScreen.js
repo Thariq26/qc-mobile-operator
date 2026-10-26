@@ -19,28 +19,43 @@ import { TypingIndicator } from '../../components/chat/TypingIndicator';
 import { aiService } from '../../api/services/aiService';
 import { typography } from '../../theme/typography';
 
-const QUICK_PROMPTS = [
+const MACHINE_PROMPTS = [
+  'SOP Setting Tonase Amada Press',
+  'Troubleshooting Bending Macet',
+  'Pelumasan Dies Komatsu',
+  'Kalibrasi Sudut Bending',
+  'Pembersihan Scrap Stamping',
+  'Reset E-Stop Robot Welding',
+];
+
+const QC_PROMPTS = [
   'Cek SOP Bending',
   'Solusi Burry Blanking',
   'Penyebab Las Keropos',
   'Toleransi Lubang Baut PT-1001',
-  'Analisa Shift 1',
-  'SOP Pembersihan Scrap Amada',
+  'Analisa SPC Out-of-Control',
+  'SOP Penanganan Sompal',
 ];
 
 export const AiChatScreen = ({ route }) => {
   const { colors, isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, isOperatorProduksi } = useAuth();
+
+  const quickPrompts = isOperatorProduksi ? MACHINE_PROMPTS : QC_PROMPTS;
 
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef(null);
 
+  const welcomeText = isOperatorProduksi
+    ? `Halo ${user?.fullName || 'Rekan Operator'}! Saya **AI Copilot Mesin & Maintenance PT Galaxy Mandiri Perkasa**.\n\nSaya siap membantu Anda menangani:\n1. Panduan setting mesin press, welding, dan bending.\n2. Troubleshooting cepat gangguan mekanis & tooling mesin.\n3. SOP pembersihan scrap, pelumasan dies, dan setup cetakan.\n\nKetik pertanyaan Anda atau pilih saran cepat di bawah!`
+    : `Halo ${user?.fullName || 'Rekan QC'}! Saya **QC AI Quality Agent PT Galaxy Mandiri Perkasa**.\n\nSaya siap membantu Anda menangani:\n1. Solusi teknis cacat stamping & welding.\n2. Analisis batas kendali SPC p-Chart & mitigasi deviasi 3-Sigma.\n3. Analisis akar masalah komplain customer.\n\nKetik pertanyaan Anda atau pilih saran cepat di bawah!`;
+
   const [messages, setMessages] = useState([
     {
       id: 'msg_welcome',
       isUser: false,
-      text: `Halo ${user?.fullName || 'Rekan QC'}! Saya **QC AI Agent PT Galaxy Mandiri Perkasa**.\n\nSaya siap membantu Anda menangani:\n1. Solusi teknis cacat stamping & welding.\n2. Konsultasi SOP tooling dan clearance die mesin.\n3. Analisis akar masalah komplain customer.\n\nKetik pertanyaan Anda atau pilih saran cepat di bawah!`,
+      text: welcomeText,
       timestamp: '14:00',
       modelTag: 'Gemini 1.5 Pro via n8n RAG',
     },
@@ -72,7 +87,7 @@ export const AiChatScreen = ({ route }) => {
     try {
       const response = await aiService.sendN8nChatMessage({
         sessionId: `qc_${user?.username || 'operator'}_session`,
-        operatorName: user?.fullName || 'Budi Santoso',
+        operatorName: user?.fullName || user?.username || 'Operator',
         message: textToSend.trim(),
       });
 
@@ -177,7 +192,7 @@ export const AiChatScreen = ({ route }) => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsScroll}
         >
-          {QUICK_PROMPTS.map((prompt, idx) => (
+          {quickPrompts.map((prompt, idx) => (
             <Pressable
               key={idx}
               onPress={() => handleQuickPrompt(prompt)}

@@ -116,7 +116,7 @@ export const LogoutConfirmModal = ({ visible, onClose }) => {
             <View style={styles.sessionItem}>
               <UserCheck size={16} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={[styles.sessionText, { color: colors.textPrimary }]}>
-                Operator: <Text style={{ fontWeight: '800' }}>{user?.fullName || 'Budi Santoso'} ({user?.role || 'QC Inspector'})</Text>
+                Operator: <Text style={{ fontWeight: '800' }}>{user?.fullName || user?.username || 'User'} ({user?.role || 'QC Inspector'})</Text>
               </Text>
             </View>
 

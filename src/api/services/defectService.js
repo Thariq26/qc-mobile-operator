@@ -1,83 +1,53 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../client';
 import { ENDPOINTS, getBaseUrl } from '../endpoints';
 import { Platform } from 'react-native';
+import { getLocalDateString } from '../../utils/dateFormatter';
+import { userService } from './userService';
 import {
   MASTER_PARTS,
   MASTER_MACHINES,
   MASTER_DEFECT_TYPES,
+  MASTER_OPERATORS,
 } from '../../data/masterData';
 
 const FALLBACK_PARTS = MASTER_PARTS;
 const FALLBACK_DEFECT_TYPES = MASTER_DEFECT_TYPES;
 const FALLBACK_MACHINES = MASTER_MACHINES;
+const FALLBACK_OPERATORS = MASTER_OPERATORS;
+const DEFECT_STORAGE_KEY = '@qc_local_defect_history_buffer_v2';
 
-// Initial realistic local history buffer
-let localHistoryBuffer = [
-  {
-    id: 101,
-    partNumber: 'PT-1001',
-    partName: 'Front Bracket A',
-    defectName: 'Gompal',
-    proses: 'Blanking',
-    quantity: 8,
-    operatorName: 'Budi Santoso',
-    defectDate: '2026-10-13',
-    time: '13:42',
-    shift: 'Shift 1',
-    namaMesin: 'Amada Press 01',
-    remarks: 'Sisi kiri dekat lubang punching clearance aus',
-    photoUrl: null,
-    status: 'Synced to Cloud',
-  },
-  {
-    id: 102,
-    partNumber: 'PT-1003',
-    partName: 'Side Reinforce L',
-    defectName: 'Burry',
-    proses: 'Blanking',
-    quantity: 14,
-    operatorName: 'Budi Santoso',
-    defectDate: '2026-10-13',
-    time: '11:15',
-    shift: 'Shift 1',
-    namaMesin: 'Amada Press 01',
-    remarks: 'Tepi potong kasar >0.08mm, perlu regrinding die',
-    photoUrl: null,
-    status: 'Synced to Cloud',
-  },
-  {
-    id: 103,
-    partNumber: 'PT-1002',
-    partName: 'Rear Flange B',
-    defectName: 'Tidak Flat',
-    proses: 'Bending',
-    quantity: 5,
-    operatorName: 'Budi Santoso',
-    defectDate: '2026-10-12',
-    time: '15:20',
-    shift: 'Shift 2',
-    namaMesin: 'Komatsu Press 02',
-    remarks: 'Sudut tekuk melebar 2 derajat dari gambar kerja',
-    photoUrl: null,
-    status: 'Synced to Cloud',
-  },
-  {
-    id: 104,
-    partNumber: 'PT-1004',
-    partName: 'Main Stay Plate',
-    defectName: 'Keropos',
-    proses: 'Welding Robot',
-    quantity: 3,
-    operatorName: 'Budi Santoso',
-    defectDate: '2026-10-11',
-    time: '09:30',
-    shift: 'Shift 1',
-    namaMesin: 'Welding Robot A',
-    remarks: 'Gas shielding argon sempat tersumbat nozzle',
-    photoUrl: null,
-    status: 'Synced to Cloud',
-  },
-];
+// Persisted local history buffer for offline shop floor recording
+let localHistoryBuffer = [];
+
+// Load persisted local defect buffer on initialization
+(async () => {
+  try {
+    const saved = await AsyncStorage.getItem(DEFECT_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Filter out legacy dummy entries
+        localHistoryBuffer = parsed.filter((item) => {
+          const isDemo =
+            (item.createdBy === 'budi_qc' && item.remarks && item.remarks.includes('clearance aus')) ||
+            (item.namaMesin === 'Amada Press 01' && item.quantity === 8 && item.defectName === 'Gompal');
+          return !isDemo && (item.id < 101 || item.id > 105);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Failed loading persisted defect history buffer:', e);
+  }
+})();
+
+const persistLocalDefectBuffer = async () => {
+  try {
+    await AsyncStorage.setItem(DEFECT_STORAGE_KEY, JSON.stringify(localHistoryBuffer.slice(0, 50)));
+  } catch (e) {
+    console.warn('Failed persisting defect history buffer:', e);
+  }
+};
 
 export const defectService = {
   getParts: async () => {
@@ -135,6 +105,11 @@ export const defectService = {
     }
   },
 
+  getOperators: async (role = null) => {
+    // Delegated to single source of truth in userService
+    return userService.getOperators(role);
+  },
+
   uploadPhoto: async (uri) => {
     try {
       if (!uri) return null;
@@ -182,9 +157,9 @@ export const defectService = {
         defectName: payload.defectName || 'Gompal',
         proses: payload.proses || 'Blanking',
         quantity: payload.quantity || 1,
-        operatorName: payload.operatorName || 'Budi Santoso',
-        createdBy: payload.username || payload.createdBy || 'budi_qc',
-        defectDate: payload.defectDate || new Date().toISOString().split('T')[0],
+        operatorName: payload.operatorName || 'Operator',
+        createdBy: payload.username || payload.createdBy || 'operator',
+        defectDate: payload.defectDate || getLocalDateString(),
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         shift: payload.shift || 'Shift 1',
         namaMesin: payload.namaMesin || 'Amada Press 01',
@@ -192,7 +167,8 @@ export const defectService = {
         photoUrl: payload.photoUrl || null,
         status: 'Synced to Cloud',
       };
-      localHistoryBuffer = [newRecord, ...localHistoryBuffer];
+      localHistoryBuffer = [newRecord, ...localHistoryBuffer.filter((i) => i.id !== newRecord.id)];
+      await persistLocalDefectBuffer();
 
       return response.data;
     } catch (err) {
@@ -200,24 +176,67 @@ export const defectService = {
       
       const offlineRecord = {
         id: Date.now(),
+        partId: payload.partId,
         partNumber: payload.partNumber || `PT-${payload.partId}`,
         partName: payload.partName || 'Auto Bracket',
+        defectTypeId: payload.defectTypeId,
         defectName: payload.defectName || 'Gompal',
         proses: payload.proses || 'Blanking',
         quantity: payload.quantity || 1,
-        operatorName: payload.operatorName || 'Budi Santoso',
-        createdBy: payload.username || payload.createdBy || 'budi_qc',
-        defectDate: payload.defectDate || new Date().toISOString().split('T')[0],
+        operatorName: payload.operatorName || 'Operator',
+        createdBy: payload.username || payload.createdBy || 'operator',
+        defectDate: payload.defectDate || getLocalDateString(),
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         shift: payload.shift || 'Shift 1',
         namaMesin: payload.namaMesin || 'Amada Press 01',
         remarks: payload.remarks || '',
         photoUrl: payload.photoUrl || null,
         status: 'Cached Locally (Offline)',
+        isOffline: true,
       };
       localHistoryBuffer = [offlineRecord, ...localHistoryBuffer];
+      await persistLocalDefectBuffer();
       return offlineRecord;
     }
+  },
+
+  /**
+   * Auto-sync pending offline defects when online connection restored
+   */
+  syncOfflineDefects: async () => {
+    const offlineItems = localHistoryBuffer.filter((i) => i.isOffline || i.status?.includes('Offline'));
+    if (offlineItems.length === 0) return { synced: 0 };
+
+    let syncedCount = 0;
+    for (const item of offlineItems) {
+      try {
+        await apiClient.post(ENDPOINTS.NG_DATA, {
+          partId: item.partId,
+          partNumber: item.partNumber,
+          partName: item.partName,
+          defectTypeId: item.defectTypeId,
+          defectName: item.defectName,
+          proses: item.proses,
+          quantity: item.quantity,
+          operatorName: item.operatorName,
+          username: item.createdBy,
+          defectDate: item.defectDate,
+          shift: item.shift,
+          namaMesin: item.namaMesin,
+          remarks: item.remarks,
+          photoUrl: item.photoUrl,
+        });
+        item.status = 'Synced to Cloud';
+        item.isOffline = false;
+        syncedCount++;
+      } catch (e) {
+        console.warn(`Sync failed for offline defect ${item.id}:`, e?.message);
+      }
+    }
+    if (syncedCount > 0) {
+      await persistLocalDefectBuffer();
+    }
+    return { synced: syncedCount };
   },
 
   getHistory: async (filterPeriod = 'all', username = null, role = null) => {
@@ -231,14 +250,15 @@ export const defectService = {
       if (Array.isArray(response.data) && response.data.length > 0) {
         const mapped = response.data.map((item) => ({
           id: item.id,
+          partId: item.part?.id,
           partNumber: item.part?.partNumber || item.partNumber || 'PT-1001',
           partName: item.part?.partName || item.partName || 'Front Bracket',
           defectName: item.defectType?.name || item.defectName || 'Defect',
           proses: item.proses || 'Blanking',
-          quantity: item.quantity || 0,
+          quantity: Number(item.quantity || 0),
           operatorName: item.operatorName || item.createdBy || 'Operator',
           createdBy: item.createdBy,
-          defectDate: item.defectDate || '2026-10-13',
+          defectDate: item.defectDate ? String(item.defectDate).split('T')[0] : getLocalDateString(),
           time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '12:00',
           shift: item.shift || 'Shift 1',
           namaMesin: item.namaMesin || 'Amada Press 01',
@@ -260,6 +280,80 @@ export const defectService = {
     } catch {
       const isAdmin = (role && role.toUpperCase() === 'ADMIN') || (username && username.toLowerCase() === 'admin');
       return applyPeriodFilter(isAdmin ? localHistoryBuffer : filterDefectsByUser(localHistoryBuffer, username), filterPeriod);
+    }
+  },
+
+  /**
+   * Fetch all shop floor defects across the entire plant (unrestricted by operator identity)
+   * Essential for connecting QC defect findings with production runs regardless of who inspected it.
+   */
+  getShopFloorDefects: async () => {
+    try {
+      const response = await apiClient.get(ENDPOINTS.NG_DATA, { params: { role: 'ADMIN' } });
+      let mapped = [];
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        mapped = response.data.map((item) => ({
+          id: item.id,
+          partId: item.part?.id,
+          partNumber: item.part?.partNumber || item.partNumber || 'PT-1001',
+          partName: item.part?.partName || item.partName || 'Front Bracket',
+          defectName: item.defectType?.name || item.defectName || 'Defect',
+          proses: item.proses || 'Blanking',
+          quantity: Number(item.quantity || 0),
+          operatorName: item.operatorName || item.createdBy || 'Operator',
+          createdBy: item.createdBy,
+          defectDate: item.defectDate ? String(item.defectDate).split('T')[0] : getLocalDateString(),
+          time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '12:00',
+          shift: item.shift || 'Shift 1',
+          namaMesin: item.namaMesin || 'Amada Press 01',
+          remarks: item.remarks || '',
+          photoUrl: item.photoUrl,
+          status: 'Synced to Cloud',
+        }));
+      }
+
+      // Merge with any freshly added local offline records
+      const existingIds = new Set(mapped.map((m) => m.id));
+      const offlineList = (localHistoryBuffer || []).map((item) => ({
+        id: item.id,
+        partId: item.partId,
+        partNumber: item.partNumber || `PT-${item.partId}`,
+        partName: item.partName || 'Auto Bracket',
+        defectName: item.defectName || 'Gompal',
+        proses: item.proses || 'Blanking',
+        quantity: Number(item.quantity || 0),
+        operatorName: item.operatorName || item.createdBy || 'Operator',
+        createdBy: item.createdBy,
+        defectDate: item.defectDate ? String(item.defectDate).split('T')[0] : getLocalDateString(),
+        time: item.time || '12:00',
+        shift: item.shift || 'Shift 1',
+        namaMesin: item.namaMesin || 'Amada Press 01',
+        remarks: item.remarks || '',
+        photoUrl: item.photoUrl,
+        status: item.status || 'Cached Locally (Offline)',
+      }));
+
+      return [...offlineList.filter((loc) => !existingIds.has(loc.id)), ...mapped];
+    } catch (e) {
+      console.warn('Failed loading shop floor defects from cloud:', e?.message);
+      return (localHistoryBuffer || []).map((item) => ({
+        id: item.id,
+        partId: item.partId,
+        partNumber: item.partNumber || `PT-${item.partId}`,
+        partName: item.partName || 'Auto Bracket',
+        defectName: item.defectName || 'Gompal',
+        proses: item.proses || 'Blanking',
+        quantity: Number(item.quantity || 0),
+        operatorName: item.operatorName || item.createdBy || 'Operator',
+        createdBy: item.createdBy,
+        defectDate: item.defectDate ? String(item.defectDate).split('T')[0] : getLocalDateString(),
+        time: item.time || '12:00',
+        shift: item.shift || 'Shift 1',
+        namaMesin: item.namaMesin || 'Amada Press 01',
+        remarks: item.remarks || '',
+        photoUrl: item.photoUrl,
+        status: item.status || 'Cached Locally (Offline)',
+      }));
     }
   },
 };

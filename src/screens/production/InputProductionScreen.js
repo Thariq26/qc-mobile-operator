@@ -36,9 +36,10 @@ import { useAuth } from '../../context/AuthContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SpringButton } from '../../components/common/SpringButton';
 import { AchievementMeter } from '../../components/production/AchievementMeter';
+import { ConfirmProductionModal } from '../../components/common/ConfirmProductionModal';
 import { defectService } from '../../api/services/defectService';
 import { productionService } from '../../api/services/productionService';
-import { formatIndonesianDate } from '../../utils/dateFormatter';
+import { formatIndonesianDate, getLocalDateString } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
 import { MASTER_PARTS, MASTER_MACHINES } from '../../data/masterData';
 
@@ -46,7 +47,6 @@ import { MASTER_PARTS, MASTER_MACHINES } from '../../data/masterData';
 const SHIFTS = [
   { id: 'Shift 1', label: 'Shift 1 (Pagi: 07.00 - 15.30)' },
   { id: 'Shift 2', label: 'Shift 2 (Siang: 15.30 - 23.00)' },
-  { id: 'Shift 3', label: 'Shift 3 (Malam: 23.00 - 07.00)' },
 ];
 
 // Production line filters
@@ -68,7 +68,7 @@ const OPERATIONAL_PROCESSES = [
 
   // 3. Finishing & Painting
   { id: 'Degreasing', name: 'Degreasing', category: 'Finishing & Painting', line: 'Painting', desc: 'Pembersihan oli & residu kimia plat' },
-  { id: 'ED Coating', name: 'ED Coating', line: 'Finishing & Painting', line: 'Painting', desc: 'Pengecatan elektroforesis anti karat' },
+  { id: 'ED Coating', name: 'ED Coating', category: 'Finishing & Painting', line: 'Painting', desc: 'Pengecatan elektroforesis anti karat' },
   { id: 'Top Coat Spraying', name: 'Top Coat Spraying', category: 'Finishing & Painting', line: 'Painting', desc: 'Pengecatan semprot warna akhir' },
   { id: 'Baking Oven', name: 'Baking Oven', category: 'Finishing & Painting', line: 'Painting', desc: 'Pemanasan oven pengeringan cat' },
 
@@ -98,9 +98,7 @@ export const InputProductionScreen = ({ navigation }) => {
 
   // Form Global State
   const [selectedShift, setSelectedShift] = useState('Shift 1');
-  const [productionDate, setProductionDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [productionDate, setProductionDate] = useState(getLocalDateString());
 
   // Batch Items State (starts with 1 item)
   const [items, setItems] = useState([
@@ -117,8 +115,8 @@ export const InputProductionScreen = ({ navigation }) => {
       processCategoryTab: 'Rekomendasi Lini',
       isCustomProcess: false,
       customProcess: '',
-      targetQuantity: '4000',
-      producedQuantity: '4150',
+      targetQuantity: '',
+      producedQuantity: '',
     },
   ]);
 
@@ -135,6 +133,13 @@ export const InputProductionScreen = ({ navigation }) => {
   const [activeItemIndexForMachine, setActiveItemIndexForMachine] = useState(null);
   const [machineSearchQuery, setMachineSearchQuery] = useState('');
   const [machineLineFilter, setMachineLineFilter] = useState('Semua');
+
+  const [processModalVisible, setProcessModalVisible] = useState(false);
+  const [activeItemIndexForProcess, setActiveItemIndexForProcess] = useState(null);
+  const [processSearchQuery, setProcessSearchQuery] = useState('');
+  const [processCategoryFilter, setProcessCategoryFilter] = useState('Semua');
+  const [customProcessTemp, setCustomProcessTemp] = useState('');
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
   // Load complete Master Data on mount
   useEffect(() => {
@@ -232,7 +237,8 @@ export const InputProductionScreen = ({ navigation }) => {
               machineLine: machine.line,
               machineType: machine.type || 'Mesin Produksi',
               processName: defaultProc,
-              processCategoryTab: 'Rekomendasi Lini',
+              isCustomProcess: false,
+              customProcess: '',
             };
           }
           return item;
@@ -241,6 +247,69 @@ export const InputProductionScreen = ({ navigation }) => {
     }
     setMachineModalVisible(false);
     setActiveItemIndexForMachine(null);
+  };
+
+  // Open Process Selector Modal for a specific item index
+  const handleOpenProcessModal = (index) => {
+    setActiveItemIndexForProcess(index);
+    const item = items[index];
+    setProcessSearchQuery('');
+    setProcessCategoryFilter('Semua');
+    setCustomProcessTemp(item?.isCustomProcess ? item.customProcess : '');
+    setProcessModalVisible(true);
+  };
+
+  // Select Process from Modal
+  const handleSelectProcess = (proc) => {
+    if (activeItemIndexForProcess !== null) {
+      const targetId = items[activeItemIndexForProcess]?.id;
+      if (targetId) {
+        setItems((prevItems) =>
+          prevItems.map((item) => {
+            if (item.id === targetId) {
+              return {
+                ...item,
+                processName: proc.name,
+                isCustomProcess: false,
+                customProcess: '',
+              };
+            }
+            return item;
+          })
+        );
+      }
+    }
+    setProcessModalVisible(false);
+    setActiveItemIndexForProcess(null);
+  };
+
+  // Apply Custom Process from Modal
+  const handleApplyCustomProcess = (customName) => {
+    const trimmed = (customName || customProcessTemp).trim();
+    if (!trimmed) {
+      Alert.alert('Perhatian', 'Nama proses kustom tidak boleh kosong!');
+      return;
+    }
+    if (activeItemIndexForProcess !== null) {
+      const targetId = items[activeItemIndexForProcess]?.id;
+      if (targetId) {
+        setItems((prevItems) =>
+          prevItems.map((item) => {
+            if (item.id === targetId) {
+              return {
+                ...item,
+                processName: trimmed,
+                isCustomProcess: true,
+                customProcess: trimmed,
+              };
+            }
+            return item;
+          })
+        );
+      }
+    }
+    setProcessModalVisible(false);
+    setActiveItemIndexForProcess(null);
   };
 
   // Helper to suggest appropriate process based on machine line
@@ -282,8 +351,8 @@ export const InputProductionScreen = ({ navigation }) => {
       processCategoryTab: 'Rekomendasi Lini',
       isCustomProcess: false,
       customProcess: '',
-      targetQuantity: '3000',
-      producedQuantity: '3000',
+      targetQuantity: '',
+      producedQuantity: '',
     };
 
     setItems([...items, newItem]);
@@ -310,29 +379,34 @@ export const InputProductionScreen = ({ navigation }) => {
     );
   };
 
-  // Filter processes for each item based on its active category tab
-  const getFilteredProcessesForItem = (item) => {
-    const tab = item.processCategoryTab || 'Rekomendasi Lini';
-    if (tab === 'Rekomendasi Lini') {
-      const line = (item.machineLine || '').toLowerCase();
-      if (line.includes('bend')) {
-        return OPERATIONAL_PROCESSES.filter((p) => p.line === 'Bending' || p.category.includes('Stamping'));
-      }
-      if (line.includes('weld')) {
-        return OPERATIONAL_PROCESSES.filter((p) => p.category === 'Welding');
-      }
-      if (line.includes('paint') || line.includes('finish')) {
-        return OPERATIONAL_PROCESSES.filter((p) => p.category === 'Finishing & Painting');
-      }
-      if (line.includes('assem')) {
-        return OPERATIONAL_PROCESSES.filter((p) => p.category === 'Assembly');
-      }
-      return OPERATIONAL_PROCESSES.filter((p) => p.category === 'Stamping & Forming');
+  // Dynamic Quick-Pick Processes for each item (auto-adapted to machine line + currently selected process)
+  const getQuickPickProcessesForItem = (item) => {
+    const line = (item.machineLine || '').toLowerCase();
+    let baseList = [];
+    if (line.includes('bend')) {
+      baseList = OPERATIONAL_PROCESSES.filter((p) => p.line === 'Bending' || p.category.includes('Stamping'));
+    } else if (line.includes('weld')) {
+      baseList = OPERATIONAL_PROCESSES.filter((p) => p.category === 'Welding');
+    } else if (line.includes('paint') || line.includes('finish') || line.includes('coat')) {
+      baseList = OPERATIONAL_PROCESSES.filter((p) => p.category === 'Finishing & Painting');
+    } else if (line.includes('assem')) {
+      baseList = OPERATIONAL_PROCESSES.filter((p) => p.category === 'Assembly');
+    } else {
+      baseList = OPERATIONAL_PROCESSES.filter((p) => p.category === 'Stamping & Forming');
     }
-    if (tab === 'Semua Proses') {
-      return OPERATIONAL_PROCESSES;
+
+    // Ensure the item's currently selected standard process is present in the quick-pick chips if not custom
+    if (!item.isCustomProcess && item.processName) {
+      const alreadyPresent = baseList.some((p) => p.name === item.processName);
+      if (!alreadyPresent) {
+        const currentProc = OPERATIONAL_PROCESSES.find((p) => p.name === item.processName);
+        if (currentProc) {
+          baseList = [currentProc, ...baseList];
+        }
+      }
     }
-    return OPERATIONAL_PROCESSES.filter((p) => p.category === tab);
+
+    return baseList;
   };
 
   // Filter Parts in Modal
@@ -347,20 +421,96 @@ export const InputProductionScreen = ({ navigation }) => {
     });
   }, [parts, partSearchQuery, partLineFilter]);
 
+  // Line filter tabs for Machine Selection Modal with real counts
+  const machineLineTabs = useMemo(() => {
+    const counts = { Semua: machines.length };
+    machines.forEach((m) => {
+      const rawLine = (m.line || 'Lainnya').trim();
+      let category = rawLine;
+      if (rawLine.toLowerCase().includes('stamping')) {
+        category = 'Stamping';
+      } else if (rawLine.toLowerCase().includes('welding')) {
+        category = 'Welding';
+      } else if (rawLine.toLowerCase().includes('bending')) {
+        category = 'Bending';
+      } else if (rawLine.toLowerCase().includes('painting')) {
+        category = 'Painting';
+      }
+      counts[category] = (counts[category] || 0) + 1;
+    });
+
+    const standardTabs = ['Semua', 'Stamping', 'Bending', 'Welding', 'Painting'];
+    const available = standardTabs.filter((t) => t === 'Semua' || (counts[t] && counts[t] > 0));
+
+    // Also include any other unique lines that exist in machines
+    Object.keys(counts).forEach((k) => {
+      if (!available.includes(k) && counts[k] > 0) {
+        available.push(k);
+      }
+    });
+
+    return available.map((tab) => ({
+      name: tab,
+      count: counts[tab] || 0,
+    }));
+  }, [machines]);
+
   // Filter Machines in Modal
   const modalFilteredMachines = useMemo(() => {
     return machines.filter((m) => {
+      const query = machineSearchQuery.trim().toLowerCase();
       const matchesSearch =
-        m.name.toLowerCase().includes(machineSearchQuery.toLowerCase()) ||
-        (m.type || '').toLowerCase().includes(machineSearchQuery.toLowerCase());
-      const matchesLine =
-        machineLineFilter === 'Semua' || (m.line || '').toLowerCase().includes(machineLineFilter.toLowerCase());
+        !query ||
+        (m.name || '').toLowerCase().includes(query) ||
+        (m.line || '').toLowerCase().includes(query) ||
+        (m.type || '').toLowerCase().includes(query);
+
+      if (machineLineFilter === 'Semua') {
+        return matchesSearch;
+      }
+
+      const mLine = (m.line || '').toLowerCase();
+      const filterLower = machineLineFilter.toLowerCase();
+      const matchesLine = mLine.includes(filterLower);
+
       return matchesSearch && matchesLine;
     });
   }, [machines, machineSearchQuery, machineLineFilter]);
 
-  // Validate and submit batch production
-  const handleSubmit = async () => {
+  // Filter Processes in Modal
+  const modalFilteredProcesses = useMemo(() => {
+    const q = processSearchQuery.trim().toLowerCase();
+    return OPERATIONAL_PROCESSES.filter((p) => {
+      const matchesSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        (p.desc && p.desc.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q));
+
+      if (processCategoryFilter === 'Semua') {
+        return matchesSearch;
+      }
+      return (
+        matchesSearch &&
+        (p.category.toLowerCase().includes(processCategoryFilter.toLowerCase()) ||
+          (p.line && p.line.toLowerCase().includes(processCategoryFilter.toLowerCase())))
+      );
+    });
+  }, [processSearchQuery, processCategoryFilter]);
+
+  // Category filter tabs for Process Modal with real counts
+  const processCategoryTabs = useMemo(() => {
+    return [
+      { name: 'Semua', count: OPERATIONAL_PROCESSES.length },
+      { name: 'Stamping', count: OPERATIONAL_PROCESSES.filter((p) => p.category.includes('Stamping')).length },
+      { name: 'Welding', count: OPERATIONAL_PROCESSES.filter((p) => p.category === 'Welding').length },
+      { name: 'Painting', count: OPERATIONAL_PROCESSES.filter((p) => p.category.includes('Finishing')).length },
+      { name: 'Assembly', count: OPERATIONAL_PROCESSES.filter((p) => p.category === 'Assembly').length },
+    ];
+  }, []);
+
+  // 1. Validate fields and trigger confirmation popup
+  const handlePressSubmit = () => {
     setErrorMessage('');
 
     // Strict validation
@@ -387,18 +537,28 @@ export const InputProductionScreen = ({ navigation }) => {
       }
     }
 
+    // Open confirmation popup
+    setConfirmModalVisible(true);
+  };
+
+  // 2. Confirmed by user in modal -> Execute actual database save
+  const handleConfirmSubmit = async () => {
     setSubmitting(true);
 
     try {
+      const distinctLines = [...new Set(items.map((i) => i.machineLine).filter(Boolean))];
+      const batchLine = distinctLines.length === 1 ? distinctLines[0] : (items[0]?.machineLine || 'Stamping');
+
       const payload = {
         productionDate,
         shift: selectedShift,
-        line: items[0]?.machineLine || 'Stamping',
-        operatorName: user?.fullName || 'Budi Santoso',
-        username: user?.username || 'budi_qc',
-        createdBy: user?.username || 'budi_qc',
+        line: batchLine,
+        operatorName: user?.fullName || user?.username || 'Operator',
+        username: user?.username || 'operator',
+        createdBy: user?.username || 'operator',
         items: items.map((item) => ({
           machineName: item.machineName,
+          line: item.machineLine || batchLine,
           partId: Number(item.partId),
           partNumber: item.partNumber,
           partName: item.partName,
@@ -409,6 +569,8 @@ export const InputProductionScreen = ({ navigation }) => {
       };
 
       await productionService.saveBatchProduction(payload);
+
+      setConfirmModalVisible(false);
 
       Alert.alert(
         'Produksi Berhasil Dicatat!',
@@ -434,11 +596,10 @@ export const InputProductionScreen = ({ navigation }) => {
                   partName: parts[0]?.partName || 'Front Bracket A',
                   partLine: parts[0]?.line || 'Stamping',
                   processName: 'Blanking',
-                  processCategoryTab: 'Rekomendasi Lini',
                   isCustomProcess: false,
                   customProcess: '',
-                  targetQuantity: '4000',
-                  producedQuantity: '4000',
+                  targetQuantity: '',
+                  producedQuantity: '',
                 },
               ]);
             },
@@ -454,6 +615,7 @@ export const InputProductionScreen = ({ navigation }) => {
 
   const activeItemForPart = activeItemIndexForPart !== null ? items[activeItemIndexForPart] : null;
   const activeItemForMachine = activeItemIndexForMachine !== null ? items[activeItemIndexForMachine] : null;
+  const activeItemForProcess = activeItemIndexForProcess !== null ? items[activeItemIndexForProcess] : null;
 
   return (
     <KeyboardAvoidingView
@@ -483,7 +645,7 @@ export const InputProductionScreen = ({ navigation }) => {
                 INPUT PRODUKSI HARIAN
               </Text>
               <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-                {user?.fullName || 'Budi Santoso'} • {selectedShift}
+                {user?.fullName || user?.username || 'Operator'} • {selectedShift}
               </Text>
             </View>
           </View>
@@ -565,12 +727,12 @@ export const InputProductionScreen = ({ navigation }) => {
         {/* C. Form Item Produksi Mesin (Multi-Item Batch Support) */}
         <View style={styles.sectionBlock}>
           <View style={styles.itemsHeaderRow}>
-            <View>
-              <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginBottom: 0 }]} numberOfLines={1}>
                 DETAIL PRODUKSI PER MESIN ({items.length} MESIN)
               </Text>
-              <Text style={[styles.sectionHint, { color: colors.textMuted }]}>
-                Tersedia 29 Mesin & 121 Master Part PT Galaxy Mandiri Perkasa
+              <Text style={[styles.sectionHint, { color: colors.textMuted }]} numberOfLines={1}>
+                Tersedia 29 Mesin & 121 Master Part PT GMP
               </Text>
             </View>
             <Pressable
@@ -589,7 +751,7 @@ export const InputProductionScreen = ({ navigation }) => {
           </View>
 
           {items.map((item, index) => {
-            const filteredProcesses = getFilteredProcessesForItem(item);
+            const quickPickProcesses = getQuickPickProcessesForItem(item);
 
             return (
               <View
@@ -650,8 +812,8 @@ export const InputProductionScreen = ({ navigation }) => {
                     <View style={[styles.selectorIconCircle, { backgroundColor: colors.warning + '18' }]}>
                       <Cpu size={20} color={colors.warning} />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.triggerMainTitle, { color: colors.textPrimary }]}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={[styles.triggerMainTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {item.machineName}
                       </Text>
                       <Text style={[styles.triggerSubTitle, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -685,18 +847,20 @@ export const InputProductionScreen = ({ navigation }) => {
                     <View style={[styles.selectorIconCircle, { backgroundColor: colors.primary + '18' }]}>
                       <Package size={20} color={colors.primary} />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                         <View style={[styles.partNumberBadge, { backgroundColor: colors.primary }]}>
-                          <Text style={styles.partNumberBadgeText}>{item.partNumber}</Text>
+                          <Text style={styles.partNumberBadgeText} numberOfLines={1}>{item.partNumber}</Text>
                         </View>
-                        <Text style={[styles.partLineText, { color: colors.textMuted }]}>
-                          • Lini {item.partLine || 'Stamping'}
-                        </Text>
                       </View>
-                      <Text style={[styles.triggerMainTitle, { color: colors.textPrimary, marginTop: 4 }]}>
+                      <Text style={[styles.triggerMainTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {item.partName}
                       </Text>
+                      {item.partLine ? (
+                        <Text style={[styles.triggerSubTitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                          Lini: {item.partLine}
+                        </Text>
+                      ) : null}
                     </View>
                     <View style={[styles.triggerActionChip, { backgroundColor: colors.primary }]}>
                       <Text style={styles.triggerActionChipText}>Pilih Part</Text>
@@ -704,23 +868,27 @@ export const InputProductionScreen = ({ navigation }) => {
                   </Pressable>
                 </View>
 
-                {/* 4. PILIH PROSES OPERASIONAL MANUFAKTUR (16 Proses Komprehensif) */}
+                {/* 3. PILIH PROSES OPERASIONAL MANUFAKTUR */}
                 <View style={styles.fieldGroup}>
                   <View style={styles.processHeaderBar}>
-                    <Text style={[styles.subFieldLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
-                      3. PROSES OPERASIONAL MANUFAKTUR *
+                    <Text style={[styles.subFieldLabel, { color: colors.textSecondary, marginBottom: 0, flex: 1, marginRight: 8 }]} numberOfLines={1}>
+                      3. PROSES OPERASIONAL *
                     </Text>
                     <View
                       style={[
                         styles.currentProcessBadge,
-                        { backgroundColor: colors.aiAccent + '18', borderColor: colors.aiAccent },
+                        {
+                          backgroundColor: item.isCustomProcess ? colors.warning + '18' : colors.primary + '18',
+                          borderColor: item.isCustomProcess ? colors.warning : colors.primary,
+                        },
                       ]}
                     >
                       <Text
                         style={[
                           styles.currentProcessBadgeText,
-                          { color: colors.aiAccentLight || colors.aiAccent },
+                          { color: item.isCustomProcess ? colors.warning : colors.primary },
                         ]}
+                        numberOfLines={1}
                       >
                         {item.isCustomProcess && item.customProcess.trim()
                           ? `Kustom: ${item.customProcess.trim()}`
@@ -729,51 +897,16 @@ export const InputProductionScreen = ({ navigation }) => {
                     </View>
                   </View>
 
-                  {/* Filter Kategori Proses */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.processCategoryScroll}
-                  >
-                    {PROCESS_FILTER_TABS.map((catTab) => {
-                      const isCatActive = (item.processCategoryTab || 'Rekomendasi Lini') === catTab;
-                      return (
-                        <Pressable
-                          key={catTab}
-                          onPress={() => updateItemField(item.id, 'processCategoryTab', catTab)}
-                          style={[
-                            styles.processCatTab,
-                            {
-                              backgroundColor: isCatActive ? colors.aiAccent : colors.cardSubtle,
-                              borderColor: isCatActive ? colors.aiAccent : colors.border,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.processCatTabText,
-                              {
-                                color: isCatActive ? '#FFFFFF' : colors.textSecondary,
-                                fontWeight: isCatActive ? '800' : '600',
-                              },
-                            ]}
-                          >
-                            {catTab}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-
-                  {/* Chips Proses */}
+                  {/* Dynamic Quick-Picks (Auto-Adaptive per Lini Mesin) + Modal Trigger */}
                   <View style={styles.processChipsContainer}>
-                    {filteredProcesses.map((proc) => {
+                    {quickPickProcesses.map((proc) => {
                       const isSelected = !item.isCustomProcess && item.processName === proc.name;
                       return (
                         <Pressable
                           key={proc.name}
                           onPress={() => {
                             updateItemField(item.id, 'isCustomProcess', false);
+                            updateItemField(item.id, 'customProcess', '');
                             updateItemField(item.id, 'processName', proc.name);
                           }}
                           style={[
@@ -785,7 +918,7 @@ export const InputProductionScreen = ({ navigation }) => {
                           ]}
                         >
                           {isSelected && (
-                            <Check size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                            <Check size={14} color="#FFFFFF" style={{ marginRight: 5 }} />
                           )}
                           <Text
                             style={[
@@ -802,37 +935,66 @@ export const InputProductionScreen = ({ navigation }) => {
                       );
                     })}
 
-                    {/* Toggle Opsi Proses Kustom */}
-                    <Pressable
-                      onPress={() => updateItemField(item.id, 'isCustomProcess', !item.isCustomProcess)}
-                      style={[
-                        styles.processChipButton,
-                        {
-                          backgroundColor: item.isCustomProcess ? colors.warning : colors.cardSubtle,
-                          borderColor: item.isCustomProcess ? colors.warning : colors.border,
-                        },
-                      ]}
-                    >
-                      <Text
+                    {/* Jika sedang menggunakan proses kustom, tampilkan chip kustom aktif */}
+                    {item.isCustomProcess && (
+                      <View
                         style={[
-                          styles.processChipButtonText,
+                          styles.processChipButton,
                           {
-                            color: item.isCustomProcess ? '#000000' : colors.textSecondary,
-                            fontWeight: item.isCustomProcess ? '800' : '600',
+                            backgroundColor: colors.warning,
+                            borderColor: colors.warning,
                           },
                         ]}
                       >
-                        + Proses Kustom
+                        <Check size={14} color="#000000" style={{ marginRight: 5 }} />
+                        <Text
+                          style={[
+                            styles.processChipButtonText,
+                            {
+                              color: '#000000',
+                              fontWeight: '800',
+                            },
+                          ]}
+                        >
+                          {item.customProcess.trim() || 'Kustom'}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Tombol Praktis Buka Modal 16 Standar Proses & Opsi Kustom */}
+                    <Pressable
+                      onPress={() => handleOpenProcessModal(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Pilih proses lainnya untuk item ${index + 1}`}
+                      style={[
+                        styles.processChipButtonMore,
+                        {
+                          backgroundColor: colors.cardSubtle,
+                          borderColor: colors.primary + '80',
+                        },
+                      ]}
+                    >
+                      <SlidersHorizontal size={13} color={colors.primary} style={{ marginRight: 5 }} />
+                      <Text
+                        style={[
+                          styles.processChipButtonMoreText,
+                          { color: colors.primary },
+                        ]}
+                      >
+                        Semua & Kustom
                       </Text>
                     </Pressable>
                   </View>
 
-                  {/* Input Proses Kustom jika dipilih */}
+                  {/* Input Cepat Proses Kustom jika mode kustom aktif */}
                   {item.isCustomProcess && (
                     <View style={styles.customProcessInputWrapper}>
                       <TextInput
                         value={item.customProcess}
-                        onChangeText={(txt) => updateItemField(item.id, 'customProcess', txt)}
+                        onChangeText={(txt) => {
+                          updateItemField(item.id, 'customProcess', txt);
+                          updateItemField(item.id, 'processName', txt);
+                        }}
                         placeholder="Ketik nama proses khusus (misal: Chamfering, Tap Ulir...)"
                         placeholderTextColor={colors.textMuted}
                         style={[
@@ -848,10 +1010,10 @@ export const InputProductionScreen = ({ navigation }) => {
                   )}
                 </View>
 
-                {/* 5. Target Produksi vs Aktual Hasil (Side by Side) */}
-                <View style={styles.dualQtyRow}>
+                {/* 5. Target Produksi vs Hasil Aktual */}
+                <View style={styles.doubleQtyRow}>
                   {/* Target Produksi */}
-                  <View style={{ flex: 1, marginRight: 8 }}>
+                  <View style={styles.qtyColumnItem}>
                     <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
                       TARGET (PCS) *
                     </Text>
@@ -876,10 +1038,10 @@ export const InputProductionScreen = ({ navigation }) => {
                     </View>
                   </View>
 
-                  {/* Aktual Jadi */}
-                  <View style={{ flex: 1, marginLeft: 8 }}>
+                  {/* Hasil Aktual Mesin */}
+                  <View style={styles.qtyColumnItem}>
                     <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                      AKTUAL HASIL (PCS) *
+                      HASIL AKTUAL (PCS) *
                     </Text>
                     <View
                       style={[
@@ -894,7 +1056,7 @@ export const InputProductionScreen = ({ navigation }) => {
                           updateItemField(item.id, 'producedQuantity', sanitized);
                         }}
                         keyboardType="numeric"
-                        placeholder="4150"
+                        placeholder="4000"
                         placeholderTextColor={colors.textMuted}
                         style={[styles.bigNumericInput, { color: colors.primary }]}
                       />
@@ -903,7 +1065,7 @@ export const InputProductionScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                {/* 6. Live Achievement Card (Bento Meter Calculation) */}
+                {/* 6. Live Achievement Card */}
                 <AchievementMeter
                   target={Number(item.targetQuantity)}
                   actual={Number(item.producedQuantity)}
@@ -921,7 +1083,7 @@ export const InputProductionScreen = ({ navigation }) => {
             size="large"
             loading={submitting}
             disabled={submitting}
-            onPress={handleSubmit}
+            onPress={handlePressSubmit}
             style={styles.saveButton}
           />
           <Text style={[styles.saveFooterNotice, { color: colors.textMuted }]}>
@@ -1053,7 +1215,8 @@ export const InputProductionScreen = ({ navigation }) => {
               keyExtractor={(item) => String(item.id)}
               showsVerticalScrollIndicator={true}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 24 }}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
               ListEmptyComponent={
                 <View style={styles.emptySearchContainer}>
                   <AlertCircle size={28} color={colors.textMuted} style={{ marginBottom: 6 }} />
@@ -1205,40 +1368,43 @@ export const InputProductionScreen = ({ navigation }) => {
             </View>
 
             {/* Line Filter Tabs for Machines */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.modalFilterScroll}
-            >
-              {['Semua', 'Stamping', 'Bending', 'Welding', 'Painting'].map((filterLine) => {
-                const isActive = machineLineFilter === filterLine;
-                return (
-                  <Pressable
-                    key={filterLine}
-                    onPress={() => setMachineLineFilter(filterLine)}
-                    style={[
-                      styles.modalFilterPill,
-                      {
-                        backgroundColor: isActive ? colors.warning : colors.cardSubtle,
-                        borderColor: isActive ? colors.warning : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
+            <View style={styles.modalFilterWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.modalFilterScroll}
+              >
+                {machineLineTabs.map((tabItem) => {
+                  const filterLine = tabItem.name;
+                  const isActive = machineLineFilter === filterLine;
+                  return (
+                    <Pressable
+                      key={filterLine}
+                      onPress={() => setMachineLineFilter(filterLine)}
                       style={[
-                        styles.modalFilterPillText,
+                        styles.modalFilterPill,
                         {
-                          color: isActive ? '#000000' : colors.textSecondary,
-                          fontWeight: isActive ? '800' : '600',
+                          backgroundColor: isActive ? colors.warning : colors.cardSubtle,
+                          borderColor: isActive ? colors.warning : colors.border,
                         },
                       ]}
                     >
-                      {filterLine}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+                      <Text
+                        style={[
+                          styles.modalFilterPillText,
+                          {
+                            color: isActive ? '#000000' : colors.textSecondary,
+                            fontWeight: isActive ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {filterLine} ({tabItem.count})
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
 
             {/* List of 29 Machines */}
             <FlatList
@@ -1246,7 +1412,8 @@ export const InputProductionScreen = ({ navigation }) => {
               keyExtractor={(item) => String(item.id)}
               showsVerticalScrollIndicator={true}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 24 }}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
               ListEmptyComponent={
                 <View style={styles.emptySearchContainer}>
                   <AlertCircle size={28} color={colors.textMuted} style={{ marginBottom: 6 }} />
@@ -1318,6 +1485,272 @@ export const InputProductionScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: SELECTOR PROSES OPERASIONAL (16 STANDAR & KUSTOM)                */}
+      {/* ========================================================================= */}
+      <Modal
+        visible={processModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setProcessModalVisible(false)}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: colors.backdrop }]}>
+          <View
+            style={[
+              styles.modalSheetContainer,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            {/* Sheet Handle */}
+            <View style={styles.sheetHandleContainer}>
+              <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            </View>
+
+            {/* Modal Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View
+                  style={[styles.modalHeaderBadge, { backgroundColor: colors.primary + '18' }]}
+                >
+                  <Layers size={20} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]}>
+                    PILIH PROSES OPERASIONAL
+                  </Text>
+                  <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                    16 Standar Manufaktur & Opsi Kustom
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                onPress={() => setProcessModalVisible(false)}
+                hitSlop={12}
+                style={[styles.modalCloseBtn, { backgroundColor: colors.cardSubtle }]}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            {/* Currently Active Process Indicator */}
+            {activeItemForProcess && (
+              <View
+                style={[
+                  styles.activeIndicatorBanner,
+                  {
+                    backgroundColor: activeItemForProcess.isCustomProcess ? colors.warning + '12' : colors.primary + '12',
+                    borderColor: activeItemForProcess.isCustomProcess ? colors.warning + '40' : colors.primary + '40',
+                  },
+                ]}
+              >
+                <CheckCircle2
+                  size={16}
+                  color={activeItemForProcess.isCustomProcess ? colors.warning : colors.primary}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={[
+                    styles.activeIndicatorText,
+                    { color: activeItemForProcess.isCustomProcess ? colors.warning : colors.primary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Proses Saat Ini: {activeItemForProcess.isCustomProcess && activeItemForProcess.customProcess.trim()
+                    ? `Kustom: ${activeItemForProcess.customProcess.trim()}`
+                    : activeItemForProcess.processName}
+                </Text>
+              </View>
+            )}
+
+            {/* Custom Process Box */}
+            <View style={[styles.modalCustomCard, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                <Sparkles size={14} color={colors.warning} style={{ marginRight: 6 }} />
+                <Text style={[styles.modalCustomCardTitle, { color: colors.textPrimary }]}>
+                  Gunakan Proses Khusus / Kustom:
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <TextInput
+                  value={customProcessTemp}
+                  onChangeText={setCustomProcessTemp}
+                  placeholder="Ketik nama proses khusus (mis: Chamfering...)"
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.modalCustomInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary, flex: 1 }]}
+                />
+                <Pressable
+                  onPress={() => handleApplyCustomProcess(customProcessTemp)}
+                  disabled={!customProcessTemp.trim()}
+                  style={[
+                    styles.modalCustomApplyBtn,
+                    {
+                      backgroundColor: customProcessTemp.trim() ? colors.warning : colors.cardSubtle,
+                      opacity: customProcessTemp.trim() ? 1 : 0.5,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.modalCustomApplyBtnText, { color: customProcessTemp.trim() ? '#000000' : colors.textMuted }]}>
+                    Terapkan
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Search Bar */}
+            <View
+              style={[
+                styles.modalSearchBar,
+                { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+              ]}
+            >
+              <Search size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <TextInput
+                value={processSearchQuery}
+                onChangeText={setProcessSearchQuery}
+                placeholder="Cari proses standar (Blanking, Spot, ED Coating...)"
+                placeholderTextColor={colors.textMuted}
+                style={[styles.modalSearchInput, { color: colors.textPrimary }]}
+              />
+              {processSearchQuery.length > 0 && (
+                <Pressable onPress={() => setProcessSearchQuery('')} hitSlop={8}>
+                  <X size={16} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+
+            {/* Category Filter Tabs */}
+            <View style={styles.modalFilterWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.modalFilterScroll}
+              >
+                {processCategoryTabs.map((tabItem) => {
+                  const filterCat = tabItem.name;
+                  const isActive = processCategoryFilter === filterCat;
+                  return (
+                    <Pressable
+                      key={filterCat}
+                      onPress={() => setProcessCategoryFilter(filterCat)}
+                      style={[
+                        styles.modalFilterPill,
+                        {
+                          backgroundColor: isActive ? colors.primary : colors.cardSubtle,
+                          borderColor: isActive ? colors.primary : colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.modalFilterPillText,
+                          {
+                            color: isActive ? '#FFFFFF' : colors.textSecondary,
+                            fontWeight: isActive ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {filterCat} ({tabItem.count})
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* List of 16 Standard Processes */}
+            <FlatList
+              data={modalFilteredProcesses}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
+              ListEmptyComponent={
+                <View style={styles.emptySearchContainer}>
+                  <AlertCircle size={28} color={colors.textMuted} style={{ marginBottom: 6 }} />
+                  <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
+                    Tidak ditemukan proses sesuai kata kunci "{processSearchQuery}"
+                  </Text>
+                </View>
+              }
+              renderItem={({ item: proc }) => {
+                const isSelected = activeItemForProcess && !activeItemForProcess.isCustomProcess && activeItemForProcess.processName === proc.name;
+                return (
+                  <Pressable
+                    onPress={() => handleSelectProcess(proc)}
+                    style={({ pressed }) => [
+                      styles.partListItem,
+                      {
+                        borderBottomColor: colors.border,
+                        backgroundColor: isSelected ? colors.primary + '18' : 'transparent',
+                      },
+                      pressed && { backgroundColor: colors.cardSubtle },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[styles.machineListName, { color: colors.textPrimary, marginRight: 8 }]}>
+                          {proc.name}
+                        </Text>
+                        <View
+                          style={[
+                            styles.processCategoryBadge,
+                            {
+                              backgroundColor:
+                                proc.category === 'Welding'
+                                  ? colors.critical + '18'
+                                  : proc.category.includes('Finishing')
+                                  ? colors.warning + '18'
+                                  : colors.primary + '18',
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.processCategoryBadgeText,
+                              {
+                                color:
+                                  proc.category === 'Welding'
+                                    ? colors.critical
+                                    : proc.category.includes('Finishing')
+                                    ? colors.warning
+                                    : colors.primary,
+                              },
+                            ]}
+                          >
+                            {proc.category}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.machineListSubtitle, { color: colors.textSecondary, marginTop: 4 }]}>
+                        {proc.desc}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <CheckCircle2 size={20} color={colors.primary} style={{ marginLeft: 12 }} />
+                    )}
+                  </Pressable>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL KONFIRMASI INPUT DATA PRODUKSI */}
+      <ConfirmProductionModal
+        visible={confirmModalVisible}
+        onClose={() => setConfirmModalVisible(false)}
+        onConfirm={handleConfirmSubmit}
+        submitting={submitting}
+        data={{
+          productionDate,
+          selectedShift,
+          operatorName: user?.fullName || user?.username || 'Operator',
+          items,
+        }}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -1328,7 +1761,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingTop: 12,
+    paddingBottom: 64,
   },
   headerContextContainer: {
     marginBottom: 16,
@@ -1482,7 +1916,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   subFieldLabel: {
-    fontSize: typography.sizes.micro - 1,
+    fontSize: typography.sizes.micro,
     fontWeight: '800',
     letterSpacing: 0.4,
     marginBottom: 6,
@@ -1504,11 +1938,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   triggerMainTitle: {
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.cardHeading,
     fontWeight: '800',
   },
   triggerSubTitle: {
-    fontSize: typography.sizes.caption - 1,
+    fontSize: typography.sizes.caption,
     marginTop: 2,
   },
   triggerActionChip: {
@@ -1523,14 +1957,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   partNumberBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
     marginRight: 6,
   },
   partNumberBadgeText: {
     color: '#FFFFFF',
-    fontSize: typography.sizes.micro - 1,
+    fontSize: typography.sizes.micro,
     fontWeight: '800',
   },
   partLineText: {
@@ -1548,28 +1982,16 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
     borderWidth: 1,
+    maxWidth: '55%',
   },
   currentProcessBadgeText: {
     fontSize: typography.sizes.micro,
     fontWeight: '800',
   },
-  processCategoryScroll: {
-    gap: 6,
-    paddingBottom: 6,
-  },
-  processCatTab: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  processCatTabText: {
-    fontSize: typography.sizes.micro,
-  },
   processChipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
     marginTop: 4,
   },
   processChipButton: {
@@ -1577,38 +1999,98 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    minHeight: 38,
   },
   processChipButtonText: {
     fontSize: typography.sizes.caption,
+    fontWeight: '700',
+  },
+  processChipButtonMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    minHeight: 38,
+  },
+  processChipButtonMoreText: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '800',
   },
   customProcessInputWrapper: {
-    marginTop: 8,
+    marginTop: 10,
   },
   customProcessInput: {
-    height: 44,
+    height: 48,
     borderRadius: 10,
     borderWidth: 1.5,
     paddingHorizontal: 12,
     fontSize: typography.sizes.body,
+    fontWeight: '600',
   },
-  dualQtyRow: {
+  modalCustomCard: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  modalCustomCardTitle: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '800',
+  },
+  modalCustomInput: {
+    height: 42,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: typography.sizes.caption,
+    fontWeight: '600',
+  },
+  modalCustomApplyBtn: {
+    paddingHorizontal: 14,
+    height: 42,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCustomApplyBtnText: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '800',
+  },
+  processCategoryBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  processCategoryBadgeText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '800',
+  },
+  doubleQtyRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     marginVertical: 4,
+    gap: 12,
+  },
+  qtyColumnItem: {
+    flex: 1,
   },
   qtyInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
+    height: 48,
     borderRadius: 12,
     borderWidth: 1.5,
     paddingHorizontal: 12,
   },
   bigNumericInput: {
     flex: 1,
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 20,
+    fontWeight: '800',
   },
   unitLabel: {
     fontSize: typography.sizes.caption,
@@ -1621,6 +2103,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     width: '100%',
+    minHeight: 52,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
@@ -1713,28 +2196,45 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.body,
     fontWeight: '600',
   },
+  modalFilterWrapper: {
+    height: 44,
+    marginBottom: 10,
+    flexShrink: 0,
+    justifyContent: 'center',
+  },
   modalFilterRow: {
     flexDirection: 'row',
+    height: 44,
+    alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
+    flexShrink: 0,
   },
   modalFilterScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 2,
     gap: 8,
-    paddingBottom: 12,
   },
   modalFilterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    height: 38,
+    paddingHorizontal: 16,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
   modalFilterPillText: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.micro,
+    fontWeight: '700',
   },
   emptySearchContainer: {
+    flex: 1,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 180,
   },
   emptySearchText: {
     fontSize: typography.sizes.caption,

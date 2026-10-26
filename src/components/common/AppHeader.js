@@ -11,8 +11,6 @@ import {
   Sun,
   Moon,
   Wifi,
-  KeyRound,
-  LogOut,
   ChevronDown,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -33,7 +31,7 @@ import { OperatorProfileModal } from './OperatorProfileModal';
  */
 export const AppHeader = ({ isOffline = false }) => {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
 
   // Modal States
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
@@ -112,9 +110,11 @@ export const AppHeader = ({ isOffline = false }) => {
             pressed && { opacity: 0.8 },
           ]}
         >
-          {/* Blue 'QC' Badge matching industrial plant floor specification */}
+          {/* Avatar Badge matching industrial plant floor specification */}
           <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.logoBadgeText}>QC</Text>
+            <Text style={styles.logoBadgeText}>
+              {isOperatorProduksi ? 'OP' : isAdmin ? 'AD' : 'QC'}
+            </Text>
           </View>
 
           <View style={styles.titleColumn}>
@@ -123,7 +123,7 @@ export const AppHeader = ({ isOffline = false }) => {
                 style={[styles.companyName, { color: colors.textPrimary }]}
                 numberOfLines={1}
               >
-                PT GALAXY MANDIRI
+                PT GALAXY MANDIRI PERKASA
               </Text>
             </View>
             <View style={styles.metaRow}>
@@ -131,14 +131,19 @@ export const AppHeader = ({ isOffline = false }) => {
                 style={[styles.operatorText, { color: colors.textSecondary }]}
                 numberOfLines={1}
               >
-                {user?.fullName || 'Budi Santoso'} • {user?.role || 'QC Inspector'}
+                {user?.fullName || user?.username || 'User'} •{' '}
+                {isOperatorProduksi
+                  ? 'Operator Produksi'
+                  : isStaffQc
+                  ? 'Staff QC'
+                  : user?.role || 'QC Inspector'}
               </Text>
               <ChevronDown size={13} color={colors.textMuted} style={{ marginLeft: 2 }} />
             </View>
           </View>
         </Pressable>
 
-        {/* Right Actions: Status Ticker, Change Password, Logout, Theme */}
+        {/* Right Actions: Status Ticker & Theme Switcher */}
         <View style={styles.rightActions}>
           {/* Breathing Status Pill Badge */}
           <View
@@ -166,51 +171,7 @@ export const AppHeader = ({ isOffline = false }) => {
             </Text>
           </View>
 
-          {/* 1. Tombol Ubah Kata Sandi (Change Password) */}
-          <Pressable
-            onPress={() => setChangePasswordVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Ubah Kata Sandi Akun QC"
-            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-            style={({ pressed }) => [
-              styles.actionIconButton,
-              {
-                backgroundColor: colors.cardSubtle,
-                borderColor: colors.border,
-              },
-              pressed && {
-                opacity: 0.75,
-                transform: [{ scale: 0.92 }],
-                backgroundColor: colors.primary + '20',
-              },
-            ]}
-          >
-            <KeyRound size={17} color={colors.primary} />
-          </Pressable>
-
-          {/* 2. Tombol Logout (Keluar Sesi) */}
-          <Pressable
-            onPress={() => setLogoutConfirmVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Logout Sesi QC"
-            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-            style={({ pressed }) => [
-              styles.actionIconButton,
-              {
-                backgroundColor: colors.critical + '14',
-                borderColor: colors.critical + '44',
-              },
-              pressed && {
-                opacity: 0.75,
-                transform: [{ scale: 0.92 }],
-                backgroundColor: colors.critical + '30',
-              },
-            ]}
-          >
-            <LogOut size={17} color={colors.critical} />
-          </Pressable>
-
-          {/* 3. Theme Switcher Button */}
+          {/* Theme Switcher Button */}
           <Pressable
             onPress={toggleTheme}
             accessibilityRole="button"
@@ -291,12 +252,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   logoBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 8,
     elevation: 3,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
@@ -306,7 +267,7 @@ const styles = StyleSheet.create({
   logoBadgeText: {
     color: '#FFFFFF',
     fontWeight: '900',
-    fontSize: 15,
+    fontSize: 14,
     letterSpacing: 0.5,
   },
   titleColumn: {
@@ -318,9 +279,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   companyName: {
-    fontSize: typography.sizes.cardHeading - 1,
+    fontSize: 13.5,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.2,
   },
   metaRow: {
     flexDirection: 'row',
@@ -328,19 +289,20 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   operatorText: {
-    fontSize: typography.sizes.caption - 0.5,
+    fontSize: typography.sizes.micro,
     fontWeight: '500',
+    flexShrink: 1,
   },
   rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   statusTicker: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -348,17 +310,17 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 5,
+    marginRight: 4,
   },
   statusText: {
-    fontSize: typography.sizes.micro - 0.5,
+    fontSize: 10.5,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   actionIconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 9,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',

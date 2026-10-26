@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma Artboard Export - QC Mobile Operator Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0B0F17;
+      --card-dark: #111827;
+      --card-subtle-dark: #1E293B;
+      --border-dark: rgba(255, 255, 255, 0.12);
+      --text-primary-dark: #F8FAFC;
+      --text-secondary-dark: #94A3B8;
+      --text-muted-dark: #64748B;
+
+      --primary: #2563EB;
+      --primary-gradient: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%);
+      --ai-gradient: linear-gradient(135deg, #2563EB 0%, #6366F1 50%, #7C3AED 100%);
+      --success: #10B981;
+      --critical: #EF4444;
+      --warning: #F59E0B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #05080E;
+      color: #F8FAFC;
+      padding: 40px;
+      overflow-x: auto;
+    }
+
+    /* Canvas Header */
+    .canvas-header {
+      margin-bottom: 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 24px;
+    }
+
+    .canvas-title h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+    }
+
+    .canvas-title p {
+      font-size: 14px;
+      color: #94A3B8;
+      margin-top: 6px;
+    }
+
+    .figma-badge {
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.4);
+      color: #60A5FA;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Artboards Grid Layout */
+    .artboards-row {
+      display: flex;
+      gap: 36px;
+      align-items: flex-start;
+      flex-wrap: nowrap;
+    }
+
+    /* Individual Frame Container */
+    .device-artboard {
+      flex: 0 0 390px;
+      width: 390px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .artboard-tag {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .artboard-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #F8FAFC;
+      letter-spacing: 0.2px;
+    }
+
+    .artboard-role {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94A3B8;
+    }
+
+    /* Mobile Screen Mockup */
+    .mobile-screen {
+      width: 390px;
+      min-height: 844px;
+      background: var(--bg-dark);
+      border-radius: 40px;
+      border: 4px solid #1E293B;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Mobile Status Bar */
+    .status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #F8FAFC;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* Screen App Header */
+    .app-header {
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-dark);
+      background: var(--card-dark);
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #FFFFFF;
+    }
+
+    .header-info-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-primary-dark);
+    }
+
+    .header-info-role {
+      font-size: 12px;
+      color: var(--text-secondary-dark);
+    }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--success);
+    }
+
+    /* Screen Scrollable Body */
+    .screen-body {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    /* KPI Bento Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .kpi-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 118px;
+    }
+
+    .kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .kpi-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+    }
+
+    .kpi-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary-dark);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .kpi-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin: 4px 0;
+    }
+
+    .kpi-val {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text-primary-dark);
+      letter-spacing: -0.5px;
+      line-height: 34px;
+    }
+
+    .kpi-unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary-dark);
+    }
+
+    .kpi-pill {
+      align-self: flex-start;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    /* Time Filter Segmented Tabs */
+    .segmented-filter {
+      background: var(--card-dark);
+      border: 1.5px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 4px;
+      display: flex;
+      gap: 6px;
+      min-height: 52px;
+    }
+
+    .seg-pill {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      padding: 6px 0;
+    }
+
+    .seg-pill.active {
+      background: var(--primary);
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+    }
+
+    .seg-label {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+
+    .seg-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 2px;
+    }
+
+    .seg-pill.inactive .seg-label {
+      color: var(--text-primary-dark);
+      font-weight: 600;
+    }
+
+    .seg-pill.inactive .seg-sub {
+      color: var(--text-muted-dark);
+    }
+
+    /* Card Component Base */
+    .bento-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary-dark);
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary-dark);
+      margin-top: 2px;
+    }
+
+    /* Status Pill */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status-badge.success {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--success);
+    }
+
+    .status-badge.critical {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--critical);
+    }
+
+    /* SPC Chips Row */
+    .pareto-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .pareto-header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-primary-dark);
+      letter-spacing: 0.5px;
+    }
+
+    .pareto-total-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary-dark);
+      border: 1px solid var(--border-dark);
+    }
+
+    .chips-scroll-mock {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .defect-card-mock {
+      min-width: 130px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1.5px solid;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .defect-card-mock.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 3px 8px rgba(37, 99, 235, 0.4);
+    }
+
+    .defect-card-mock.inactive {
+      background: var(--card-subtle-dark);
+      border-color: var(--border-dark);
+      color: var(--text-primary-dark);
+    }
+
+    .card-mock-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .rank-pill-mini {
+      font-size: 10px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+
+    .defect-mock-title {
+      font-size: 13px;
+      font-weight: 800;
+      flex: 1;
+      margin-left: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .defect-mock-metrics {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .micro-track-mock {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .micro-fill-mock {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .drilldown-banner-mock {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+      border: 1px solid;
+    }
+
+    /* Limits Bento Bar */
+    .limits-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .limit-pill {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1.5px solid;
+      min-height: 42px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    /* 4 Column Machine Metrics */
+    .metrics-4col {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border-dark);
+      padding-top: 10px;
+      text-align: center;
+    }
+
+    .metric-col-item label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary-dark);
+      margin-bottom: 4px;
+    }
+
+    .metric-col-item .val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary-dark);
+    }
+
+    .metric-col-item .unit {
+      font-size: 11px;
+      color: var(--text-secondary-dark);
+    }
+
+    /* Progress Bar */
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: #1E293B;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    /* Buttons */
+    .btn-large {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 12px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #FFFFFF;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--primary-gradient); }
+    .btn-ai { background: var(--ai-gradient); }
+
+    /* Tactile Stepper Component */
+    .stepper-box {
+      border: 1.5px solid var(--border-dark);
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 68px;
+      background: var(--card-dark);
+    }
+
+    .step-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      border: 1.5px solid var(--border-dark);
+      background: var(--card-subtle-dark);
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-number {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--text-primary-dark);
+    }
+
+    /* Bottom Navigation Bar Mockup */
+    .bottom-tabs {
+      height: 64px;
+      background: var(--card-dark);
+      border-top: 1px solid var(--border-dark);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary-dark);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tab-item.active {
+      color: var(--primary);
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Canvas Banner -->
+  <div class="canvas-header">
+    <div class="canvas-title">
+      <h1>QC Mobile Operator — Figma Design System Artboards</h1>
+      <p>PT Galaxy Mandiri Perkasa • Metal Stamping & Quality Control Handheld App • 8 Master Screens</p>
+    </div>
+    <div class="figma-badge">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z"></path>
+        <path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z"></path>
+        <path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z"></path>
+        <path d="M5 19.5A3.5 3.5 0 0 1 8.5 16H12v3.5a3.5 3.5 0 1 1-7 0z"></path>
+        <path d="M5 12.5A3.5 3.5 0 0 1 8.5 9H12v7H8.5A3.5 3.5 0 0 1 5 12.5z"></path>
+      </svg>
+      Importable to Figma via "html.to.design" Plugin
+    </div>
+  </div>
+
+  <!-- Row of 8 Mobile Artboards -->
+  <div class="artboards-row">
+
+    <!-- ==================== ARTBOARD 1: LOGIN SCREEN ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">01 • Login Screen</span>
+        <span class="artboard-role">All Users</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>07:30</span>
+          <div class="status-icons">LTE • 98%</div>
+        </div>
+        <div class="screen-body" style="justify-content: center; padding: 24px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="width: 58px; height: 58px; border-radius: 18px; background: var(--primary); margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900;">GMP</div>
+            <h2 style="font-size: 20px; font-weight: 800; color: #FFFFFF;">PT Galaxy Mandiri Perkasa</h2>
+            <p style="font-size: 13px; color: var(--text-secondary-dark); margin-top: 4px;">QC & Production Handheld Monitoring</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary-dark); margin-bottom: 6px; display: block;">USERNAME OPERATOR / QC</label>
+              <div style="height: 50px; background: var(--card-dark); border: 1.5px solid var(--border-dark); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #FFFFFF;">operator.stamping</div>
+            </div>
+
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary-dark); margin-bottom: 6px; display: block;">KATA SANDI</label>
+              <div style="height: 50px; background: var(--card-dark); border: 1.5px solid var(--border-dark); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #FFFFFF;">
+                <span>••••••••••••</span>
+                <span style="font-size: 12px; color: var(--primary); font-weight: 700;">Lihat</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+              <button class="btn-large btn-primary">MASUK SISTEM</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 12px;">
+              <span style="font-size: 12px; color: var(--text-muted-dark);">Mode Offline Siap Aktif • Shift 1 Pagi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 2: DASHBOARD (STAFF QC VIEW) ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">02 • Dashboard (QC View)</span>
+        <span class="artboard-role">Staff QC</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>09:42</span>
+          <div class="status-icons">5G • 88%</div>
+        </div>
+        <div class="app-header">
+          <div class="header-user">
+            <div class="header-avatar">QC</div>
+            <div>
+              <div class="header-info-name">Thariq Akbar</div>
+              <div class="header-info-role">Staff QC Inspection</div>
+            </div>
+          </div>
+          <div class="header-badge">● Online</div>
+        </div>
+        <div class="screen-body">
+          <!-- Bento Grid 2x2 -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-title-wrap">
+                  <div class="kpi-dot" style="background: var(--primary);"></div>
+                  <span class="kpi-title">TOTAL PROD</span>
+                </div>
+              </div>
+              <div class="kpi-val-row">
+                <span class="kpi-val">12.450</span>
+                <span class="kpi-unit">pcs</span>
+              </div>
+              <div class="kpi-pill" style="background: rgba(37,99,235,0.1); border-color: rgba(37,99,235,0.3); color: var(--primary);">Gross Cetak</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-title-wrap">
+                  <div class="kpi-dot" style="background: var(--critical);"></div>
+                  <span class="kpi-title">TEMUAN NG</span>
+                </div>
+              </div>
+              <div class="kpi-val-row">
+                <span class="kpi-val">128</span>
+                <span class="kpi-unit">pcs</span>
+              </div>
+              <div class="kpi-pill" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--critical);">Tolak Mutu</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-title-wrap">
+                  <div class="kpi-dot" style="background: var(--success);"></div>
+                  <span class="kpi-title">DEFECT RATE</span>
+                </div>
+              </div>
+              <div class="kpi-val-row">
+                <span class="kpi-val">1.03%</span>
+              </div>
+              <div class="kpi-pill" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: var(--success);">Batas: 2.0%</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <div class="kpi-title-wrap">
+                  <div class="kpi-dot" style="background: var(--warning);"></div>
+                  <span class="kpi-title">KOMPLAIN</span>
+                </div>
+              </div>
+              <div class="kpi-val-row">
+                <span class="kpi-val">0</span>
+                <span class="kpi-unit">tiket</span>
+              </div>
+              <div class="kpi-pill" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: var(--success);">Zero Defect</div>
+            </div>
+          </div>
+
+          <!-- Time Filter -->
+          <div class="segmented-filter">
+            <div class="seg-pill active">
+              <span class="seg-label">Daily</span>
+              <span class="seg-sub">(Hari Ini)</span>
+            </div>
+            <div class="seg-pill inactive">
+              <span class="seg-label">Weekly</span>
+              <span class="seg-sub">(7 Hari)</span>
+            </div>
+            <div class="seg-pill inactive">
+              <span class="seg-label">Custom</span>
+              <span class="seg-sub">(Date-to-Date)</span>
+            </div>
+          </div>
+
+          <!-- SPC p-Chart Card -->
+          <div class="bento-card">
+            <div class="card-header-row">
+              <div>
+                <div class="card-title">SPC CONTROL CHART (p-CHART)</div>
+                <div class="card-subtitle">Proporsi Cacat & Batas 3-Sigma • Hari Ini</div>
+              </div>
+              <div class="status-badge success">IN-CONTROL</div>
+            </div>
+
+            <!-- Top 5 Pareto Defect Header Strip -->
+            <div class="pareto-header-row">
+              <div class="pareto-header-left">
+                <span>📊 TOP 5 PARETO CACAT</span>
+                <span class="pareto-total-tag">146 pcs</span>
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted-dark); font-weight: 600;">Geser & Pilih →</span>
+            </div>
+
+            <!-- Top 5 Defect Dynamic Cards -->
+            <div class="chips-scroll-mock">
+              <!-- Master: Semua Cacat (Active) -->
+              <div class="defect-card-mock active">
+                <div class="card-mock-top">
+                  <span class="rank-pill-mini" style="background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); color: #FFF;">ALL</span>
+                  <span class="defect-mock-title">Semua Cacat</span>
+                  <span style="font-size: 11px;">✓</span>
+                </div>
+                <div class="defect-mock-metrics">
+                  <span>146 pcs</span>
+                  <span style="color: #E0E7FF; font-size: 11px;">• 100% Total</span>
+                </div>
+                <div class="micro-track-mock">
+                  <div class="micro-fill-mock" style="width: 100%; background: #FFFFFF;"></div>
+                </div>
+              </div>
+
+              <!-- #1 Defect Card -->
+              <div class="defect-card-mock inactive" style="border-color: rgba(239, 68, 68, 0.45);">
+                <div class="card-mock-top">
+                  <span class="rank-pill-mini" style="background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.45); color: #FCA5A5;">#1 UTAMA</span>
+                  <span class="defect-mock-title">Baret</span>
+                </div>
+                <div class="defect-mock-metrics">
+                  <span>94 pcs</span>
+                  <span style="color: #EF4444; font-size: 11px;">• 64.4%</span>
+                </div>
+                <div class="micro-track-mock">
+                  <div class="micro-fill-mock" style="width: 64.4%; background: #EF4444;"></div>
+                </div>
+              </div>
+
+              <!-- #2 Defect Card -->
+              <div class="defect-card-mock inactive" style="border-color: rgba(245, 158, 11, 0.45);">
+                <div class="card-mock-top">
+                  <span class="rank-pill-mini" style="background: rgba(245,158,11,0.22); border-color: rgba(245,158,11,0.45); color: #FCD34D;">#2 WASPADA</span>
+                  <span class="defect-mock-title">Setting</span>
+                </div>
+                <div class="defect-mock-metrics">
+                  <span>40 pcs</span>
+                  <span style="color: #F59E0B; font-size: 11px;">• 27.4%</span>
+                </div>
+                <div class="micro-track-mock">
+                  <div class="micro-fill-mock" style="width: 27.4%; background: #F59E0B;"></div>
+                </div>
+              </div>
+
+              <!-- #3 Defect Card -->
+              <div class="defect-card-mock inactive" style="border-color: rgba(14, 165, 233, 0.45);">
+                <div class="card-mock-top">
+                  <span class="rank-pill-mini" style="background: rgba(14,165,233,0.22); border-color: rgba(14,165,233,0.45); color: #7DD3FC;">#3</span>
+                  <span class="defect-mock-title">Spatter</span>
+                </div>
+                <div class="defect-mock-metrics">
+                  <span>12 pcs</span>
+                  <span style="color: #0EA5E9; font-size: 11px;">• 8.2%</span>
+                </div>
+                <div class="micro-track-mock">
+                  <div class="micro-fill-mock" style="width: 15%; background: #0EA5E9;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Active Context Banner -->
+            <div class="drilldown-banner-mock" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); color: var(--text-primary-dark);">
+              <span>📊 Analisis: <b style="color: var(--primary);">Semua Jenis Cacat</b> (146 pcs)</span>
+              <span style="background: rgba(59, 130, 246, 0.2); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 800;">12 Mesin</span>
+            </div>
+
+            <!-- Limits Bar -->
+            <div class="limits-bar">
+              <div class="limit-pill" style="border-color: rgba(239,68,68,0.35); color: var(--critical);">UCL: 2.34%</div>
+              <div class="limit-pill" style="border-color: rgba(37,99,235,0.35); color: var(--primary);">CL: 1.03%</div>
+              <div class="limit-pill" style="border-color: rgba(16,185,129,0.35); color: var(--success);">LCL: 0.00%</div>
+            </div>
+
+            <!-- SVG Line Chart Mockup -->
+            <div style="height: 70px; background: rgba(0,0,0,0.2); border-radius: 8px; display: flex; align-items: flex-end; padding: 8px 12px;">
+              <svg width="100%" height="50" viewBox="0 0 320 50">
+                <line x1="0" y1="10" x2="320" y2="10" stroke="#EF4444" stroke-dasharray="4,4" stroke-width="1.5"></line>
+                <line x1="0" y1="28" x2="320" y2="28" stroke="#2563EB" stroke-width="1.5"></line>
+                <path d="M 10 32 L 60 25 L 120 30 L 180 18 L 240 24 L 300 20" fill="none" stroke="#60A5FA" stroke-width="2.5"></path>
+                <circle cx="180" cy="18" r="4" fill="#3B82F6"></circle>
+                <circle cx="300" cy="20" r="4" fill="#3B82F6"></circle>
+              </svg>
+            </div>
+          </div>
+
+          <!-- AI Action Button -->
+          <button class="btn-large btn-ai">⚡ Rekomendasi Solusi AI (Random Forest)</button>
+        </div>
+        <div class="bottom-tabs">
+          <div class="tab-item active"><span>Dashboard</span></div>
+          <div class="tab-item"><span>Input Cacat</span></div>
+          <div class="tab-item"><span>Riwayat QC</span></div>
+          <div class="tab-item"><span>AI Chat</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 3: DASHBOARD (OPERATOR VIEW) ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">03 • Dashboard (Operator View)</span>
+        <span class="artboard-role">Operator Produksi</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>11:15</span>
+          <div class="status-icons">Wi-Fi • 94%</div>
+        </div>
+        <div class="app-header">
+          <div class="header-user">
+            <div class="header-avatar" style="background: #4F46E5;">OP</div>
+            <div>
+              <div class="header-info-name">Budi Santoso</div>
+              <div class="header-info-role">Operator Stamping Line 01</div>
+            </div>
+          </div>
+          <div class="header-badge">● Shift 1</div>
+        </div>
+        <div class="screen-body">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span class="kpi-title">TARGET SHIFT</span>
+              </div>
+              <div class="kpi-val-row">
+                <span class="kpi-val">3.000</span>
+                <span class="kpi-unit">pcs</span>
+              </div>
+              <div class="kpi-pill" style="background: rgba(37,99,235,0.1); border-color: rgba(37,99,235,0.3); color: var(--primary);">Mesin 01</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span class="kpi-title">PRODUK BAGUS</span>
+              </div>
+              <div class="kpi-val-row">
+                <span class="kpi-val">2.850</span>
+                <span class="kpi-unit">pcs</span>
+              </div>
+              <div class="kpi-pill" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: var(--success);">95% Efisiensi</div>
+            </div>
+          </div>
+
+          <!-- Machine Status Card -->
+          <div class="bento-card">
+            <div class="card-header-row">
+              <div>
+                <div class="card-title">Amada Stamping Press 01</div>
+                <div class="card-subtitle">Line 1 • Blanking Plat S50C</div>
+              </div>
+              <div class="status-badge success">On Target</div>
+            </div>
+
+            <div class="metrics-4col">
+              <div class="metric-col-item">
+                <label>Target</label>
+                <div class="val">3.000 <span class="unit">pcs</span></div>
+              </div>
+              <div class="metric-col-item">
+                <label>Gross</label>
+                <div class="val">2.875 <span class="unit">pcs</span></div>
+              </div>
+              <div class="metric-col-item">
+                <label>Cacat NG</label>
+                <div class="val">-25 <span class="unit">pcs</span></div>
+              </div>
+              <div class="metric-col-item">
+                <label>Net OK</label>
+                <div class="val">2.850 <span class="unit">pcs</span></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 95%; background: var(--success);"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary-dark);">
+                <span>95% Efisiensi Bersih</span>
+                <span>Sisa: 150 pcs</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action -->
+          <button class="btn-large btn-primary">+ CATAT HASIL PRODUKSI BATCH</button>
+        </div>
+        <div class="bottom-tabs">
+          <div class="tab-item active"><span>Dashboard</span></div>
+          <div class="tab-item"><span>Input Prod</span></div>
+          <div class="tab-item"><span>Input NG</span></div>
+          <div class="tab-item"><span>Riwayat</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 4: INPUT PRODUKSI ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">04 • Input Hasil Produksi</span>
+        <span class="artboard-role">Operator Produksi</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>11:30</span>
+          <div class="status-icons">5G • 90%</div>
+        </div>
+        <div class="app-header">
+          <div class="card-title">CATAT PRODUKSI MESIN</div>
+          <div class="header-badge">Shift 1</div>
+        </div>
+        <div class="screen-body">
+          <!-- Part Selector Card -->
+          <div class="bento-card" style="padding: 12px 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary-dark); margin-bottom: 4px;">NOMOR PART KOMPONEN</div>
+            <div style="font-size: 15px; font-weight: 800; color: #FFFFFF;">PT-1001 • Bracket Lower Mount</div>
+            <div style="font-size: 12px; color: var(--primary); margin-top: 2px;">Toyota Avanza Front Frame</div>
+          </div>
+
+          <!-- Dual Numeric Input -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="bento-card" style="padding: 12px;">
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary-dark);">TARGET (PCS)</span>
+              <div style="font-size: 24px; font-weight: 900; color: #FFFFFF; margin-top: 6px;">1.500</div>
+            </div>
+            <div class="bento-card" style="padding: 12px; border-color: var(--primary);">
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">GROSS CETAK (PCS)</span>
+              <div style="font-size: 24px; font-weight: 900; color: #FFFFFF; margin-top: 6px;">1.480</div>
+            </div>
+          </div>
+
+          <!-- Live Achievement Meter -->
+          <div class="bento-card" style="background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary-dark);">Net Produk Bagus</span>
+                <div style="font-size: 18px; font-weight: 900; color: #FFFFFF;">1.470 pcs</div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--success);">Efisiensi 98.6%</span>
+                <div style="font-size: 12px; color: var(--text-secondary-dark);">Variance: -20 pcs</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div style="margin-top: auto;">
+            <button class="btn-large btn-primary">SIMPAN LAPORAN PRODUKSI</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 5: INPUT CACAT NG ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">05 • Input Cacat Produk (NG)</span>
+        <span class="artboard-role">Staff QC & Operator</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>13:45</span>
+          <div class="status-icons">LTE • 82%</div>
+        </div>
+        <div class="app-header">
+          <div class="card-title">CATAT CACAT (NOT GOOD)</div>
+          <div class="status-badge critical">Audit QC</div>
+        </div>
+        <div class="screen-body">
+          <!-- Backdate Presets -->
+          <div style="display: flex; gap: 6px;">
+            <div style="flex: 1; padding: 8px 4px; border-radius: 10px; background: var(--primary); text-align: center; font-size: 12px; font-weight: 800;">Hari Ini</div>
+            <div style="flex: 1; padding: 8px 4px; border-radius: 10px; background: var(--card-subtle-dark); text-align: center; font-size: 12px; font-weight: 700; color: var(--text-secondary-dark);">Kemarin</div>
+            <div style="flex: 1; padding: 8px 4px; border-radius: 10px; background: var(--card-subtle-dark); text-align: center; font-size: 12px; font-weight: 700; color: var(--text-secondary-dark);">H-2</div>
+            <div style="flex: 1; padding: 8px 4px; border-radius: 10px; background: var(--card-subtle-dark); text-align: center; font-size: 12px; font-weight: 700; color: var(--text-secondary-dark);">H-3</div>
+          </div>
+
+          <!-- Defect Selector -->
+          <div class="bento-card" style="padding: 12px 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary-dark);">JENIS CACAT PRODUK</div>
+            <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">Gompal (Chipping)</div>
+            <div style="font-size: 12px; color: var(--critical); font-weight: 700; margin-top: 4px;">Severity: Critical • Blanking Edge</div>
+          </div>
+
+          <!-- Tactile Stepper -->
+          <div class="stepper-box">
+            <div class="step-btn">−</div>
+            <div style="text-align: center;">
+              <span class="step-number">8</span>
+              <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary-dark); margin-left: 4px;">pcs NG</span>
+            </div>
+            <div class="step-btn">+</div>
+          </div>
+
+          <!-- Camera Upload Box -->
+          <div style="border: 1.5px dashed var(--border-dark); border-radius: 14px; padding: 18px; text-align: center; background: rgba(255,255,255,0.02);">
+            <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">📸 Ambil Foto Bukti Cacat</div>
+            <div style="font-size: 11px; color: var(--text-secondary-dark); margin-top: 4px;">Kamera HD otomatis kompresi ukuran file</div>
+          </div>
+
+          <!-- Submit -->
+          <div style="margin-top: auto;">
+            <button class="btn-large btn-primary" style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">SIMPAN TEMUAN CACAT (NG)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 6: RIWAYAT PRODUKSI ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">06 • Riwayat Produksi Mesin</span>
+        <span class="artboard-role">Operator & Supervisor</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>14:20</span>
+          <div class="status-icons">5G • 77%</div>
+        </div>
+        <div class="app-header">
+          <div class="card-title">RIWAYAT PRODUKSI</div>
+          <div class="header-badge">Rekap Mesin</div>
+        </div>
+        <div class="screen-body">
+          <!-- Search Bar -->
+          <div style="height: 46px; background: var(--card-dark); border: 1.5px solid var(--border-dark); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary-dark);">
+            <span>🔍 Cari nomor part, mesin, shift...</span>
+          </div>
+
+          <!-- Production Log Card 1 -->
+          <div class="bento-card">
+            <div class="card-header-row">
+              <div>
+                <div class="card-title">Amada Press 01</div>
+                <div class="card-subtitle">PT-1001 • Bracket Lower Mount</div>
+              </div>
+              <div class="status-badge success">Cloud</div>
+            </div>
+
+            <div class="metrics-4col">
+              <div class="metric-col-item">
+                <label>Target</label>
+                <div class="val">1.500</div>
+              </div>
+              <div class="metric-col-item">
+                <label>Gross</label>
+                <div class="val">1.480</div>
+              </div>
+              <div class="metric-col-item">
+                <label>NG</label>
+                <div class="val">-10</div>
+              </div>
+              <div class="metric-col-item">
+                <label>Net OK</label>
+                <div class="val">1.470</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary-dark); border-top: 1px solid var(--border-dark); padding-top: 8px;">
+              <span>Shift 1 • Budi Santoso</span>
+              <span>13:45 WIB</span>
+            </div>
+          </div>
+
+          <!-- Production Log Card 2 -->
+          <div class="bento-card">
+            <div class="card-header-row">
+              <div>
+                <div class="card-title">Komatsu Press 02</div>
+                <div class="card-subtitle">PT-2004 • Side Member Inner</div>
+              </div>
+              <div class="status-badge success">Cloud</div>
+            </div>
+
+            <div class="metrics-4col">
+              <div class="metric-col-item">
+                <label>Target</label>
+                <div class="val">800</div>
+              </div>
+              <div class="metric-col-item">
+                <label>Gross</label>
+                <div class="val">805</div>
+              </div>
+              <div class="metric-col-item">
+                <label>NG</label>
+                <div class="val">-5</div>
+              </div>
+              <div class="metric-col-item">
+                <label>Net OK</label>
+                <div class="val">800</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary-dark); border-top: 1px solid var(--border-dark); padding-top: 8px;">
+              <span>Shift 1 • Joko Susilo</span>
+              <span>11:15 WIB</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 7: RIWAYAT CACAT SAYA ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">07 • Riwayat Temuan Cacat</span>
+        <span class="artboard-role">Staff QC</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>15:10</span>
+          <div class="status-icons">Wi-Fi • 68%</div>
+        </div>
+        <div class="app-header">
+          <div class="card-title">RIWAYAT INPUT SAYA</div>
+          <div class="status-badge" style="background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: var(--critical);">Total: 18 pcs</div>
+        </div>
+        <div class="screen-body">
+          <!-- Card 1 -->
+          <div class="bento-card">
+            <div class="card-header-row">
+              <span style="font-size: 11px; font-weight: 800; background: rgba(37,99,235,0.15); color: #60A5FA; padding: 3px 8px; border-radius: 6px;">PT-1001</span>
+              <span style="font-size: 11px; color: var(--text-secondary-dark);">Hari Ini • 13:45</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 15px; font-weight: 800; color: #FFFFFF;">Gompal (Chipping)</div>
+                <div style="font-size: 12px; color: var(--text-secondary-dark); margin-top: 2px;">Amada Press 01 • Blanking</div>
+              </div>
+              <div style="font-size: 22px; font-weight: 900; color: var(--text-primary-dark);">8 <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary-dark);">pcs</span></div>
+            </div>
+            <div style="font-size: 12px; font-style: italic; color: var(--text-secondary-dark); background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 6px;">"Sisi flens kiri rompal 2mm"</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bento-card">
+            <div class="card-header-row">
+              <span style="font-size: 11px; font-weight: 800; background: rgba(37,99,235,0.15); color: #60A5FA; padding: 3px 8px; border-radius: 6px;">PT-3002</span>
+              <span style="font-size: 11px; color: var(--text-secondary-dark);">Hari Ini • 10:20</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 15px; font-weight: 800; color: #FFFFFF;">Baret (Scratch)</div>
+                <div style="font-size: 12px; color: var(--text-secondary-dark); margin-top: 2px;">Press Brake 03 • Bending</div>
+              </div>
+              <div style="font-size: 22px; font-weight: 900; color: var(--text-primary-dark);">10 <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary-dark);">pcs</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ARTBOARD 8: AI CHAT COPILOT ==================== -->
+    <div class="device-artboard">
+      <div class="artboard-tag">
+        <span class="artboard-name">08 • Asisten AI Konsultasi SOP</span>
+        <span class="artboard-role">All Users</span>
+      </div>
+      <div class="mobile-screen">
+        <div class="status-bar">
+          <span>16:00</span>
+          <div class="status-icons">5G • 60%</div>
+        </div>
+        <div class="app-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: var(--ai-gradient); display: flex; align-items: center; justify-content: center; font-size: 14px;">⚡</div>
+            <div class="card-title">AI KONSULTASI PROSES</div>
+          </div>
+          <div class="header-badge" style="background: rgba(99,102,241,0.15); color: #818CF8; border-color: rgba(99,102,241,0.3);">Model: QC-LLM</div>
+        </div>
+        <div class="screen-body" style="justify-content: flex-end;">
+          <!-- User Bubble -->
+          <div style="align-self: flex-end; max-width: 80%; background: var(--primary); padding: 10px 14px; border-radius: 14px 14px 2px 14px; font-size: 13px; font-weight: 600; color: #FFFFFF;">
+            Bagaimana cara atasi cacat baret berulang pada dies Blanking Amada 01?
+          </div>
+
+          <!-- AI Bubble -->
+          <div style="align-self: flex-start; max-width: 88%; background: var(--card-dark); border: 1px solid var(--border-dark); padding: 12px 14px; border-radius: 14px 14px 14px 2px; font-size: 13px; line-height: 19px; color: var(--text-primary-dark);">
+            <div style="font-weight: 800; color: #818CF8; margin-bottom: 4px;">⚡ Rekomendasi SOP Mitigasi:</div>
+            1. Periksa kebersihan die cavity dari sisa gram serbuk plat.<br>
+            2. Cek kekeringan pelumasan oli drawing (rekomendasi: naikkan rasio pelumas 10%).<br>
+            3. Poles radius punch die dengan amplas grade 1000.
+          </div>
+
+          <!-- Prompt Suggestions -->
+          <div style="display: flex; gap: 6px; overflow: hidden; margin-top: 6px;">
+            <div style="padding: 6px 10px; border-radius: 8px; background: var(--card-subtle-dark); font-size: 11px; font-weight: 700; color: var(--text-secondary-dark); white-space: nowrap;">Toleransi plat SAPH440</div>
+            <div style="padding: 6px 10px; border-radius: 8px; background: var(--card-subtle-dark); font-size: 11px; font-weight: 700; color: var(--text-secondary-dark); white-space: nowrap;">SOP ganti dies</div>
+          </div>
+
+          <!-- Chat Input -->
+          <div style="height: 48px; background: var(--card-dark); border: 1.5px solid var(--border-dark); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-secondary-dark); margin-top: 4px;">
+            <span>Ketik kendala proses mesin...</span>
+            <span style="font-weight: 800; color: var(--primary);">KIRIM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

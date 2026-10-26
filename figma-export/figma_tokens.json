@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "name": "QC Mobile Operator Design System",
+  "color": {
+    "dark": {
+      "background": { "value": "#0B0F17", "type": "color" },
+      "card": { "value": "#111827", "type": "color" },
+      "cardSubtle": { "value": "#1E293B", "type": "color" },
+      "border": { "value": "rgba(255, 255, 255, 0.12)", "type": "color" },
+      "textPrimary": { "value": "#F8FAFC", "type": "color" },
+      "textSecondary": { "value": "#94A3B8", "type": "color" },
+      "textMuted": { "value": "#64748B", "type": "color" }
+    },
+    "light": {
+      "background": { "value": "#F8FAFC", "type": "color" },
+      "card": { "value": "#FFFFFF", "type": "color" },
+      "cardSubtle": { "value": "#F1F5F9", "type": "color" },
+      "border": { "value": "#E2E8F0", "type": "color" },
+      "textPrimary": { "value": "#0F172A", "type": "color" },
+      "textSecondary": { "value": "#475569", "type": "color" },
+      "textMuted": { "value": "#94A3B8", "type": "color" }
+    },
+    "brand": {
+      "primary": { "value": "#2563EB", "type": "color" },
+      "primaryDark": { "value": "#1D4ED8", "type": "color" },
+      "primaryLight": { "value": "#60A5FA", "type": "color" },
+      "indigo": { "value": "#6366F1", "type": "color" },
+      "purple": { "value": "#7C3AED", "type": "color" }
+    },
+    "semantic": {
+      "success": { "value": "#10B981", "type": "color" },
+      "successBg": { "value": "rgba(16, 185, 129, 0.12)", "type": "color" },
+      "critical": { "value": "#EF4444", "type": "color" },
+      "criticalBg": { "value": "rgba(239, 68, 68, 0.12)", "type": "color" },
+      "warning": { "value": "#F59E0B", "type": "color" },
+      "warningBg": { "value": "rgba(245, 158, 11, 0.12)", "type": "color" }
+    }
+  },
+  "typography": {
+    "fontFamilies": {
+      "body": { "value": "Plus Jakarta Sans, sans-serif", "type": "fontFamilies" },
+      "heading": { "value": "Plus Jakarta Sans, sans-serif", "type": "fontFamilies" },
+      "mono": { "value": "JetBrains Mono, monospace", "type": "fontFamilies" }
+    },
+    "fontSizes": {
+      "kpi": { "value": "28px", "type": "fontSizes" },
+      "h1": { "value": "22px", "type": "fontSizes" },
+      "h2": { "value": "19px", "type": "fontSizes" },
+      "h3": { "value": "17px", "type": "fontSizes" },
+      "cardHeading": { "value": "16px", "type": "fontSizes" },
+      "body": { "value": "14px", "type": "fontSizes" },
+      "caption": { "value": "13px", "type": "fontSizes" },
+      "micro": { "value": "12px", "type": "fontSizes" }
+    },
+    "fontWeights": {
+      "regular": { "value": "400", "type": "fontWeights" },
+      "medium": { "value": "500", "type": "fontWeights" },
+      "semiBold": { "value": "600", "type": "fontWeights" },
+      "bold": { "value": "700", "type": "fontWeights" },
+      "extraBold": { "value": "800", "type": "fontWeights" },
+      "black": { "value": "900", "type": "fontWeights" }
+    },
+    "lineHeights": {
+      "kpi": { "value": "34px", "type": "lineHeights" },
+      "h1": { "value": "28px", "type": "lineHeights" },
+      "h2": { "value": "24px", "type": "lineHeights" },
+      "cardHeading": { "value": "22px", "type": "lineHeights" },
+      "body": { "value": "20px", "type": "lineHeights" },
+      "caption": { "value": "18px", "type": "lineHeights" },
+      "micro": { "value": "16px", "type": "lineHeights" }
+    }
+  },
+  "spacing": {
+    "xs": { "value": "4px", "type": "spacing" },
+    "sm": { "value": "8px", "type": "spacing" },
+    "md": { "value": "12px", "type": "spacing" },
+    "lg": { "value": "16px", "type": "spacing" },
+    "xl": { "value": "20px", "type": "spacing" },
+    "2xl": { "value": "24px", "type": "spacing" },
+    "3xl": { "value": "32px", "type": "spacing" }
+  },
+  "borderRadius": {
+    "sm": { "value": "6px", "type": "borderRadius" },
+    "md": { "value": "8px", "type": "borderRadius" },
+    "lg": { "value": "10px", "type": "borderRadius" },
+    "xl": { "value": "14px", "type": "borderRadius" },
+    "2xl": { "value": "16px", "type": "borderRadius" },
+    "sheet": { "value": "24px", "type": "borderRadius" },
+    "full": { "value": "999px", "type": "borderRadius" }
+  },
+  "touchTargets": {
+    "stepper": { "value": "52px", "type": "sizing" },
+    "filterPill": { "value": "44px", "type": "sizing" },
+    "chip": { "value": "46px", "type": "sizing" },
+    "buttonLarge": { "value": "52px", "type": "sizing" },
+    "inputField": { "value": "48px", "type": "sizing" },
+    "inputLarge": { "value": "56px", "type": "sizing" }
+  }
+}

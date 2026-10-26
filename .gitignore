@@ -1,16 +1,31 @@
+# Dependencies
 node_modules/
+
+# Expo & Local Cache
 .expo/
 dist/
 web-build/
-*.apk
 .eas/
+
+# Environment variables
 .env
 .env.local
 .env*.local
-npm-debug.*
+
+# Binaries & Packaging
+*.apk
+*.aab
+*.ipa
+
+# Security keys & certificates
 *.jks
 *.p8
 *.p12
 *.key
+*.keystore
 *.mobileprovision
+
+# Debug logs
+*.log
 *.orig.*
+npm-debug.*

@@ -82,12 +82,12 @@ export const KpiCard = ({
           {icon && <View style={styles.iconContainer}>{icon}</View>}
         </View>
 
-        {/* Row 2: Metric Value (22px Black 900) */}
+        {/* Row 2: Metric Value (Consistent textPrimary for clean readability) */}
         <View style={styles.valueRow}>
           <Text
             style={[
               styles.valueText,
-              { color: badgeVariant === 'critical' ? colors.critical : colors.textPrimary },
+              { color: colors.textPrimary },
             ]}
           >
             {value}
@@ -126,9 +126,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   container: {
-    padding: 13,
+    padding: 14,
     borderRadius: 16,
-    minHeight: 110,
+    minHeight: 118,
     justifyContent: 'space-between',
   },
   topRow: {
@@ -142,19 +142,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     marginRight: 6,
   },
   title: {
     fontSize: typography.sizes.micro,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   iconContainer: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
   valueRow: {
     flexDirection: 'row',
@@ -170,18 +170,18 @@ const styles = StyleSheet.create({
   unitText: {
     fontSize: typography.sizes.caption,
     fontWeight: '600',
-    marginLeft: 2,
+    marginLeft: 3,
   },
   badgePill: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
     marginTop: 2,
   },
   badgeText: {
-    fontSize: typography.sizes.micro - 1,
+    fontSize: typography.sizes.micro,
     fontWeight: '800',
   },
 });
