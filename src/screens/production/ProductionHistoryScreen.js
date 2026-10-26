@@ -40,7 +40,7 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
   const { user, isAdmin } = useAuth();
 
   const [productionList, setProductionList] = useState([]);
-  const [filterPeriod, setFilterPeriod] = useState('all'); // 'today' | 'week' | 'all'
+  const [filterPeriod, setFilterPeriod] = useState('today'); // 'today' | 'week' | 'all'
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

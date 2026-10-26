@@ -252,11 +252,12 @@ export const MyHistoryScreen = ({ navigation }) => {
             </View>
           </View>
 
+          {/* Baris 2: Operator Lini & Jam Temuan */}
           <View style={[styles.footerRow, { marginTop: 6 }]}>
-            <Text style={[styles.metaOperatorText, { color: colors.textMuted }]}>
-              Pelapor:{' '}
+            <Text style={[styles.metaOperatorText, { color: colors.textMuted, flex: 1, marginRight: 8 }]} numberOfLines={1}>
+              Operator:{' '}
               <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>
-                {item.operatorName || user?.fullName || 'Staff QC'}
+                {item.operatorName || 'Operator Produksi'}
               </Text>
             </Text>
 
@@ -264,6 +265,16 @@ export const MyHistoryScreen = ({ navigation }) => {
               Jam:{' '}
               <Text style={{ color: colors.textSecondary, fontWeight: '700' }}>
                 {item.time ? `${item.time} WIB` : '10:15 WIB'}
+              </Text>
+            </Text>
+          </View>
+
+          {/* Baris 3: Inspektur QC (Pelapor Temuan) */}
+          <View style={[styles.footerRow, { marginTop: 4 }]}>
+            <Text style={[styles.metaOperatorText, { color: colors.textMuted, flex: 1 }]} numberOfLines={1}>
+              Inspektur QC:{' '}
+              <Text style={{ color: colors.primary, fontWeight: '700' }}>
+                {item.createdBy || user?.fullName || user?.username || 'Staff QC'}
               </Text>
             </Text>
           </View>
