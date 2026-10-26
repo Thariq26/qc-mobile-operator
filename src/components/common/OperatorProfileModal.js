@@ -13,10 +13,10 @@ import {
   LogOut,
   Moon,
   Sun,
-  ShieldCheck,
   Building2,
   X,
   BadgeCheck,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -24,6 +24,7 @@ import { typography } from '../../theme/typography';
 
 /**
  * OperatorProfileModal: Shop Floor QC Profile & Quick Actions Drawer
+ * Desain Praktis, Kompak, & Ergonomis
  */
 export const OperatorProfileModal = ({
   visible,
@@ -33,6 +34,14 @@ export const OperatorProfileModal = ({
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
   const { user, isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
+
+  const roleLabel = isOperatorProduksi
+    ? 'Operator Produksi'
+    : isStaffQc
+    ? 'Staff QC'
+    : isAdmin
+    ? 'Administrator'
+    : user?.role || 'QC Inspector';
 
   return (
     <Modal
@@ -53,43 +62,13 @@ export const OperatorProfileModal = ({
             },
           ]}
         >
-          {/* Top Handle */}
+          {/* 1. Drag Handle Bar */}
           <View style={styles.handleContainer}>
             <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
           </View>
 
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {isOperatorProduksi
-                ? 'PROFIL OPERATOR PRODUKSI'
-                : isStaffQc
-                ? 'PROFIL STAFF QC'
-                : 'PROFIL PENGGUNA'}
-            </Text>
-            <Pressable
-              onPress={onClose}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={({ pressed }) => [
-                styles.closeButton,
-                { backgroundColor: colors.cardSubtle, borderColor: colors.border },
-                pressed && { opacity: 0.7 },
-              ]}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </Pressable>
-          </View>
-
-          {/* Operator Identity Card */}
-          <View
-            style={[
-              styles.profileBanner,
-              {
-                backgroundColor: colors.cardSubtle,
-                borderColor: colors.border,
-              },
-            ]}
-          >
+          {/* 2. Compact Integrated Profile Header */}
+          <View style={styles.profileHeaderRow}>
             <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
               <Text style={styles.avatarText}>
                 {isOperatorProduksi ? 'OP' : isAdmin ? 'AD' : 'QC'}
@@ -98,124 +77,171 @@ export const OperatorProfileModal = ({
 
             <View style={styles.profileDetails}>
               <View style={styles.nameRow}>
-                <Text style={[styles.operatorName, { color: colors.textPrimary }]}>
+                <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {user?.fullName || user?.username || 'User'}
                 </Text>
-                <BadgeCheck size={16} color={colors.primary} style={{ marginLeft: 4 }} />
+                <BadgeCheck size={16} color={colors.primary} style={{ marginLeft: 5 }} />
               </View>
-              <Text style={[styles.roleSubtitle, { color: colors.textSecondary }]}>
-                {isOperatorProduksi
-                  ? 'Operator Produksi'
-                  : isStaffQc
-                  ? 'Staff QC Inspector'
-                  : user?.role || 'QC Inspector'}{' '}
-                • {user?.username || '-'}
-              </Text>
+
+              <View style={styles.roleUsernameRow}>
+                <View
+                  style={[
+                    styles.rolePill,
+                    { backgroundColor: colors.primary + '16', borderColor: colors.primary + '30' },
+                  ]}
+                >
+                  <Text style={[styles.rolePillText, { color: colors.primary }]}>
+                    {roleLabel}
+                  </Text>
+                </View>
+                {user?.username ? (
+                  <Text style={[styles.usernameText, { color: colors.textSecondary }]}>
+                    @{user.username}
+                  </Text>
+                ) : null}
+              </View>
+
               <View style={styles.plantRow}>
-                <Building2 size={13} color={colors.textMuted} style={{ marginRight: 4 }} />
-                <Text style={[styles.plantText, { color: colors.textMuted }]}>
+                <Building2 size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
+                <Text style={[styles.plantText, { color: colors.textMuted }]} numberOfLines={1}>
                   PT Galaxy Mandiri Perkasa
                 </Text>
               </View>
             </View>
+
+            {/* Tombol Tutup X */}
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              accessibilityLabel="Tutup profil"
+              style={({ pressed }) => [
+                styles.closeButton,
+                { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <X size={16} color={colors.textSecondary} />
+            </Pressable>
           </View>
 
-          {/* Quick Menu Options */}
-          <View style={styles.sectionBlock}>
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
-              PENGATURAN & KEAMANAN
-            </Text>
+          {/* Divider Pemisah */}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-            {/* Option 1: Change Password */}
+          {/* 3. Grouped Settings Card (Praktis dalam 1 Kartu Terpadu) */}
+          <Text style={[styles.sectionHeading, { color: colors.textMuted }]}>
+            PENGATURAN & KEAMANAN
+          </Text>
+
+          <View
+            style={[
+              styles.settingsGroupCard,
+              { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+            ]}
+          >
+            {/* Ubah Kata Sandi */}
             <Pressable
               onPress={() => {
                 onClose();
                 onOpenChangePassword();
               }}
               style={({ pressed }) => [
-                styles.menuItem,
-                {
-                  backgroundColor: colors.cardSubtle,
-                  borderColor: colors.border,
-                },
-                pressed && { opacity: 0.75, backgroundColor: colors.border },
+                styles.settingRow,
+                pressed && { backgroundColor: colors.border + '60' },
               ]}
             >
-              <View style={[styles.menuIconBox, { backgroundColor: colors.primary + '18' }]}>
-                <KeyRound size={18} color={colors.primary} />
+              <View style={[styles.iconBox, { backgroundColor: colors.primary + '18' }]}>
+                <KeyRound size={17} color={colors.primary} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+              <View style={styles.settingTextCol}>
+                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
                   Ubah Kata Sandi
                 </Text>
-                <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>
-                  Perbarui password login akun QC
+                <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>
+                  Perbarui kata sandi login akun Anda
                 </Text>
               </View>
+              <ChevronRight size={18} color={colors.textMuted} />
             </Pressable>
 
-            {/* Option 2: Toggle Theme */}
+            {/* Garis Pemisah Tipis Antar Menu */}
+            <View style={[styles.innerDivider, { backgroundColor: colors.border }]} />
+
+            {/* Tema Tampilan with Interactive Indicator Pill */}
             <Pressable
               onPress={toggleTheme}
               style={({ pressed }) => [
-                styles.menuItem,
-                {
-                  backgroundColor: colors.cardSubtle,
-                  borderColor: colors.border,
-                },
-                pressed && { opacity: 0.75, backgroundColor: colors.border },
+                styles.settingRow,
+                pressed && { backgroundColor: colors.border + '60' },
               ]}
             >
               <View
                 style={[
-                  styles.menuIconBox,
+                  styles.iconBox,
                   { backgroundColor: isDark ? colors.warning + '18' : colors.primary + '18' },
                 ]}
               >
                 {isDark ? (
-                  <Moon size={18} color={colors.warning} />
+                  <Moon size={17} color={colors.warning} />
                 ) : (
-                  <Sun size={18} color={colors.primary} />
+                  <Sun size={17} color={colors.primary} />
                 )}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
-                  Tema Tampilan ({isDark ? 'Mode Gelap' : 'Mode Terang'})
+              <View style={styles.settingTextCol}>
+                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
+                  Tema Tampilan
                 </Text>
-                <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>
-                  Ketuk untuk beralih mode warna
+                <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>
+                  {isDark ? 'Mode Gelap (Obsidian) aktif' : 'Mode Terang (Clean Slate) aktif'}
                 </Text>
               </View>
-            </Pressable>
 
-            {/* Option 3: Logout */}
-            <Pressable
-              onPress={() => {
-                onClose();
-                onOpenLogout();
-              }}
-              style={({ pressed }) => [
-                styles.menuItem,
-                {
-                  backgroundColor: colors.critical + '12',
-                  borderColor: colors.critical + '40',
-                },
-                pressed && { opacity: 0.75 },
-              ]}
-            >
-              <View style={[styles.menuIconBox, { backgroundColor: colors.critical + '20' }]}>
-                <LogOut size={18} color={colors.critical} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuTitle, { color: colors.critical }]}>
-                  Logout Sesi Operator
-                </Text>
-                <Text style={[styles.menuDesc, { color: colors.critical + 'CC' }]}>
-                  Keluar dari sesi shift dan hapus token
+              {/* Status Pill Toggle */}
+              <View
+                style={[
+                  styles.themeTogglePill,
+                  {
+                    backgroundColor: isDark ? colors.warning + '18' : colors.primary + '18',
+                    borderColor: isDark ? colors.warning + '40' : colors.primary + '40',
+                  },
+                ]}
+              >
+                {isDark ? (
+                  <Moon size={11} color={colors.warning} style={{ marginRight: 4 }} />
+                ) : (
+                  <Sun size={11} color={colors.primary} style={{ marginRight: 4 }} />
+                )}
+                <Text
+                  style={[
+                    styles.themeToggleText,
+                    { color: isDark ? colors.warning : colors.primary },
+                  ]}
+                >
+                  {isDark ? 'Gelap' : 'Terang'}
                 </Text>
               </View>
             </Pressable>
           </View>
+
+          {/* 4. Action Button: Logout Ringkas */}
+          <Pressable
+            onPress={() => {
+              onClose();
+              onOpenLogout();
+            }}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              {
+                backgroundColor: colors.critical + '12',
+                borderColor: colors.critical + '35',
+              },
+              pressed && { opacity: 0.75, backgroundColor: colors.critical + '22' },
+            ]}
+          >
+            <LogOut size={16} color={colors.critical} style={{ marginRight: 8 }} />
+            <Text style={[styles.logoutText, { color: colors.critical }]}>
+              Logout Sesi {isOperatorProduksi ? 'Operator' : 'Pengguna'}
+            </Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -231,13 +257,13 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   drawerCard: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
     borderWidth: 1,
     borderBottomWidth: 0,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     elevation: 24,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -8 },
@@ -246,52 +272,30 @@ const styles = StyleSheet.create({
   },
   handleContainer: {
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
   dragHandle: {
-    width: 44,
+    width: 40,
     height: 4,
     borderRadius: 2,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 14,
-  },
-  modalTitle: {
-    fontSize: typography.sizes.cardHeading,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileBanner: {
+  profileHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   avatarBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   avatarText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
@@ -302,14 +306,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  operatorName: {
-    fontSize: typography.sizes.screenTitle - 4,
+  userName: {
+    fontSize: typography.sizes.cardHeading,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
-  roleSubtitle: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '600',
+  roleUsernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: 2,
+  },
+  rolePill: {
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  rolePillText: {
+    fontSize: typography.sizes.micro - 1,
+    fontWeight: '700',
+  },
+  usernameText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '600',
   },
   plantRow: {
     flexDirection: 'row',
@@ -317,41 +337,88 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   plantText: {
-    fontSize: typography.sizes.micro,
+    fontSize: typography.sizes.micro - 1,
     fontWeight: '500',
   },
-  sectionBlock: {
-    marginBottom: 14,
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  divider: {
+    height: 1,
+    marginBottom: 12,
   },
   sectionHeading: {
     fontSize: typography.sizes.micro,
     fontWeight: '800',
     letterSpacing: 0.6,
     marginBottom: 8,
+    paddingHorizontal: 2,
   },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
+  settingsGroupCard: {
     borderRadius: 14,
     borderWidth: 1,
-    marginBottom: 8,
+    overflow: 'hidden',
+    marginBottom: 12,
   },
-  menuIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  innerDivider: {
+    height: 1,
+    marginLeft: 52,
+  },
+  iconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  menuTitle: {
+  settingTextCol: {
+    flex: 1,
+  },
+  settingTitle: {
     fontSize: typography.sizes.body - 1,
     fontWeight: '700',
   },
-  menuDesc: {
+  settingDesc: {
     fontSize: typography.sizes.micro,
     marginTop: 1,
+  },
+  themeTogglePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  themeToggleText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '700',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  logoutText: {
+    fontSize: typography.sizes.body - 1,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
 });
 

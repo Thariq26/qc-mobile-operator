@@ -11,39 +11,47 @@ import {
 } from 'react-native';
 import {
   Factory,
+  CheckCircle2,
   Calendar,
   User,
   Package,
   Layers,
-  CheckCircle2,
-  AlertTriangle,
   X,
-  TrendingUp,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { typography } from '../../theme/typography';
 import { formatIndonesianDate } from '../../utils/dateFormatter';
+import { typography } from '../../theme/typography';
 
 /**
- * ConfirmProductionModal: Modal Konfirmasi Sebelum Simpan Data Produksi
- * Menyajikan ringkasan hasil target vs aktual per mesin sebelum disinkronkan ke database.
+ * ConfirmProductionModal: Production Shift Confirmation Dialog
+ * Desain Praktis, Kompak, & Ergonomis (Zero Duplication & Fast Visual Scan)
  */
 export const ConfirmProductionModal = ({
   visible,
   onClose,
   onConfirm,
   submitting = false,
-  data = {},
+  data,
+  productionDate: propDate = '',
+  selectedShift: propShift = 'Shift 1',
+  operatorName: propOperator = '',
+  items: propItems = [],
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
-  const {
-    productionDate = '',
-    selectedShift = 'Shift 1',
-    operatorName = '',
-    items = [],
-  } = data;
+  if (!visible) return null;
 
+  // Mendukung passing via data={{ ... }} (dari InputProductionScreen) ATAU props terpisah
+  const productionDate = data?.productionDate ?? propDate ?? '';
+  const selectedShift = data?.selectedShift ?? propShift ?? 'Shift 1';
+  const operatorName = data?.operatorName ?? propOperator ?? '';
+  const items = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(propItems)
+    ? propItems
+    : [];
+
+  // Aggregate Calculations
   const totalTarget = items.reduce((acc, it) => acc + (Number(it.targetQuantity) || 0), 0);
   const totalProduced = items.reduce((acc, it) => acc + (Number(it.producedQuantity) || 0), 0);
   const overallEfficiency = totalTarget > 0 ? (totalProduced / totalTarget) * 100 : 0;
@@ -75,18 +83,28 @@ export const ConfirmProductionModal = ({
             },
           ]}
         >
-          {/* Top Bar with Icon & Close Button */}
-          <View style={styles.topBar}>
-            <View
-              style={[
-                styles.iconBadge,
-                {
-                  backgroundColor: colors.primary + '18',
-                  borderColor: colors.primary + '40',
-                },
-              ]}
-            >
-              <Factory size={22} color={colors.primary} />
+          {/* Header Terpadu: Icon + Title + Close Button */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <View
+                style={[
+                  styles.iconBadge,
+                  {
+                    backgroundColor: colors.primary + '18',
+                    borderColor: colors.primary + '40',
+                  },
+                ]}
+              >
+                <Factory size={18} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={[styles.title, { color: colors.textPrimary }]}>
+                  Konfirmasi Simpan Produksi
+                </Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                  Periksa pencapaian shift sebelum disimpan
+                </Text>
+              </View>
             </View>
 
             <Pressable
@@ -99,32 +117,26 @@ export const ConfirmProductionModal = ({
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <X size={18} color={colors.textSecondary} />
+              <X size={16} color={colors.textSecondary} />
             </Pressable>
           </View>
 
-          {/* Title & Subtitle */}
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Konfirmasi Simpan Produksi
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Periksa kembali data pencapaian mesin shift ini sebelum disimpan ke database.
-          </Text>
-
-          {/* Context Strip: Tanggal, Shift, Operator */}
+          {/* Context Strip: Tanggal, Shift, Operator, & Total Mesin */}
           <View
             style={[
               styles.contextStrip,
               { backgroundColor: colors.cardSubtle, borderColor: colors.border },
             ]}
           >
+            {/* Baris 1: Tanggal & Shift Pill */}
             <View style={styles.contextRow}>
               <View style={styles.contextItem}>
-                <Calendar size={13} color={colors.primary} style={{ marginRight: 5 }} />
+                <Calendar size={13} color={colors.primary} style={{ marginRight: 6 }} />
                 <Text style={[styles.contextText, { color: colors.textPrimary }]}>
                   {productionDate ? formatIndonesianDate(productionDate) : 'Hari Ini'}
                 </Text>
               </View>
+
               <View style={[styles.shiftPill, { backgroundColor: colors.primary + '18' }]}>
                 <Text style={[styles.shiftPillText, { color: colors.primary }]}>
                   {selectedShift}
@@ -132,16 +144,23 @@ export const ConfirmProductionModal = ({
               </View>
             </View>
 
+            {/* Baris 2: Operator Lini & Jumlah Mesin */}
             <View style={[styles.contextRow, { marginTop: 6 }]}>
               <View style={styles.contextItem}>
-                <User size={13} color={colors.textSecondary} style={{ marginRight: 5 }} />
-                <Text style={[styles.contextText, { color: colors.textSecondary }]}>
-                  Operator: <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>{operatorName || 'Operator'}</Text>
+                <User size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  Operator:{' '}
+                  <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>
+                    {operatorName || 'Operator'}
+                  </Text>
                 </Text>
               </View>
-              <Text style={[styles.itemCountText, { color: colors.textMuted }]}>
-                {items.length} Mesin
-              </Text>
+
+              <View style={[styles.machineCountBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.machineCountText, { color: colors.textSecondary }]}>
+                  {items.length} Mesin
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -149,7 +168,7 @@ export const ConfirmProductionModal = ({
           <ScrollView
             style={styles.itemsScroll}
             showsVerticalScrollIndicator={true}
-            contentContainerStyle={{ paddingVertical: 4 }}
+            contentContainerStyle={{ paddingVertical: 2 }}
           >
             {items.map((it, idx) => {
               const target = Number(it.targetQuantity) || 0;
@@ -168,6 +187,7 @@ export const ConfirmProductionModal = ({
                     },
                   ]}
                 >
+                  {/* Item Top: Machine Name, Process & Efficiency Pill */}
                   <View style={styles.itemCardTop}>
                     <View style={styles.itemHeaderLeft}>
                       <View style={[styles.itemIndexDot, { backgroundColor: colors.primary }]}>
@@ -176,7 +196,11 @@ export const ConfirmProductionModal = ({
                       <Text style={[styles.machineName, { color: colors.textPrimary }]} numberOfLines={1}>
                         {it.machineName}
                       </Text>
+                      <Text style={[styles.processTag, { color: colors.textSecondary }]}>
+                        • {it.isCustomProcess && it.customProcess ? it.customProcess : it.processName || 'Proses'}
+                      </Text>
                     </View>
+
                     <View
                       style={[
                         styles.effPill,
@@ -197,22 +221,15 @@ export const ConfirmProductionModal = ({
                     </View>
                   </View>
 
-                  <View style={styles.itemDetailRow}>
-                    <Package size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
-                    <Text style={[styles.itemDetailText, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {it.partNumber} • {it.partName}
+                  {/* Part Info */}
+                  <View style={styles.itemPartRow}>
+                    <Package size={12} color={colors.primary} style={{ marginRight: 5 }} />
+                    <Text style={[styles.partText, { color: colors.textPrimary }]} numberOfLines={1}>
+                      <Text style={{ fontWeight: '800', color: colors.primary }}>{it.partNumber}</Text> • {it.partName}
                     </Text>
                   </View>
 
-                  <View style={styles.itemDetailRow}>
-                    <Layers size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
-                    <Text style={[styles.itemDetailText, { color: colors.textSecondary }]}>
-                      Proses: <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>
-                        {it.isCustomProcess && it.customProcess ? it.customProcess : it.processName}
-                      </Text>
-                    </Text>
-                  </View>
-
+                  {/* Target vs Actual (Kompak) */}
                   <View style={[styles.qtyRow, { borderTopColor: colors.border }]}>
                     <View style={styles.qtyCol}>
                       <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>TARGET</Text>
@@ -220,7 +237,7 @@ export const ConfirmProductionModal = ({
                         {target.toLocaleString('id-ID')} <Text style={styles.qtyUnit}>pcs</Text>
                       </Text>
                     </View>
-                    <View style={styles.qtyCol}>
+                    <View style={styles.qtyColRight}>
                       <Text style={[styles.qtyLabel, { color: itemOnTarget ? colors.success : colors.critical }]}>
                         HASIL AKTUAL
                       </Text>
@@ -234,7 +251,7 @@ export const ConfirmProductionModal = ({
             })}
           </ScrollView>
 
-          {/* Total Summary Footer */}
+          {/* Total Summary Footer Strip */}
           <View
             style={[
               styles.totalFooter,
@@ -242,7 +259,7 @@ export const ConfirmProductionModal = ({
             ]}
           >
             <View>
-              <Text style={[styles.totalLabel, { color: colors.textMuted }]}>TOTAL OUTPUT SHIFT</Text>
+              <Text style={[styles.totalLabel, { color: colors.textMuted }]}>TOTAL OUTPUT ({items.length} MESIN)</Text>
               <Text style={[styles.totalValue, { color: colors.textPrimary }]}>
                 {totalProduced.toLocaleString('id-ID')} / {totalTarget.toLocaleString('id-ID')} pcs
               </Text>
@@ -311,36 +328,51 @@ const styles = StyleSheet.create({
   },
   dialogCard: {
     width: '100%',
-    maxWidth: 420,
-    maxHeight: '85%',
+    maxWidth: 400,
+    maxHeight: '82%',
     borderRadius: 20,
     borderWidth: 1.5,
     padding: 18,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
-        shadowRadius: 16,
+        shadowRadius: 14,
       },
       android: {
         elevation: 12,
       },
     }),
   },
-  topBar: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 10,
+  },
+  title: {
+    fontSize: typography.sizes.cardHeading,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  subtitle: {
+    fontSize: typography.sizes.micro,
+    marginTop: 1,
   },
   closeButton: {
     width: 32,
@@ -349,22 +381,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  title: {
-    fontSize: typography.sizes.h3 || 18,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: typography.sizes.caption,
-    lineHeight: 18,
-    marginBottom: 12,
+    marginLeft: 8,
   },
   contextStrip: {
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    padding: 10,
     marginBottom: 10,
   },
   contextRow: {
@@ -375,26 +398,35 @@ const styles = StyleSheet.create({
   contextItem: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  contextText: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
   },
   shiftPill: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 2.5,
     borderRadius: 6,
   },
   shiftPillText: {
-    fontSize: 11,
+    fontSize: typography.sizes.micro - 1,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
-  itemCountText: {
-    fontSize: 11,
+  machineCountBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  machineCountText: {
+    fontSize: typography.sizes.micro - 1,
+    fontWeight: '700',
+  },
+  contextText: {
+    fontSize: typography.sizes.micro,
     fontWeight: '600',
   },
   itemsScroll: {
-    maxHeight: 220,
+    maxHeight: 240,
     marginBottom: 10,
   },
   itemSummaryCard: {
@@ -425,112 +457,117 @@ const styles = StyleSheet.create({
   },
   itemIndexText: {
     color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: typography.sizes.micro - 2,
+    fontWeight: '900',
   },
   machineName: {
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.body - 1,
     fontWeight: '800',
-    flex: 1,
+  },
+  processTag: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   effPill: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 5,
     borderWidth: 1,
   },
   effPillText: {
-    fontSize: 10,
+    fontSize: typography.sizes.micro - 1,
     fontWeight: '800',
   },
-  itemDetailRow: {
+  itemPartRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 8,
   },
-  itemDetailText: {
-    fontSize: typography.sizes.caption - 1,
-    fontWeight: '500',
+  partText: {
+    fontSize: typography.sizes.micro,
+    flex: 1,
   },
   qtyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     borderTopWidth: 1,
     paddingTop: 6,
-    marginTop: 4,
   },
   qtyCol: {
     flex: 1,
   },
+  qtyColRight: {
+    alignItems: 'flex-end',
+  },
   qtyLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    marginBottom: 1,
+    fontSize: typography.sizes.micro - 2,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   qtyValue: {
-    fontSize: 13,
+    fontSize: typography.sizes.caption,
     fontWeight: '700',
+    marginTop: 1,
   },
   qtyUnit: {
-    fontSize: 10,
-    fontWeight: '400',
+    fontSize: typography.sizes.micro - 2,
+    fontWeight: '600',
   },
   totalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    padding: 10,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   totalLabel: {
-    fontSize: 9,
+    fontSize: typography.sizes.micro - 2,
     fontWeight: '800',
-    letterSpacing: 0.3,
-    marginBottom: 2,
+    letterSpacing: 0.4,
   },
   totalValue: {
-    fontSize: 13,
+    fontSize: typography.sizes.caption,
     fontWeight: '800',
+    marginTop: 1,
   },
   efficiencyBig: {
-    fontSize: 15,
+    fontSize: typography.sizes.body,
     fontWeight: '900',
+    marginTop: 1,
   },
   actionsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   cancelButton: {
     flex: 1,
-    height: 46,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 11,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.body - 1,
     fontWeight: '700',
   },
   confirmButton: {
     flex: 1.3,
-    height: 46,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 11,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
   },
   confirmButtonText: {
     color: '#FFFFFF',
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.body - 1,
     fontWeight: '800',
   },
 });

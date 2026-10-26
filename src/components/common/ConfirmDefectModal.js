@@ -10,58 +10,67 @@ import {
 } from 'react-native';
 import {
   AlertTriangle,
+  CheckCircle2,
   Calendar,
   User,
   Package,
-  Layers,
   Cpu,
   Camera,
-  CheckCircle2,
-  X,
   FileText,
+  X,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { typography } from '../../theme/typography';
 import { formatIndonesianDate } from '../../utils/dateFormatter';
+import { typography } from '../../theme/typography';
 
 /**
- * ConfirmDefectModal: Modal Konfirmasi Sebelum Catat Temuan Cacat (NG)
- * Menyajikan rincian lengkap part, jenis cacat, mesin, jumlah NG, dan operator lini untuk audit ISO 9001.
+ * ConfirmDefectModal: Shop Floor Confirmation Dialog for Defect (NG) Logging
+ * Desain Praktis, Kompak, & Ergonomis (Anti-Truncation)
  */
 export const ConfirmDefectModal = ({
   visible,
   onClose,
   onConfirm,
   submitting = false,
-  data = {},
+  data,
+  defectDate: propDate = '',
+  selectedShift: propShift = 'Shift 1',
+  selectedOperator: propOp = null,
+  operatorName: propOpName = '',
+  selectedPart: propPart = null,
+  selectedMachine: propMachine = '',
+  selectedProcess: propProcess = '',
+  selectedDefect: propDefect = null,
+  quantity: propQty = 1,
+  remarks: propRemarks = '',
+  hasPhoto: propHasPhoto = false,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
-  const {
-    defectDate = '',
-    selectedShift = 'Shift 1',
-    selectedOperator = null,
-    operatorName = '',
-    selectedPart = null,
-    selectedDefect = null,
-    selectedProcess = '',
-    selectedMachine = '',
-    quantity = 1,
-    remarks = '',
-    hasPhoto = false,
-  } = data;
+  if (!visible) return null;
+
+  // Resolusi data: Mendukung passing via data={{ ... }} (dari InputDefectScreen) ATAU props langsung
+  const defectDate = data?.defectDate ?? propDate ?? '';
+  const selectedShift = data?.selectedShift ?? propShift ?? 'Shift 1';
+  const selectedOperator = data?.selectedOperator ?? propOp ?? null;
+  const operatorName = data?.operatorName ?? propOpName ?? '';
+  const selectedPart = data?.selectedPart ?? propPart ?? null;
+  const selectedMachine = data?.selectedMachine ?? propMachine ?? '';
+  const selectedProcess = data?.selectedProcess ?? propProcess ?? '';
+  const selectedDefect = data?.selectedDefect ?? propDefect ?? null;
+  const quantity = Number(data?.quantity ?? propQty ?? 1);
+  const remarks = data?.remarks ?? propRemarks ?? '';
+  const hasPhoto = Boolean(data?.hasPhoto ?? propHasPhoto);
 
   const isCritical =
-    selectedDefect?.category?.toLowerCase() === 'critical' ||
+    selectedDefect?.category === 'Critical' ||
     selectedDefect?.name === 'Gompal' ||
     selectedDefect?.name === 'Keropos' ||
-    selectedDefect?.name === 'Retak Tarik';
+    selectedDefect?.name === 'Retak Tarik' ||
+    selectedDefect?.name === 'Double Punch';
 
-  const categoryColor = isCritical
-    ? colors.critical
-    : selectedDefect?.category?.toLowerCase() === 'major'
-    ? colors.warning
-    : colors.primary;
+  const categoryColor = isCritical ? colors.critical : colors.warning;
+  const displayOperator = selectedOperator?.fullName || operatorName || 'Operator';
 
   return (
     <Modal
@@ -89,18 +98,28 @@ export const ConfirmDefectModal = ({
             },
           ]}
         >
-          {/* Top Bar with Icon & Close Button */}
-          <View style={styles.topBar}>
-            <View
-              style={[
-                styles.iconBadge,
-                {
-                  backgroundColor: colors.critical + '18',
-                  borderColor: colors.critical + '40',
-                },
-              ]}
-            >
-              <AlertTriangle size={22} color={colors.critical} />
+          {/* Header Terpadu: Icon + Title + Close Button */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <View
+                style={[
+                  styles.iconBadge,
+                  {
+                    backgroundColor: colors.critical + '18',
+                    borderColor: colors.critical + '40',
+                  },
+                ]}
+              >
+                <AlertTriangle size={18} color={colors.critical} />
+              </View>
+              <View>
+                <Text style={[styles.title, { color: colors.textPrimary }]}>
+                  Konfirmasi Lapor Cacat
+                </Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                  Periksa detail temuan sebelum disimpan
+                </Text>
+              </View>
             </View>
 
             <Pressable
@@ -113,79 +132,70 @@ export const ConfirmDefectModal = ({
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <X size={18} color={colors.textSecondary} />
+              <X size={16} color={colors.textSecondary} />
             </Pressable>
           </View>
 
-          {/* Title & Subtitle */}
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Konfirmasi Lapor Cacat (NG)
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Pastikan data temuan cacat di bawah sudah akurat untuk kebutuhan audit mampu telusur ISO 9001.
-          </Text>
-
-          {/* Summary Box */}
+          {/* 1. Context Strip: Mesin, Proses, Shift, & Tanggal */}
           <View
             style={[
-              styles.summaryContainer,
+              styles.contextStrip,
               { backgroundColor: colors.cardSubtle, borderColor: colors.border },
             ]}
           >
-            {/* 1. Tanggal & Shift */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelGroup}>
-                <Calendar size={13} color={colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Waktu & Shift</Text>
-              </View>
-              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
-                {defectDate ? formatIndonesianDate(defectDate) : 'Hari Ini'} • <Text style={{ color: colors.primary, fontWeight: '800' }}>{selectedShift}</Text>
+            <View style={styles.contextLeft}>
+              <Cpu size={13} color={colors.primary} style={{ marginRight: 5 }} />
+              <Text style={[styles.contextMachine, { color: colors.textPrimary }]} numberOfLines={1}>
+                {selectedMachine || 'Amada 1'} • {selectedProcess || 'Stamping'}
               </Text>
             </View>
 
-            {/* 2. Operator Lini Produksi */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelGroup}>
-                <User size={13} color={colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Operator Lini</Text>
-              </View>
-              <Text style={[styles.detailValue, { color: colors.textPrimary }]} numberOfLines={1}>
-                {selectedOperator?.fullName || operatorName || '-'}
-                {selectedOperator?.username ? ` (@${selectedOperator.username})` : ''}
+            <View style={[styles.shiftBadge, { backgroundColor: colors.primary + '18' }]}>
+              <Text style={[styles.shiftBadgeText, { color: colors.primary }]}>
+                {selectedShift}
               </Text>
             </View>
+          </View>
 
-            {/* 3. Part Number */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelGroup}>
-                <Package size={13} color={colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Part Number</Text>
+          {/* 2. Part Info Block (Bebas Truncation) */}
+          <View
+            style={[
+              styles.partBlock,
+              { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.partTopRow}>
+              <View style={[styles.partNumBadge, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '30' }]}>
+                <Text style={[styles.partNumText, { color: colors.primary }]}>
+                  {selectedPart?.partNumber || 'PT-1001'}
+                </Text>
               </View>
-              <Text style={[styles.detailValue, { color: colors.textPrimary }]} numberOfLines={1}>
-                <Text style={{ fontWeight: '800', color: colors.primary }}>{selectedPart?.partNumber}</Text> - {selectedPart?.partName}
+              <Text style={[styles.dateText, { color: colors.textMuted }]}>
+                {defectDate ? formatIndonesianDate(defectDate) : 'Hari Ini'}
               </Text>
             </View>
+            <Text style={[styles.partNameFull, { color: colors.textPrimary }]} numberOfLines={2}>
+              {selectedPart?.partName || 'Part Komponen'}
+            </Text>
+          </View>
 
-            {/* 4. Mesin & Proses */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelGroup}>
-                <Cpu size={13} color={colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Mesin & Proses</Text>
-              </View>
-              <Text style={[styles.detailValue, { color: colors.textPrimary }]} numberOfLines={1}>
-                {selectedMachine} • {selectedProcess}
+          {/* 3. Highlight Temuan Cacat & Kuantitas NG (Hero Box) */}
+          <View
+            style={[
+              styles.defectHeroCard,
+              {
+                backgroundColor: colors.critical + '0C',
+                borderColor: colors.critical + '35',
+              },
+            ]}
+          >
+            <View style={styles.defectHeroLeft}>
+              <Text style={[styles.defectHeroLabel, { color: colors.textMuted }]}>
+                JENIS CACAT TEMUAN
               </Text>
-            </View>
-
-            {/* 5. Jenis Cacat & Severity Category */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelGroup}>
-                <AlertTriangle size={13} color={categoryColor} style={{ marginRight: 6 }} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Jenis Cacat</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={[styles.defectNameHighlight, { color: colors.textPrimary }]}>
-                  {selectedDefect?.name}
+              <View style={styles.defectNameRow}>
+                <Text style={[styles.defectNameText, { color: colors.textPrimary }]}>
+                  {selectedDefect?.name || 'Cacat'}
                 </Text>
                 {selectedDefect?.category ? (
                   <View
@@ -202,47 +212,57 @@ export const ConfirmDefectModal = ({
               </View>
             </View>
 
-            {/* 6. Jumlah Cacat Highlight */}
-            <View style={[styles.detailRow, styles.qtyHighlightRow, { borderTopColor: colors.border }]}>
-              <View style={styles.detailLabelGroup}>
-                <Text style={[styles.qtyHighlightLabel, { color: colors.textPrimary }]}>
-                  JUMLAH TEMUAN CACAT
-                </Text>
-              </View>
-              <View style={[styles.qtyBadge, { backgroundColor: colors.critical + '18', borderColor: colors.critical + '40' }]}>
-                <Text style={[styles.qtyNumber, { color: colors.critical }]}>
-                  {quantity} <Text style={{ fontSize: 13, fontWeight: '700' }}>pcs</Text>
-                </Text>
-              </View>
+            <View
+              style={[
+                styles.ngBadge,
+                { backgroundColor: colors.critical + '18', borderColor: colors.critical + '45' },
+              ]}
+            >
+              <Text style={[styles.ngNumber, { color: colors.critical }]}>
+                {quantity}
+              </Text>
+              <Text style={[styles.ngUnit, { color: colors.critical }]}>
+                pcs NG
+              </Text>
             </View>
+          </View>
 
-            {/* 7. Foto & Keterangan */}
-            <View style={[styles.detailRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-              <View style={styles.detailLabelGroup}>
-                <Camera size={13} color={hasPhoto ? colors.success : colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Lampiran Foto</Text>
-              </View>
-              <Text
-                style={[
-                  styles.detailValue,
-                  { color: hasPhoto ? colors.success : colors.textMuted, fontWeight: '700' },
-                ]}
-              >
-                {hasPhoto ? '✓ Foto Terlampir' : 'Tanpa Foto'}
+          {/* 4. Operator & Lampiran Foto (Satu Baris Kompak) */}
+          <View style={styles.metaRow}>
+            <View style={styles.metaCol}>
+              <User size={13} color={colors.textMuted} style={{ marginRight: 5 }} />
+              <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
+                Operator:{' '}
+                <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>
+                  {displayOperator}
+                </Text>
               </Text>
             </View>
 
-            {remarks && remarks.trim() ? (
-              <View style={[styles.remarksBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <FileText size={12} color={colors.textMuted} style={{ marginRight: 5, marginTop: 2 }} />
-                <Text style={[styles.remarksText, { color: colors.textSecondary }]} numberOfLines={2}>
-                  "{remarks.trim()}"
-                </Text>
-              </View>
-            ) : null}
+            <View style={styles.metaColRight}>
+              <Camera size={13} color={hasPhoto ? colors.success : colors.textMuted} style={{ marginRight: 5 }} />
+              <Text
+                style={[
+                  styles.metaText,
+                  { color: hasPhoto ? colors.success : colors.textMuted, fontWeight: '700' },
+                ]}
+              >
+                {hasPhoto ? 'Ada Foto' : 'Tanpa Foto'}
+              </Text>
+            </View>
           </View>
 
-          {/* Action Buttons */}
+          {/* Remarks jika ada */}
+          {remarks && remarks.trim() ? (
+            <View style={[styles.remarksBox, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+              <FileText size={12} color={colors.textMuted} style={{ marginRight: 5, marginTop: 1 }} />
+              <Text style={[styles.remarksText, { color: colors.textSecondary }]} numberOfLines={1}>
+                "{remarks.trim()}"
+              </Text>
+            </View>
+          ) : null}
+
+          {/* 5. Action Buttons */}
           <View style={styles.actionsRow}>
             <Pressable
               onPress={onClose}
@@ -296,35 +316,50 @@ const styles = StyleSheet.create({
   },
   dialogCard: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 400,
     borderRadius: 20,
     borderWidth: 1.5,
     padding: 18,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
-        shadowRadius: 16,
+        shadowRadius: 14,
       },
       android: {
         elevation: 12,
       },
     }),
   },
-  topBar: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 10,
+  },
+  title: {
+    fontSize: typography.sizes.cardHeading,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  subtitle: {
+    fontSize: typography.sizes.micro,
+    marginTop: 1,
   },
   closeButton: {
     width: 32,
@@ -333,125 +368,189 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 8,
   },
-  title: {
-    fontSize: typography.sizes.h3 || 18,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: typography.sizes.caption,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  summaryContainer: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
-    marginBottom: 16,
-  },
-  detailRow: {
+  contextStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
   },
-  detailLabelGroup: {
+  contextLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
+    flex: 1,
+  },
+  contextMachine: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '700',
+  },
+  shiftBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  shiftBadgeText: {
+    fontSize: typography.sizes.micro - 1,
+    fontWeight: '800',
+  },
+  partBlock: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  partTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  partNumBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  partNumText: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  dateText: {
+    fontSize: typography.sizes.micro - 1,
+    fontWeight: '500',
+  },
+  partNameFull: {
+    fontSize: typography.sizes.caption + 1,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  defectHeroCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 10,
+  },
+  defectHeroLeft: {
+    flex: 1,
     marginRight: 10,
   },
-  detailLabel: {
-    fontSize: typography.sizes.caption - 1,
-    fontWeight: '600',
-  },
-  detailValue: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  defectNameHighlight: {
-    fontSize: typography.sizes.body,
+  defectHeroLabel: {
+    fontSize: typography.sizes.micro - 2,
     fontWeight: '800',
+    letterSpacing: 0.6,
+    marginBottom: 3,
+  },
+  defectNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  defectNameText: {
+    fontSize: typography.sizes.body + 1,
+    fontWeight: '900',
+    letterSpacing: 0.2,
   },
   categoryBadge: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingVertical: 1.5,
+    borderRadius: 5,
     borderWidth: 1,
     marginLeft: 6,
   },
   categoryBadgeText: {
-    fontSize: 10,
+    fontSize: typography.sizes.micro - 2,
     fontWeight: '800',
   },
-  qtyHighlightRow: {
-    borderTopWidth: 1,
-    paddingTop: 8,
-    marginTop: 4,
+  ngBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    minWidth: 68,
   },
-  qtyHighlightLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
-  qtyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  qtyNumber: {
-    fontSize: 16,
+  ngNumber: {
+    fontSize: 20,
     fontWeight: '900',
+    lineHeight: 22,
+  },
+  ngUnit: {
+    fontSize: typography.sizes.micro - 2,
+    fontWeight: '800',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 2,
+  },
+  metaCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  metaColRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: typography.sizes.micro,
   },
   remarksBox: {
     flexDirection: 'row',
-    padding: 8,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: 8,
+    marginBottom: 12,
   },
   remarksText: {
-    fontSize: typography.sizes.caption - 1,
+    fontSize: typography.sizes.micro,
     fontStyle: 'italic',
     flex: 1,
   },
   actionsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   cancelButton: {
     flex: 1,
-    height: 46,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 11,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.body - 1,
     fontWeight: '700',
   },
   confirmButton: {
     flex: 1.3,
-    height: 46,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 11,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
   },
   confirmButtonText: {
     color: '#FFFFFF',
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.body - 1,
     fontWeight: '800',
   },
 });

@@ -1,9 +1,9 @@
 # 📋 DOKUMENTASI LENGKAP PERUBAHAN SISTEM (SINTESIS MULTI-SESI)
 ## QC Mobile Operator — PT Galaxy Mandiri Perkasa
 **Branch Repositori**: `development`  
-**Waktu Pembaruan Terakhir**: 26 Oktober 2026  
+**Waktu Pembaruan Terakhir**: 27 Oktober 2026  
 **Referensi Sesi Terkait**:
-- Sesi 1: `605342d8-85d4-4462-ad97-7c3509b33dbf` (Label Audit ISO, Footer Anti-Truncation, Default Filter Hari Ini, Service Produksi)
+- Sesi 1: `605342d8-85d4-4462-ad97-7c3509b33dbf` (Label Audit ISO, Footer Anti-Truncation, Default Filter Hari Ini, Service Produksi, Redesain Praktis Seluruh Modal Dialog)
 - Sesi 2: `6409b324-a5d9-4b87-b231-ff727a20f361` (Responsivitas Typography `moderateScale`, Viewport Scroll FlatList, Sticky Navigasi)
 
 ---
@@ -21,7 +21,7 @@
 | **7** | **Service Produksi & Offline Buffer** | `src/api/services/productionService.js` | `605342d8` | Memulihkan fungsi batch production, offline persistence buffer, auto-sync, dan penghitungan metrik efisiensi yang sinkron dengan temuan cacat QC (*shop floor defect sync*). |
 | **8** | **Dynamic Cache & Hapus Master Data** | `src/data/masterData.js` *(dihapus)*<br>`src/api/services/defectService.js`<br>`src/api/services/userService.js`<br>`src/context/AuthContext.js` | `605342d8` | Menghapus 474 baris data dummy statis dan menggantinya dengan Dynamic Local Caching (`AsyncStorage`) yang di-prefetch otomatis dari MySQL saat login. |
 | **9** | **Pembersihan Pareto ke Analisis SPC** | `src/components/dashboard/ParetoBar.js` *(dihapus)*<br>`src/components/dashboard/SpcControlChart.js` | `605342d8` | Menghapus diagram Pareto lama dan menyelaraskan label pada grafik kendali mutu SPC p-Chart menjadi *"STRATIFIKASI CACAT UTAMA"*. |
-| **10** | **Modal Konfirmasi & Remember Me** | `src/components/common/ConfirmProductionModal.js`<br>`ConfirmDefectModal.js`<br>`LoginErrorModal.js` | `605342d8` | Menambahkan pop-up konfirmasi pengaman salah tekan (*fat-finger proof*) serta fitur Ingat Saya (`expo-secure-store`) dan modal error login modern. |
+| **10** | **Redesain Praktis & Ergonomis Seluruh Modal Dialog** | `src/components/common/ConfirmProductionModal.js`<br>`ConfirmDefectModal.js`<br>`OperatorProfileModal.js`<br>`LogoutConfirmModal.js` | `605342d8` | Merestrukturisasi 4 modal utama: mengatasi tabrakan baris tanggal/shift/operator (*2-row context strip*), perbaikan parsing data batch produksi (0 mesin/efisiensi bug fix), hero box kuantitas NG, serta drawer profil & konfirmasi logout yang ringkas dan modern. |
 
 ---
 
@@ -131,3 +131,36 @@ Sempat terjadi perbedaan data antara Web (`localhost:8081`) dan Expo Go di HP ak
 1. Di `defectService.js` dan `productionService.js`, penggabungan buffer lokal diprioritaskan hanya untuk rekaman yang benar-benar `isOffline: true`.
 2. Melakukan *auto-purge* rekaman lokal begitu data segar berhasil ditarik dari server MySQL.
 3. Memastikan filter default periode pada `ProductionHistoryScreen.js` bernilai `'today'` (Hari Ini), seragam dengan riwayat defect.
+
+---
+
+## 6. Redesain Praktis & Ergonomis Dialog Modal Shop Floor
+
+### 6.1 Modal Konfirmasi Produksi (`ConfirmProductionModal.js`)
+- **Penyelesaian Bug Data Output & Efisiensi 0%**:
+  - Komponen sebelumnya hanya membaca `items` via props langsung, sedangkan layar input mengirimkan objek terbungkus `data={{ items, ... }}`.
+  - Ditambahkan resolusi *fallback* ganda: `items = Array.isArray(data?.items) ? data.items : (Array.isArray(propsItems) ? propsItems : [])`.
+  - Data target, aktual hasil, dan persentase efisiensi batch kini terhitung dan tampil presisi.
+- **Solusi Tabrakan Teks Baris Konteks (*2-Row Context Strip*)**:
+  - Sebelumnya tanggal panjang (`Selasa, 27 Oktober 2026`), teks shift (`• Shift 1`), dan nama operator berada dalam satu baris horizontal flex, menyebabkan teks shift patah ke bawah ikon kalender dan menabrak nama operator.
+  - Dipecah menjadi 2 baris teratur:
+    - **Baris 1**: `[Calendar] Selasa, 27 Oktober 2026` (Kiri) + `[Shift 1 Pill]` (Kanan).
+    - **Baris 2**: `[User] Operator: Aliva Fauzi Octavian` (Kiri) + `[1 Mesin Badge]` (Kanan).
+  - Tampilan bebas tabrakan (*zero overlap*) pada seluruh resolusi layar smartphone.
+
+### 6.2 Modal Konfirmasi Temuan Cacat (`ConfirmDefectModal.js`)
+- **Desain Ringkas & Bebas Terpotong (*Zero Truncation*)**:
+  - Menghilangkan *header double-row* yang memakan ruang vertikal.
+  - Memisahkan kode part (`partNumber`) dan nama part (`partName`) ke dalam baris bertingkat sehingga nama part panjang tampil 100% utuh.
+  - Menghadirkan *Hero NG Quantity Box* kontras tinggi untuk verifikasi visual cepat jumlah temuan sebelum dikirim ke server.
+  - Mendukung pembacaan data baik melalui prop `data={{ ... }}` maupun props individual.
+
+### 6.3 Modal Profil Operator (`OperatorProfileModal.js`)
+- **Format Drawer Bawah Praktis (~140px Lebih Ringkas)**:
+  - Header profil digabungkan dalam satu baris horizontal: Avatar Inisial + Nama Lengkap + Badge Role & Username + Tombol Tutup (X).
+  - Mengelompokkan pengaturan aplikasi ke dalam satu *Grouped Settings Card* terpadu (Tema Tampilan & Informasi Versi).
+  - Mengintegrasikan interaksi ganti tema Gelap/Terang langsung melalui *Toggle Pill* di dalam modal tanpa perlu navigasi keluar.
+  - Tombol Keluar / Logout ditempatkan di bagian bawah dengan gaya merah yang tegas namun ergonomis.
+
+### 6.4 Modal Konfirmasi Logout (`LogoutConfirmModal.js`)
+- Tampilan dialog konfirmasi keluar disederhanakan dengan ikon penanda yang jelas, teks instruksi to-the-point, dan tombol tindakan yang proporsional.
