@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { authService } from '../api/services/authService';
+import { defectService } from '../api/services/defectService';
 import { setOnUnauthorized } from '../api/client';
 
 const TOKEN_KEY = '@qc_auth_token';
@@ -112,6 +113,17 @@ export const AuthProvider = ({ children }) => {
 
       setToken(jwtToken);
       setUser(userData);
+
+      // Sinkronisasi otomatis master data dari database ke cache lokal (AsyncStorage)
+      setTimeout(() => {
+        Promise.allSettled([
+          defectService.getParts(),
+          defectService.getDefectTypes(),
+          defectService.getMachines(),
+          defectService.getOperators(),
+        ]).catch(() => {});
+      }, 100);
+
       return { success: true, user: userData };
     } catch (error) {
       console.error('Login error:', error);

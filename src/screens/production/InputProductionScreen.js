@@ -41,7 +41,6 @@ import { defectService } from '../../api/services/defectService';
 import { productionService } from '../../api/services/productionService';
 import { formatIndonesianDate, getLocalDateString } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
-import { MASTER_PARTS, MASTER_MACHINES } from '../../data/masterData';
 
 // Shift options
 const SHIFTS = [
@@ -93,8 +92,8 @@ export const InputProductionScreen = ({ navigation }) => {
   const { user } = useAuth();
 
   // Master Data
-  const [parts, setParts] = useState(MASTER_PARTS);
-  const [machines, setMachines] = useState(MASTER_MACHINES);
+  const [parts, setParts] = useState([]);
+  const [machines, setMachines] = useState([]);
 
   // Form Global State
   const [selectedShift, setSelectedShift] = useState('Shift 1');
@@ -150,8 +149,8 @@ export const InputProductionScreen = ({ navigation }) => {
           defectService.getMachines(),
         ]);
 
-        const validParts = Array.isArray(partsList) && partsList.length > 0 ? partsList : MASTER_PARTS;
-        const validMachines = Array.isArray(machinesList) && machinesList.length > 0 ? machinesList : MASTER_MACHINES;
+        const validParts = Array.isArray(partsList) ? partsList : [];
+        const validMachines = Array.isArray(machinesList) ? machinesList : [];
 
         setParts(validParts);
         setMachines(validMachines);

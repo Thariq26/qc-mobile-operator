@@ -4,17 +4,35 @@ import { ENDPOINTS, getBaseUrl } from '../endpoints';
 import { Platform } from 'react-native';
 import { getLocalDateString } from '../../utils/dateFormatter';
 import { userService } from './userService';
-import {
-  MASTER_PARTS,
-  MASTER_MACHINES,
-  MASTER_DEFECT_TYPES,
-  MASTER_OPERATORS,
-} from '../../data/masterData';
+// Kunci penyimpanan cache dinamis di memori lokal HP (Dynamic Offline Cache)
+const CACHE_KEYS = {
+  PARTS: '@qc_cached_parts_v1',
+  DEFECT_TYPES: '@qc_cached_defect_types_v1',
+  MACHINES: '@qc_cached_machines_v1',
+};
 
-const FALLBACK_PARTS = MASTER_PARTS;
-const FALLBACK_DEFECT_TYPES = MASTER_DEFECT_TYPES;
-const FALLBACK_MACHINES = MASTER_MACHINES;
-const FALLBACK_OPERATORS = MASTER_OPERATORS;
+// Helper membaca cache lokal jika offline
+const getLocalCache = async (key) => {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.warn(`Failed reading cache for ${key}:`, e);
+    return [];
+  }
+};
+
+// Helper menyimpan cache lokal dari database
+const setLocalCache = async (key, data) => {
+  try {
+    if (Array.isArray(data) && data.length > 0) {
+      await AsyncStorage.setItem(key, JSON.stringify(data));
+    }
+  } catch (e) {
+    console.warn(`Failed writing cache for ${key}:`, e);
+  }
+};
+
 const DEFECT_STORAGE_KEY = '@qc_local_defect_history_buffer_v2';
 
 // Persisted local history buffer for offline shop floor recording
@@ -54,55 +72,58 @@ export const defectService = {
     try {
       const response = await apiClient.get(ENDPOINTS.PARTS);
       if (Array.isArray(response.data) && response.data.length > 0) {
-        return response.data.map((p) => ({
+        const mapped = response.data.map((p) => ({
           id: p.id,
           partNumber: p.partNumber,
           partName: p.partName,
           line: p.line || 'Stamping',
           status: p.status || 'Active',
         }));
+        await setLocalCache(CACHE_KEYS.PARTS, mapped);
+        return mapped;
       }
-      return FALLBACK_PARTS;
     } catch (err) {
-      console.warn('Gagal memuat master part dari database:', err?.message);
-      return FALLBACK_PARTS;
+      console.warn('Gagal memuat master part dari database, membaca cache lokal:', err?.message);
     }
+    return await getLocalCache(CACHE_KEYS.PARTS);
   },
 
   getDefectTypes: async () => {
     try {
       const response = await apiClient.get(ENDPOINTS.DEFECTS);
       if (Array.isArray(response.data) && response.data.length > 0) {
-        return response.data.map((d) => ({
+        const mapped = response.data.map((d) => ({
           id: d.id,
           name: d.name,
           category: d.category || 'Medium',
           proses: d.proses || 'Stamping',
           description: d.description || `Cacat ${d.name}`,
         }));
+        await setLocalCache(CACHE_KEYS.DEFECT_TYPES, mapped);
+        return mapped;
       }
-      return FALLBACK_DEFECT_TYPES;
     } catch (err) {
-      console.warn('Gagal memuat master defect dari database:', err?.message);
-      return FALLBACK_DEFECT_TYPES;
+      console.warn('Gagal memuat master defect dari database, membaca cache lokal:', err?.message);
     }
+    return await getLocalCache(CACHE_KEYS.DEFECT_TYPES);
   },
 
   getMachines: async () => {
     try {
       const response = await apiClient.get(ENDPOINTS.MACHINES);
       if (Array.isArray(response.data) && response.data.length > 0) {
-        return response.data.map((m) => ({
+        const mapped = response.data.map((m) => ({
           id: m.id,
           name: m.name,
           line: m.line || 'Stamping',
         }));
+        await setLocalCache(CACHE_KEYS.MACHINES, mapped);
+        return mapped;
       }
-      return FALLBACK_MACHINES;
     } catch (err) {
-      console.warn('Gagal memuat master mesin dari database:', err?.message);
-      return FALLBACK_MACHINES;
+      console.warn('Gagal memuat master mesin dari database, membaca cache lokal:', err?.message);
     }
+    return await getLocalCache(CACHE_KEYS.MACHINES);
   },
 
   getOperators: async (role = null) => {
