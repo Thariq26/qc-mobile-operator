@@ -250,7 +250,7 @@ export const dashboardService = {
       // Filter cacat dalam rentang periode aktif
       const defectList = rawDefectList.filter((d) => isWithinPeriod(d.defectDate));
 
-      // Hitung frekuensi akumulasi seluruh jenis cacat pada periode aktif, lalu urutkan secara Pareto (Top 5 Saja)
+      // Hitung frekuensi akumulasi seluruh jenis cacat pada periode aktif untuk stratifikasi SPC (Top 5 Cacat Utama)
       const defectCounts = {};
       defectList.forEach((d) => {
         const name = (d.defectName || 'Lain-lain').trim();

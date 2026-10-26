@@ -96,7 +96,7 @@ export const SpcControlChart = ({
     (d) => (d.name || '').toLowerCase() === activeDefect.toLowerCase()
   );
 
-  // Helper metadata Pareto rank & pewarnaan tingkat urgensi cacat
+  // Helper metadata rank & pewarnaan tingkat urgensi cacat
   const getRankMeta = (index) => {
     if (index === 0) {
       return {
@@ -434,7 +434,7 @@ export const SpcControlChart = ({
         </View>
       </View>
 
-      {/* Dynamic Pareto Top 5 Defect Section */}
+      {/* Dynamic Stratifikasi Top 5 Defect Section */}
       {topDefects.length > 0 ? (
         <View style={styles.defectFilterWrapper}>
           {/* Section Header Strip */}
@@ -442,7 +442,7 @@ export const SpcControlChart = ({
             <View style={styles.defectHeaderLeft}>
               <ChartBar size={15} color={colors.primary} style={{ marginRight: 6 }} />
               <Text style={[styles.defectHeaderTitle, { color: colors.textPrimary }]}>
-                TOP 5 PARETO CACAT
+                STRATIFIKASI CACAT UTAMA
               </Text>
               <View
                 style={[
@@ -699,7 +699,7 @@ export const SpcControlChart = ({
                         { color: isSelected ? '#E0E7FF' : colors.textSecondary },
                       ]}
                     >
-                      {pVal}% Pareto
+                      {pVal}% Porsi
                     </Text>
                   </View>
 
