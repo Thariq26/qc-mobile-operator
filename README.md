@@ -112,21 +112,7 @@ cd qc-mobile-operator
 npm install
 ```
 
-### 3. Konfigurasi Variabel Lingkungan
-Salin file `.env.example` menjadi `.env`:
-```bash
-cp .env.example .env
-```
-Isi konfigurasi pada file `.env`:
-```env
-# URL REST API Backend (kosongkan jika menggunakan mock/offline mode)
-EXPO_PUBLIC_API_URL=https://qc-backend-gmp.onrender.com
-
-# [Opsional] Google Gemini API Key untuk integrasi Tanya AI live
-EXPO_PUBLIC_GEMINI_API_KEY=
-```
-
-### 4. Menjalankan Server Pengembangan Expo
+### 3. Menjalankan Server Pengembangan Expo
 ```bash
 npx expo start
 ```
