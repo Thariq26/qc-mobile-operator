@@ -20,6 +20,7 @@ import {
   Filter,
   WifiOff,
   Calendar,
+  X,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -100,8 +101,9 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
   const totalGross = filteredList.reduce((acc, i) => acc + (Number(i.producedQuantity ?? i.grossProduced ?? i.produced ?? 0)), 0);
   const totalNet = filteredList.reduce((acc, i) => acc + (Number(i.netProduced ?? 0)), 0);
   const totalNg = filteredList.reduce((acc, i) => acc + (Number(i.totalNg ?? 0)), 0);
-  const avgEfficiency = filteredList.length > 0
-    ? Math.round(filteredList.reduce((acc, i) => acc + (Number(i.efficiency ?? 0)), 0) / filteredList.length)
+  // First-Pass Yield (% Kualitas OK dari Total Produksi)
+  const efficiencyRate = totalGross > 0
+    ? Number(((totalNet / totalGross) * 100).toFixed(1))
     : 100;
 
   const renderItem = ({ item }) => {
@@ -158,21 +160,23 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
           </View>
         </View>
 
-        {/* Part Info & Process Info */}
-        <View style={styles.partRow}>
-          <View style={[styles.partPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.partNumText, { color: colors.primary }]}>
-              {item.partNumber || 'PT-1001'}
-            </Text>
-            <Text style={[styles.partNameText, { color: colors.textPrimary }]} numberOfLines={1}>
-              {item.partName || 'Part Komponen'}
-            </Text>
+        {/* Part Info Block (Bebas Truncation) */}
+        <View style={[styles.partCardBlock, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+          <View style={styles.partTopRow}>
+            <View style={[styles.partNumBadge, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '30' }]}>
+              <Text style={[styles.partNumText, { color: colors.primary }]}>
+                {item.partNumber || 'PT-1001'}
+              </Text>
+            </View>
+            <View style={[styles.processBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.processText, { color: colors.textSecondary }]}>
+                {item.processName || item.process || 'Stamping'}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.processPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.processText, { color: colors.textSecondary }]}>
-              {item.processName || item.process || 'Stamping'}
-            </Text>
-          </View>
+          <Text style={[styles.partNameFull, { color: colors.textPrimary }]} numberOfLines={1}>
+            {item.partName || 'Part Komponen'}
+          </Text>
         </View>
 
         {/* 4 Metrics Columns: Target, Gross, NG, Net OK */}
@@ -324,114 +328,139 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
       )}
 
       <View style={styles.content}>
-        {/* Top Header Bar */}
-        <View style={styles.screenHeader}>
-          <View>
-            <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
-              RIWAYAT PRODUKSI
-            </Text>
-            <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-              Rekap hasil cetak mesin, target, dan produk bagus bersih
-            </Text>
-          </View>
-        </View>
+        <FlatList
+          data={loading ? [] : filteredList}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+          ListHeaderComponent={
+            <View style={styles.scrollableHeaderContainer}>
+              {/* 1. Top Header Bar */}
+              <View style={styles.screenHeader}>
+                <View>
+                  <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+                    RIWAYAT PRODUKSI
+                  </Text>
+                  <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+                    Rekap hasil cetak mesin, target, dan produk bagus bersih
+                  </Text>
+                </View>
+              </View>
 
-        {/* Period Selector Tabs: Hari Ini | 7 Hari | Semua */}
-        <View style={[styles.filterBar, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-          {[
-            { id: 'today', label: 'Hari Ini' },
-            { id: 'week', label: '7 Hari Terakhir' },
-            { id: 'all', label: 'Semua Rekaman' },
-          ].map((tab) => {
-            const isSelected = filterPeriod === tab.id;
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => setFilterPeriod(tab.id)}
-                style={[
-                  styles.filterTab,
-                  isSelected && { backgroundColor: colors.primary },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    {
-                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                      fontWeight: isSelected ? '800' : '600',
-                    },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+              {/* 2. Period Selector Tabs: Hari Ini | 7 Hari | Semua */}
+              <View style={[styles.filterBar, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+                {[
+                  { id: 'today', label: 'Hari Ini' },
+                  { id: 'week', label: '7 Hari' },
+                  { id: 'all', label: 'Semua' },
+                ].map((tab) => {
+                  const isSelected = filterPeriod === tab.id;
+                  return (
+                    <Pressable
+                      key={tab.id}
+                      onPress={() => setFilterPeriod(tab.id)}
+                      style={[
+                        styles.filterTab,
+                        isSelected && [
+                          styles.filterTabActive,
+                          { backgroundColor: colors.primary },
+                        ],
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.filterTabText,
+                          {
+                            color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                            fontWeight: isSelected ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {tab.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
 
-        {/* Search Bar */}
-        <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Search size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-          <TextInput
-            placeholder="Cari mesin, nomor part, proses, shift..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={[styles.searchInput, { color: colors.textPrimary }]}
-          />
-        </View>
+              {/* 3. Search Bar */}
+              <View style={[styles.searchBox, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
+                <Search size={15} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <TextInput
+                  placeholder="Cari mesin, part, proses, shift..."
+                  placeholderTextColor={colors.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={[styles.searchInput, { color: colors.textPrimary }]}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                />
+                {searchQuery.length > 0 && (
+                  <Pressable
+                    onPress={() => setSearchQuery('')}
+                    hitSlop={8}
+                    style={[styles.clearBtn, { backgroundColor: colors.card }]}
+                  >
+                    <X size={13} color={colors.textSecondary} />
+                  </Pressable>
+                )}
+              </View>
 
-        {/* KPI Mini Summary Ribbon */}
-        <View style={styles.summaryRibbon}>
-          <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Gross</Text>
-            <Text style={[styles.summaryPillVal, { color: colors.textPrimary }]}>
-              {totalGross.toLocaleString('id-ID')} pcs
-            </Text>
-          </View>
-          <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>NG</Text>
-            <Text style={[styles.summaryPillVal, { color: colors.textPrimary }]}>
-              {totalNg.toLocaleString('id-ID')} pcs
-            </Text>
-          </View>
-          <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Net OK</Text>
-            <Text style={[styles.summaryPillVal, { color: colors.textPrimary }]}>
-              {totalNet.toLocaleString('id-ID')} pcs
-            </Text>
-          </View>
-          <View style={[styles.summaryPill, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <Text style={[styles.summaryPillLabel, { color: colors.textSecondary }]}>Efisiensi</Text>
-            <Text style={[styles.summaryPillVal, { color: colors.textPrimary }]}>
-              {avgEfficiency}%
-            </Text>
-          </View>
-        </View>
+              {/* 4. KPI Summary Banner (Satu Baris Terpadu & Rapi) */}
+              <View style={[styles.summaryBar, { backgroundColor: colors.cardSubtle, borderColor: colors.border, marginBottom: 0 }]}>
+                <View style={[styles.summaryCol, { borderRightColor: colors.border }]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Gross</Text>
+                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
+                    {totalGross.toLocaleString('id-ID')}
+                  </Text>
+                  <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>pcs</Text>
+                </View>
 
-        {/* List Content */}
-        {loading ? (
-          <View style={{ gap: 12, marginTop: 12 }}>
-            <SkeletonLoader height={140} borderRadius={16} />
-            <SkeletonLoader height={140} borderRadius={16} />
-            <SkeletonLoader height={140} borderRadius={16} />
-          </View>
-        ) : (
-          <FlatList
-            data={filteredList}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderItem}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={colors.primary}
-                colors={[colors.primary]}
-              />
-            }
-            ListEmptyComponent={
+                <View style={[styles.summaryCol, { borderRightColor: colors.border }]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>NG</Text>
+                  <Text style={[styles.summaryVal, { color: colors.critical }]}>
+                    {totalNg.toLocaleString('id-ID')}
+                  </Text>
+                  <Text style={[styles.summaryUnit, { color: colors.critical }]}>pcs</Text>
+                </View>
+
+                <View style={[styles.summaryCol, { borderRightColor: colors.border }]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Net OK</Text>
+                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
+                    {totalNet.toLocaleString('id-ID')}
+                  </Text>
+                  <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>pcs</Text>
+                </View>
+
+                <View style={[styles.summaryCol, styles.summaryColLast]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Efisiensi</Text>
+                  <Text style={[styles.summaryVal, { color: colors.success }]}>
+                    {efficiencyRate}%
+                  </Text>
+                  <Text style={[styles.summaryUnit, { color: colors.success }]}>yield</Text>
+                </View>
+              </View>
+            </View>
+          }
+          ListEmptyComponent={
+            loading ? (
+              <View style={{ gap: 12, marginTop: 4 }}>
+                <SkeletonLoader height={140} borderRadius={16} />
+                <SkeletonLoader height={140} borderRadius={16} />
+                <SkeletonLoader height={140} borderRadius={16} />
+              </View>
+            ) : (
               <View style={[styles.emptyBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Layers size={36} color={colors.textSecondary} style={{ marginBottom: 10 }} />
                 <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
@@ -443,9 +472,9 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
                     : 'Catat hasil cetak mesin harian Anda melalui menu "Input Prod" di navigasi bawah.'}
                 </Text>
               </View>
-            }
-          />
-        )}
+            )
+          }
+        />
       </View>
     </View>
   );
@@ -485,6 +514,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
   },
+  scrollableHeaderContainer: {
+    paddingBottom: 2,
+  },
   screenHeader: {
     marginBottom: 10,
   },
@@ -499,62 +531,87 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    padding: 4,
-    marginBottom: 12,
-    minHeight: 50,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 3,
+    marginBottom: 10,
+    height: 38,
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 10,
-    minHeight: 42,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 7,
+  },
+  filterTabActive: {
+    elevation: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 1.5,
   },
   filterTabText: {
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.micro + 2,
+    letterSpacing: 0.2,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    height: 48,
-    marginBottom: 12,
+    height: 38,
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.micro + 2,
     paddingVertical: 0,
   },
-  summaryRibbon: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 12,
-  },
-  summaryPill: {
-    flex: 1,
+  clearBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    minHeight: 50,
     justifyContent: 'center',
   },
-  summaryPillLabel: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '700',
+  summaryBar: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 8,
+    marginBottom: 0,
+    alignItems: 'center',
   },
-  summaryPillVal: {
-    fontSize: typography.sizes.caption,
+  summaryCol: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+    borderRightWidth: 1,
+  },
+  summaryColLast: {
+    borderRightWidth: 0,
+  },
+  summaryLabel: {
+    fontSize: typography.sizes.micro - 1,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  summaryVal: {
+    fontSize: 14.5,
     fontWeight: '800',
-    marginTop: 2,
+    letterSpacing: 0.1,
+  },
+  summaryUnit: {
+    fontSize: typography.sizes.micro - 2,
+    fontWeight: '600',
+    marginTop: 1,
   },
   listContainer: {
-    paddingBottom: 24,
+    paddingBottom: 36,
     gap: 12,
   },
   card: {
@@ -602,40 +659,43 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.micro,
     fontWeight: '700',
   },
-  partRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  partPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  partCardBlock: {
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+  },
+  partTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  partNumBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
   },
   partNumText: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.micro + 1,
     fontWeight: '800',
-    marginRight: 6,
+    letterSpacing: 0.5,
   },
-  partNameText: {
-    fontSize: typography.sizes.caption,
-    flex: 1,
-    fontWeight: '600',
-  },
-  processPill: {
+  processBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
   },
   processText: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.micro,
     fontWeight: '700',
+  },
+  partNameFull: {
+    fontSize: typography.sizes.caption + 1,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   shiftPill: {
     flexDirection: 'row',
