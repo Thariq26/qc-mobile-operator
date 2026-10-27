@@ -67,6 +67,32 @@ const persistLocalDefectBuffer = async () => {
   }
 };
 
+// Helper menentukan lini part (Welding vs Stamping)
+const resolvePartLine = (p) => {
+  if (!p) return 'Stamping';
+  if (p.line && (p.line.toLowerCase().includes('weld') || p.line.toLowerCase().includes('bend'))) {
+    return p.line;
+  }
+  const text = `${p.partName || ''} ${p.partNumber || ''}`.toLowerCase();
+  if (
+    text.includes('grabrail') ||
+    text.includes('cross member') ||
+    text.includes('side member') ||
+    text.includes('subframe') ||
+    text.includes('welding') ||
+    text.includes('frame') ||
+    text.includes('rail') ||
+    text.includes('stay comp') ||
+    text.includes('pillar') ||
+    text.includes('gusset') ||
+    text.includes('pipe') ||
+    text.includes('tower')
+  ) {
+    return 'Welding';
+  }
+  return 'Stamping';
+};
+
 export const defectService = {
   getParts: async () => {
     try {
@@ -76,7 +102,7 @@ export const defectService = {
           id: p.id,
           partNumber: p.partNumber,
           partName: p.partName,
-          line: p.line || 'Stamping',
+          line: resolvePartLine(p),
           status: p.status || 'Active',
         }));
         await setLocalCache(CACHE_KEYS.PARTS, mapped);
@@ -85,7 +111,11 @@ export const defectService = {
     } catch (err) {
       console.warn('Gagal memuat master part dari database, membaca cache lokal:', err?.message);
     }
-    return await getLocalCache(CACHE_KEYS.PARTS);
+    const cached = await getLocalCache(CACHE_KEYS.PARTS);
+    return (cached || []).map((p) => ({
+      ...p,
+      line: resolvePartLine(p),
+    }));
   },
 
   getDefectTypes: async () => {

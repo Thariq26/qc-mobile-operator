@@ -22,6 +22,12 @@
 | **8** | **Dynamic Cache & Hapus Master Data** | `src/data/masterData.js` *(dihapus)*<br>`src/api/services/defectService.js`<br>`src/api/services/userService.js`<br>`src/context/AuthContext.js` | `605342d8` | Menghapus 474 baris data dummy statis dan menggantinya dengan Dynamic Local Caching (`AsyncStorage`) yang di-prefetch otomatis dari MySQL saat login. |
 | **9** | **Pembersihan Pareto ke Analisis SPC** | `src/components/dashboard/ParetoBar.js` *(dihapus)*<br>`src/components/dashboard/SpcControlChart.js` | `605342d8` | Menghapus diagram Pareto lama dan menyelaraskan label pada grafik kendali mutu SPC p-Chart menjadi *"STRATIFIKASI CACAT UTAMA"*. |
 | **10** | **Redesain Praktis & Ergonomis Seluruh Modal Dialog** | `src/components/common/ConfirmProductionModal.js`<br>`ConfirmDefectModal.js`<br>`OperatorProfileModal.js`<br>`LogoutConfirmModal.js` | `605342d8` | Merestrukturisasi 4 modal utama: mengatasi tabrakan baris tanggal/shift/operator (*2-row context strip*), perbaikan parsing data batch produksi (0 mesin/efisiensi bug fix), hero box kuantitas NG, serta drawer profil & konfirmasi logout yang ringkas dan modern. |
+| **11** | **Redesain Selector Part & Klasifikasi Lini Welding** | `src/screens/production/InputProductionScreen.js`<br>`src/api/services/defectService.js` | `605342d8` | Mengatasi teks tertindih pada kartu Part: memisahkan badge nomor part (21 karakter) ke baris mandiri dan lini ke baris ketiga. Menambahkan resolver domain cerdas (`resolvePartLine` / `getPartLine`) untuk memulihkan tab Welding yang hilang dengan penghitungan riil. |
+| **12** | **Pembersihan Label Shift pada Identitas Operator** | `src/screens/defect/InputDefectScreen.js`<br>`src/api/services/userService.js` | `605342d8` | Menghapus label `• Shift 1` / `• Shift 2` dari trigger dan daftar dropdown operator karena personil tidak terikat permanen pada shift tertentu. Menghapus fallback dummy genap/ganjil di `userService.js` dan menaikkan cache ke `@qc_cached_operators_v2`. |
+| **13** | **Redesain Praktis Modal Proses Operasional** | `src/screens/production/InputProductionScreen.js` | `605342d8` | Menghilangkan kartu raksasa "Proses Kustom" yang memakan ruang. Memindahkan Search Bar langsung di bawah header, menambahkan chip toggle `[✨ + Kustom]`, dan fitur cerdas *1-tap search-to-custom* sehingga kapasitas daftar proses standar meningkat menjadi 7–8 item. |
+| **14** | **Optimalisasi Spacing Jarak & Tombol Simpan Form** | `src/screens/production/InputProductionScreen.js`<br>`src/screens/defect/InputDefectScreen.js` | `605342d8` | Memangkas jarak kosong (whitespace) berlebih dari 42px (Produksi) dan 24px (Defect) menjadi **12px** terpadu. Menyelaraskan tombol simpan ke tinggi ergonomis **48px** dengan ikon `<CheckCircle2 size={18} />`, memangkas padding bawah scroll ke 20px, dan menghapus teks usang "Supabase". |
+| **15** | **Perbaikan Splash Image Screen Expo Go** | `app.json`<br>`App.js`<br>`assets/splash.png` | `605342d8` | Memperbaiki masalah blank putih pada Expo Go dengan rasio gambar splash proporsional (`resizeMode: contain`), latar belakang gelap `#0F172A`, dan penanganan lifecycle splash screen (`SplashScreen.preventAutoHideAsync()` & `hideAsync()`). |
+| **16** | **Pembersihan Baris Kode Tidak Terpakai** | `src/navigation/BottomTabNavigator.js`<br>`src/components/dashboard/RfModal.js`<br>`src/screens/dashboard/DashboardScreen.js` | `605342d8` | Menghapus impor dan deklarasi state/fungsi yang tidak pernah dipanggil untuk menjaga kebersihan dan performa bundle aplikasi. |
 
 ---
 
@@ -164,3 +170,100 @@ Sempat terjadi perbedaan data antara Web (`localhost:8081`) dan Expo Go di HP ak
 
 ### 6.4 Modal Konfirmasi Logout (`LogoutConfirmModal.js`)
 - Tampilan dialog konfirmasi keluar disederhanakan dengan ikon penanda yang jelas, teks instruksi to-the-point, dan tombol tindakan yang proporsional.
+
+---
+
+## 7. Redesain Kartu Selector Part & Klasifikasi Otomatis Lini Welding
+
+### Latar Belakang & Masalah
+1. **Teks Tertindih**: Pada kartu pemicu modal pemilihan Part di layar Input Produksi, badge nomor part yang panjang (21 karakter, misal `50128-K41A-N000-H1-R`) dan badge keterangan lini diletakkan sejajar dalam satu baris horizontal (`flexDirection: 'row'`). Akibatnya, teks lini terdorong keluar batas dan tertindih oleh tombol panah chevron (`triggerChevronBox`).
+2. **Part Welding Hilang**: Entitas backend MySQL `Part.java` tidak memiliki kolom `line`. Sebelumnya `defectService.js` meng-hardcode fallback semua part ke `'Stamping'`. Karena penghitung part `Welding` bernilai 0, filter dinamis menyembunyikan tab `[Welding]` sepenuhnya sehingga operator tidak dapat melihat maupun memilih komponen pengelasan.
+
+### Solusi Teknis
+1. **Struktur Bertingkat Kartu Selector Part**:
+   - **Baris 1**: Badge Part Number (`partNumberBadge`) berdiri sendiri penuh di bagian atas.
+   - **Baris 2**: Nama Part (`triggerMainTitle`) tampil tebal dan leluasa.
+   - **Baris 3**: Keterangan Lini (`Lini: Stamping` / `Lini: Welding`) ditempatkan sebagai subteks rapi di bawah nama part, bebas dari tabrakan dengan tombol chevron.
+2. **Pengklasifikasi Domain Lini Manufaktur (`resolvePartLine` / `getPartLine`)**:
+   - Menambahkan fungsi resolver cerdas pada `defectService.js` dan `InputProductionScreen.js` yang mengenali katalog komponen PT Galaxy Mandiri Perkasa:
+     - Komponen perakitan / pengelasan (*Grabrail, Cross Member, Subframe, Stay Comp, Frame, Pipe, Gusset, Tower, dsb.*) otomatis dipetakan ke lini **Welding**.
+     - Komponen lembaran plat tunggal (*Plate, Bracket, Reinforce, Gusset tunggal, dsb.*) dipetakan ke lini **Stamping**.
+   - Tab **[Semua]**, **[Stamping]**, dan **[Welding]** kini selalu aktif dengan kalkulasi jumlah riil masing-masing kategori, dan saat part welding dipilih, form input otomatis mencatat lini sebagai `Lini: Welding`.
+
+---
+
+## 8. Pembersihan Label Shift pada Identitas Operator
+
+### Latar Belakang & Masalah
+Operator adalah personil lantai pabrik yang **tidak terikat secara permanen pada Shift 1 atau Shift 2**. Jadwal shift kerja ditentukan secara manual per transaksi laporan harian, bukan menempel pada profil user. Sebelumnya, saat perombakan dropdown operator, sempat muncul tag `• Shift 1` dan `• Shift 2` di sebelah role operator akibat fallback dummy statis di `userService.js`.
+
+### Solusi Teknis
+1. **Pembersihan di `InputDefectScreen.js`**:
+   - Menghapus tag `• Shift 1` dari pemicu kartu (*trigger selector*). Kini hanya menampilkan Nama Operator, `@username`, dan badge jabatan (misal: `Operator Produksi` atau `Admin`).
+   - Menghapus label shift dari seluruh baris item di dalam dropdown accordion operator.
+   - Menghapus filter dan inisialisasi default berdasarkan shift, digantikan langsung dengan pemuatan user pertama dari database tanpa syarat shift.
+2. **Pembersihan di `userService.js`**:
+   - Menghapus atribut `shift` buatan `(idx % 2 === 0 ? 'Shift 1' : 'Shift 2')` dari mapping database Spring Boot.
+   - Memperbarui cache storage lokal ke `@qc_cached_operators_v2` agar cache lama di perangkat otomatis digantikan data bersih.
+
+---
+
+## 9. Redesain Praktis Modal Proses Operasional
+
+### Latar Belakang & Masalah
+Pada modal `PILIH PROSES OPERASIONAL`, terdapat kartu raksasa "Gunakan Proses Khusus / Kustom" yang permanen di bagian atas. Kartu ini menyita hampir 30% area layar ponsel dan menciptakan dua kotak input teks yang bertumpuk dengan Search Bar, sehingga daftar proses operasional terdesak ke bawah dan hanya mampu menampilkan 3–4 item.
+
+### Solusi Teknis
+1. **Menghapus Kotak Kustom Permanen**:
+   - Mengubah proses kustom menjadi tombol *toggle* ringkas **`[✨ + Kustom]`** di samping tab filter kategori.
+   - Kotak input kustom hanya muncul saat tombol tersebut sengaja ditekan oleh operator.
+2. **Search Bar Langsung di Bawah Header**:
+   - Kotak pencarian kini langsung berada di bagian atas tepat di bawah header modal (seragam dan konsisten dengan modal Master Part dan Mesin).
+3. **Pencarian Cerdas ke Proses Kustom (*Smart 1-Tap Apply*)**:
+   - Jika operator mengetik nama proses non-standar di Search Bar (misal: *"Chamfering"* atau *"Deburring"*), otomatis muncul kartu saran 1-ketuk: *✨ Gunakan "Chamfering" [Pilih]* tanpa perlu repot membuka input tambahan.
+4. **Peningkatan Kapasitas Viewport**:
+   - Area daftar proses operasional kini mendapatkan 85%+ ruang modal, mampu menampilkan **7 hingga 8 proses standar sekaligus** tanpa perlu langsung menggulir layar.
+
+---
+
+## 10. Optimalisasi Jarak (Spacing) & Tombol Simpan Form
+
+### Latar Belakang & Masalah
+1. **Penumpukan Margin Kosong (*Excessive Whitespace*)**:
+   - Di `InputProductionScreen.js`, terjadi penumpukan margin (`itemCard` 16px + `sectionBlock` 18px + `saveContainer` 8px = **total 42px kekosongan**) antara kartu form terakhir dan tombol simpan.
+   - Di `InputDefectScreen.js`, terdapat jarak kosong **24px** di atas tombol simpan.
+2. **Tombol Terlalu Besar & Teks Usang**:
+   - Tombol simpan menggunakan ukuran `large` (tinggi 54px) yang terlalu masif tanpa ikon penanda.
+   - Di bawah tombol simpan produksi terdapat teks usang *"Data akan disinkronkan ke Supabase..."* yang tidak relevan dengan backend MySQL Spring Boot PT GMP.
+
+### Solusi Teknis
+1. **Merapatkan Jarak Kosong Menjadi 12px**:
+   - Kartu produksi terakhir diatur ke `marginBottom: 0` dan kontainer tombol diatur rapat, menghasilkan jarak terpadu **12px** yang padat dan menyatu secara visual di kedua layar.
+   - Memangkas `paddingBottom` scroll layar dari 64px/40px menjadi **20px** agar tidak ada ruang kosong mengambang di ujung bawah layar.
+2. **Penyelarasan Desain Tombol Ergonomis**:
+   - Menyelaraskan ukuran tombol ke standar ergonomis sentuhan pabrik **48px** (`size="default"`, `borderRadius: 14`) dengan ikon verifikasi `<CheckCircle2 size={18} color="#FFFFFF" />`.
+   - Menghapus teks usang referensi "Supabase" sehingga tampilan layar bersih dan profesional.
+
+---
+
+## 11. Perbaikan Splash Image Screen pada Expo Go
+
+### Latar Belakang & Masalah
+Saat membuka aplikasi di Expo Go pada perangkat Android dan iOS, tampilan splash screen sempat mengalami *blank putih* beberapa detik sebelum masuk ke halaman Login/Dashboard. Hal ini disebabkan oleh rasio gambar splash yang tidak proporsional dan konfigurasi latar belakang yang tidak selaras dengan tema gelap aplikasi.
+
+### Solusi Teknis
+1. Di `app.json`:
+   - Mengatur `splash.resizeMode = "contain"`.
+   - Mengatur `splash.backgroundColor = "#0F172A"` (warna dasar Modern Industrial Dark Slate) agar transisi ke UI aplikasi berlangsung mulus tanpa kilatan putih.
+2. Di `App.js`:
+   - Memastikan pemanggilan `SplashScreen.preventAutoHideAsync()` saat inisialisasi font/tema dan `SplashScreen.hideAsync()` dieksekusi tepat setelah seluruh data awal siap.
+
+---
+
+## 12. Pembersihan Baris Kode Tidak Terpakai (*Dead Code Cleanup*)
+
+Menghapus impor pustaka, variabel, dan deklarasi fungsi yang tidak pernah digunakan pada:
+- `src/navigation/BottomTabNavigator.js`: Pembersihan impor ikon yang tidak terpakai dan refactoring navigasi tab.
+- `src/components/dashboard/RfModal.js`: Pembersihan parameter dan fungsi dummy.
+- `src/screens/dashboard/DashboardScreen.js`: Pembersihan state tak terpakai.
+- Menjaga kebersihan bundel aplikasi dan mempercepat waktu rendering di perangkat mobile.

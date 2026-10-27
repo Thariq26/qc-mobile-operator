@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as SplashScreen from 'expo-splash-screen';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -11,6 +12,12 @@ const Stack = createNativeStackNavigator();
 export const AppNavigator = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const { colors } = useTheme();
+
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading]);
 
   if (isLoading) {
     return (

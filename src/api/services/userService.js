@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../client';
 import { ENDPOINTS } from '../endpoints';
 
-const CACHE_KEY_OPERATORS = '@qc_cached_operators_v1';
+const CACHE_KEY_OPERATORS = '@qc_cached_operators_v2';
 
 export const userService = {
   /**
@@ -35,7 +35,6 @@ export const userService = {
           fullName: op.fullName || op.name || op.username,
           role: op.role || (op.username?.toLowerCase().includes('admin') ? 'ADMIN' : 'OPERATOR_PRODUKSI'),
           line: op.line || 'Lini Produksi',
-          shift: op.shift || (idx % 2 === 0 ? 'Shift 1' : 'Shift 2'),
         }));
 
         // Simpan ke cache lokal untuk offline fallback

@@ -21,6 +21,16 @@ import { LogoutConfirmModal } from './LogoutConfirmModal';
 import { OperatorProfileModal } from './OperatorProfileModal';
 
 /**
+ * Dapatkan inisial 2 huruf dari nama pengguna (e.g. "Aliva Fauzi" -> "AF")
+ */
+const getUserInitials = (name) => {
+  if (!name) return 'QC';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
+/**
  * AppHeader: Industrial Automotive QC Header
  * Features:
  * - Direct Change Password & Logout functions on top header
@@ -37,6 +47,16 @@ export const AppHeader = ({ isOffline = false }) => {
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+  const roleLabel = isOperatorProduksi
+    ? 'Operator'
+    : isStaffQc
+    ? 'Staff QC'
+    : isAdmin
+    ? 'Admin'
+    : user?.role
+    ? String(user.role).replace(/_/g, ' ')
+    : 'QC Inspector';
 
   // Breathing dot animation
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -100,44 +120,63 @@ export const AppHeader = ({ isOffline = false }) => {
       )}
 
       <View style={styles.contentRow}>
-        {/* Left: QC Blue Avatar Badge + Operator Info (Interactive) */}
+        {/* Left: User Avatar + Name & Company Context (Interactive Profile Button) */}
         <Pressable
           onPress={() => setProfileModalVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Buka Profil Operator"
+          accessibilityLabel="Buka Profil Pengguna"
           style={({ pressed }) => [
             styles.brandContainer,
             pressed && { opacity: 0.8 },
           ]}
         >
-          {/* Avatar Badge matching industrial plant floor specification */}
+          {/* Avatar Badge with User Initials */}
           <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
             <Text style={styles.logoBadgeText}>
-              {isOperatorProduksi ? 'OP' : isAdmin ? 'AD' : 'QC'}
+              {getUserInitials(user?.fullName || user?.username)}
             </Text>
           </View>
 
           <View style={styles.titleColumn}>
-            <View style={styles.companyRow}>
+            <Text
+              style={[styles.companyEyebrow, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
+              PT GALAXY MANDIRI PERKASA
+            </Text>
+
+            <View style={styles.userRow}>
               <Text
-                style={[styles.companyName, { color: colors.textPrimary }]}
+                style={[styles.userNameText, { color: colors.textPrimary }]}
                 numberOfLines={1}
               >
-                PT GALAXY MANDIRI PERKASA
+                {user?.fullName || user?.username || 'User'}
               </Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text
-                style={[styles.operatorText, { color: colors.textSecondary }]}
-                numberOfLines={1}
+
+              <View
+                style={[
+                  styles.rolePill,
+                  {
+                    backgroundColor: isAdmin
+                      ? (isDark ? 'rgba(168, 85, 247, 0.18)' : 'rgba(168, 85, 247, 0.12)')
+                      : (isDark ? 'rgba(59, 130, 246, 0.18)' : 'rgba(59, 130, 246, 0.12)'),
+                  },
+                ]}
               >
-                {user?.fullName || user?.username || 'User'} •{' '}
-                {isOperatorProduksi
-                  ? 'Operator Produksi'
-                  : isStaffQc
-                  ? 'Staff QC'
-                  : user?.role || 'QC Inspector'}
-              </Text>
+                <Text
+                  style={[
+                    styles.rolePillText,
+                    {
+                      color: isAdmin
+                        ? (isDark ? '#C084FC' : '#7C3AED')
+                        : (isDark ? '#60A5FA' : '#2563EB'),
+                    },
+                  ]}
+                >
+                  {roleLabel}
+                </Text>
+              </View>
+
               <ChevronDown size={13} color={colors.textMuted} style={{ marginLeft: 2 }} />
             </View>
           </View>
@@ -149,7 +188,14 @@ export const AppHeader = ({ isOffline = false }) => {
           <View
             style={[
               styles.statusTicker,
-              { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+              {
+                backgroundColor: isOffline
+                  ? (isDark ? 'rgba(234, 179, 8, 0.15)' : 'rgba(234, 179, 8, 0.1)')
+                  : (isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.1)'),
+                borderColor: isOffline
+                  ? (isDark ? 'rgba(234, 179, 8, 0.35)' : 'rgba(234, 179, 8, 0.25)')
+                  : (isDark ? 'rgba(34, 197, 94, 0.35)' : 'rgba(34, 197, 94, 0.25)'),
+              },
             ]}
           >
             <Animated.View
@@ -252,12 +298,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   logoBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 10,
     elevation: 3,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
@@ -274,34 +320,42 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  companyRow: {
+  companyEyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  userRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 1,
   },
-  companyName: {
+  userNameText: {
     fontSize: 13.5,
     fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  operatorText: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '500',
+    letterSpacing: 0.1,
+    marginRight: 6,
     flexShrink: 1,
+  },
+  rolePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  rolePillText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   statusTicker: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
@@ -313,14 +367,14 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   statusText: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   actionIconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',

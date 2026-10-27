@@ -22,6 +22,13 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { typography } from '../../theme/typography';
 
+const getUserInitials = (name) => {
+  if (!name) return 'QC';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
 /**
  * OperatorProfileModal: Shop Floor QC Profile & Quick Actions Drawer
  * Desain Praktis, Kompak, & Ergonomis
@@ -71,7 +78,7 @@ export const OperatorProfileModal = ({
           <View style={styles.profileHeaderRow}>
             <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
               <Text style={styles.avatarText}>
-                {isOperatorProduksi ? 'OP' : isAdmin ? 'AD' : 'QC'}
+                {getUserInitials(user?.fullName || user?.username)}
               </Text>
             </View>
 
@@ -96,7 +103,7 @@ export const OperatorProfileModal = ({
                 </View>
                 {user?.username ? (
                   <Text style={[styles.usernameText, { color: colors.textSecondary }]}>
-                    @{user.username}
+                    {user.username}
                   </Text>
                 ) : null}
               </View>

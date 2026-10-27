@@ -1,6 +1,10 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Tahan splash screen selama inisialisasi awal autentikasi aplikasi
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Lindungi layout aplikasi dari pembesaran font ekstrem di setelan aksesibilitas HP pengguna
 if (Text.defaultProps == null) Text.defaultProps = {};

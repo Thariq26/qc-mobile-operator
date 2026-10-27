@@ -7,6 +7,15 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0F17",
+      "dark": {
+        "image": "./assets/splash.png",
+        "backgroundColor": "#0B0F17"
+      }
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gmp.qcdefectmonitoring"

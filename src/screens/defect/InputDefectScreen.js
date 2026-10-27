@@ -82,6 +82,29 @@ const PRODUCTION_PROCESSES = [
 const SHIFTS = ['Shift 1', 'Shift 2'];
 
 /**
+ * Dapatkan 2 huruf inisial dari nama operator
+ */
+const getOperatorInitials = (name) => {
+  if (!name) return 'OP';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+/**
+ * Format nama role menjadi label yang rapi dan ramah operator
+ */
+const formatRoleLabel = (role) => {
+  if (!role) return 'Operator Produksi';
+  const r = String(role).toUpperCase();
+  if (r.includes('ADMIN')) return 'Admin';
+  if (r.includes('OPERATOR')) return 'Operator Produksi';
+  if (r.includes('QC')) return 'Staff QC';
+  if (r.includes('SUPERVISOR')) return 'Supervisor';
+  return role;
+};
+
+/**
  * InputDefectScreen: Catat Cacat Produk (NG) Handheld Form
  * Features:
  * - Manual Shift selection (Shift 1, Shift 2)
@@ -91,7 +114,7 @@ const SHIFTS = ['Shift 1', 'Shift 2'];
  * - Tips penanganan cepat AI removed per user requirement
  */
 export const InputDefectScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
 
   // Master Data
@@ -109,6 +132,7 @@ export const InputDefectScreen = ({ navigation }) => {
   const [partSearchQuery, setPartSearchQuery] = useState('');
 
   const [selectedDefect, setSelectedDefect] = useState(null);
+  const [defectSearchQuery, setDefectSearchQuery] = useState('');
   const [selectedProcess, setSelectedProcess] = useState('Blanking');
   const [selectedMachine, setSelectedMachine] = useState('Amada Press 01');
   const [quantity, setQuantity] = useState(1);
@@ -221,9 +245,8 @@ export const InputDefectScreen = ({ navigation }) => {
         setSelectedMachine(machinesList[0].name);
       }
       if (operatorsList.length > 0) {
-        const initialOp = operatorsList.find((op) => op.shift === 'Shift 1') || operatorsList[0];
-        setSelectedOperator(initialOp);
-        setOperatorName(initialOp.fullName);
+        setSelectedOperator(operatorsList[0]);
+        setOperatorName(operatorsList[0].fullName);
       }
     };
 
@@ -266,6 +289,15 @@ export const InputDefectScreen = ({ navigation }) => {
   // Stepper functions for quantity
   const incrementQty = () => setQuantity((prev) => prev + 1);
   const decrementQty = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  const setExactQty = (val) => {
+    const cleaned = String(val).replace(/[^0-9]/g, '');
+    if (cleaned === '') {
+      setQuantity(1);
+    } else {
+      const num = parseInt(cleaned, 10);
+      setQuantity(Math.max(1, Math.min(num, 9999)));
+    }
+  };
 
   // 1. Validasi input sebelum membuka modal konfirmasi
   const handlePressSubmit = () => {
@@ -349,9 +381,8 @@ export const InputDefectScreen = ({ navigation }) => {
         setRemarks('');
         setPhotoUri(null);
         if (operators.length > 0) {
-          const resetOp = operators.find((op) => op.shift === selectedShift) || operators[0];
-          setSelectedOperator(resetOp);
-          setOperatorName(resetOp.fullName);
+          setSelectedOperator(operators[0]);
+          setOperatorName(operators[0].fullName);
         }
         Alert.alert(
           'Sukses Dicatat',
@@ -375,8 +406,7 @@ export const InputDefectScreen = ({ navigation }) => {
         (op) =>
           op.fullName.toLowerCase().includes(operatorSearchQuery.toLowerCase()) ||
           (op.line && op.line.toLowerCase().includes(operatorSearchQuery.toLowerCase())) ||
-          (op.username && op.username.toLowerCase().includes(operatorSearchQuery.toLowerCase())) ||
-          (op.shift && op.shift.toLowerCase().includes(operatorSearchQuery.toLowerCase()))
+          (op.username && op.username.toLowerCase().includes(operatorSearchQuery.toLowerCase()))
       )
     : operators;
 
@@ -388,6 +418,16 @@ export const InputDefectScreen = ({ navigation }) => {
           p.partName.toLowerCase().includes(partSearchQuery.toLowerCase())
       )
     : parts;
+
+  // Filter defects if query provided, else show ALL defects
+  const displayedDefects = defectSearchQuery.trim()
+    ? defectTypes.filter(
+        (def) =>
+          def.name.toLowerCase().includes(defectSearchQuery.toLowerCase()) ||
+          (def.category && def.category.toLowerCase().includes(defectSearchQuery.toLowerCase())) ||
+          (def.proses && def.proses.toLowerCase().includes(defectSearchQuery.toLowerCase()))
+      )
+    : defectTypes;
 
   const currentProcessDetail = PRODUCTION_PROCESSES.find(
     (p) => p.name.toLowerCase() === selectedProcess.toLowerCase()
@@ -661,16 +701,29 @@ export const InputDefectScreen = ({ navigation }) => {
               },
             ]}
           >
-            <View style={[styles.selectorIconBadge, { backgroundColor: colors.primary + '18' }]}>
-              <User size={18} color={colors.primary} />
+            <View style={[styles.opAvatarBox, { backgroundColor: colors.primary + '18' }]}>
+              {selectedOperator?.fullName || operatorName ? (
+                <Text style={[styles.opAvatarText, { color: colors.primary }]}>
+                  {getOperatorInitials(selectedOperator?.fullName || operatorName)}
+                </Text>
+              ) : (
+                <User size={18} color={colors.primary} />
+              )}
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]}>
-                {selectedOperator ? `${selectedOperator.fullName} (@${selectedOperator.username})` : (operatorName || 'Pilih Operator Produksi')}
-              </Text>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {selectedOperator?.fullName || operatorName || 'Pilih Operator Produksi'}
+                </Text>
+                {selectedOperator?.username ? (
+                  <Text style={[styles.opUsernameTag, { color: colors.textSecondary }]}>
+                    @{selectedOperator.username}
+                  </Text>
+                ) : null}
+              </View>
               <Text style={[styles.optionMetaText, { color: colors.textSecondary }]}>
-                Role: {selectedOperator?.role || 'OPERATOR_PRODUKSI'} • {selectedOperator?.line || 'Lini Produksi'}
+                {formatRoleLabel(selectedOperator?.role)}
               </Text>
             </View>
 
@@ -681,7 +734,7 @@ export const InputDefectScreen = ({ navigation }) => {
             )}
           </Pressable>
 
-          {/* Drop Down List Content (Menampilkan SEMUA Operator Produksi) */}
+          {/* Drop Down List Content (Menampilkan Operator Produksi) */}
           {openDropdown === 'operator' && (
             <View
               style={[
@@ -689,48 +742,33 @@ export const InputDefectScreen = ({ navigation }) => {
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
-              {/* Quick Search inside Dropdown */}
-              <View
-                style={[
-                  styles.dropdownSearchBar,
-                  { backgroundColor: colors.cardSubtle, borderColor: colors.border },
-                ]}
-              >
-                <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
-                <TextInput
-                  value={operatorSearchQuery}
-                  onChangeText={setOperatorSearchQuery}
-                  placeholder={`Cari dari ${operators.length} nama operator...`}
-                  placeholderTextColor={colors.textMuted}
-                  style={[styles.dropdownSearchInput, { color: colors.textPrimary }]}
-                  autoCapitalize="words"
-                />
-                {operatorSearchQuery.length > 0 && (
-                  <Pressable onPress={() => setOperatorSearchQuery('')} hitSlop={8}>
-                    <X size={16} color={colors.textMuted} />
-                  </Pressable>
-                )}
-              </View>
+              {/* Quick Search inside Dropdown (Hanya jika operator lebih dari 4) */}
+              {operators.length > 4 && (
+                <View
+                  style={[
+                    styles.dropdownSearchBar,
+                    { backgroundColor: colors.cardSubtle, borderBottomColor: colors.border },
+                  ]}
+                >
+                  <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+                  <TextInput
+                    value={operatorSearchQuery}
+                    onChangeText={setOperatorSearchQuery}
+                    placeholder="Cari nama atau username operator..."
+                    placeholderTextColor={colors.textMuted}
+                    style={[styles.dropdownSearchInput, { color: colors.textPrimary }]}
+                    autoCapitalize="words"
+                  />
+                  {operatorSearchQuery.length > 0 && (
+                    <Pressable onPress={() => setOperatorSearchQuery('')} hitSlop={8}>
+                      <X size={16} color={colors.textMuted} />
+                    </Pressable>
+                  )}
+                </View>
+              )}
 
-              {/* Counter Strip */}
-              <View
-                style={[
-                  styles.dropdownCounterStrip,
-                  { backgroundColor: colors.cardSubtle, borderBottomColor: colors.border },
-                ]}
-              >
-                <Text style={[styles.dropdownCounterText, { color: colors.textSecondary }]}>
-                  {displayedOperators.length} Operator Lini Tersedia (Role: OPERATOR_PRODUKSI & ADMIN)
-                </Text>
-              </View>
-
-              {/* Scrollable Operators List */}
-              <ScrollView
-                nestedScrollEnabled={true}
-                style={styles.dropdownScrollView}
-                showsVerticalScrollIndicator={true}
-                keyboardShouldPersistTaps="handled"
-              >
+              {/* Operators List (Tanpa Counter Strip Redundan) */}
+              <View style={styles.operatorListWrap}>
                 {displayedOperators.length === 0 ? (
                   <View style={styles.emptyDropdownState}>
                     <Text style={{ color: colors.textMuted, fontSize: typography.sizes.caption }}>
@@ -738,61 +776,107 @@ export const InputDefectScreen = ({ navigation }) => {
                     </Text>
                   </View>
                 ) : (
-                  displayedOperators.map((op) => {
+                  displayedOperators.map((op, idx) => {
                     const isSelected = selectedOperator?.id === op.id || operatorName === op.fullName;
+                    const isAdmin = op.role?.toUpperCase().includes('ADMIN');
 
                     return (
                       <Pressable
-                        key={op.id || op.username}
+                        key={op.id || op.username || idx}
                         onPress={() => handleSelectOperator(op)}
                         style={({ pressed }) => [
-                          styles.dropdownItem,
+                          styles.operatorRowItem,
                           {
                             borderBottomColor: colors.border,
-                            backgroundColor: isSelected ? colors.primary + '14' : 'transparent',
+                            backgroundColor: isSelected
+                              ? (isDark ? colors.primary + '20' : colors.primary + '12')
+                              : 'transparent',
                           },
                           pressed && { backgroundColor: colors.cardSubtle },
                         ]}
                       >
-                        <View style={{ flex: 1 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {/* Initials Avatar */}
+                        <View
+                          style={[
+                            styles.operatorRowAvatar,
+                            {
+                              backgroundColor: isSelected
+                                ? colors.primary
+                                : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.operatorRowAvatarText,
+                              { color: isSelected ? '#FFFFFF' : colors.textPrimary },
+                            ]}
+                          >
+                            {getOperatorInitials(op.fullName)}
+                          </Text>
+                        </View>
+
+                        {/* Operator Details */}
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                             <Text
                               style={[
-                                styles.dropdownDefectName,
-                                { color: colors.textPrimary, fontWeight: isSelected ? '800' : '600' },
+                                styles.operatorRowName,
+                                {
+                                  color: colors.textPrimary,
+                                  fontWeight: isSelected ? '800' : '700',
+                                },
                               ]}
+                              numberOfLines={1}
                             >
                               {op.fullName}
                             </Text>
                             {op.username ? (
-                              <View
-                                style={{
-                                  backgroundColor: colors.primary + '18',
-                                  paddingHorizontal: 6,
-                                  paddingVertical: 1,
-                                  borderRadius: 6,
-                                  marginLeft: 6,
-                                }}
-                              >
-                                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
-                                  @{op.username}
-                                </Text>
-                              </View>
+                              <Text style={[styles.operatorRowUsername, { color: colors.textSecondary }]}>
+                                @{op.username}
+                              </Text>
                             ) : null}
                           </View>
-                          <Text style={[styles.itemSubText, { color: colors.textSecondary, marginTop: 2 }]}>
-                            Role: {op.role || 'OPERATOR_PRODUKSI'} • {op.line || 'Lini Produksi'}
-                          </Text>
+
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3, gap: 6 }}>
+                            {/* Role Tag */}
+                            <View
+                              style={[
+                                styles.roleTagPill,
+                                {
+                                  backgroundColor: isAdmin
+                                    ? (isDark ? 'rgba(168, 85, 247, 0.18)' : 'rgba(168, 85, 247, 0.12)')
+                                    : (isDark ? 'rgba(59, 130, 246, 0.18)' : 'rgba(59, 130, 246, 0.12)'),
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.roleTagPillText,
+                                  {
+                                    color: isAdmin
+                                      ? (isDark ? '#C084FC' : '#7C3AED')
+                                      : (isDark ? '#60A5FA' : '#2563EB'),
+                                  },
+                                ]}
+                              >
+                                {formatRoleLabel(op.role)}
+                              </Text>
+                            </View>
+                          </View>
                         </View>
 
-                        {isSelected && (
+                        {/* Selection Checkmark */}
+                        {isSelected ? (
                           <CheckCircle2 size={18} color={colors.primary} style={{ marginLeft: 8 }} />
+                        ) : (
+                          <View style={[styles.unselectedRadio, { borderColor: colors.border }]} />
                         )}
                       </Pressable>
                     );
                   })
                 )}
-              </ScrollView>
+              </View>
             </View>
           )}
 
@@ -802,11 +886,11 @@ export const InputDefectScreen = ({ navigation }) => {
         </View>
 
         {/* ========================================================================= */}
-        {/* 1. DATA PART NUMBER - DROP DOWN LIST (ALL 121 PARTS)                      */}
+        {/* 1. DATA PART NUMBER - DROP DOWN LIST                                      */}
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            PART NUMBER / NAMA PART * ({parts.length || 121} PART TERSEDIA)
+            PART NUMBER / NAMA PART * ({parts.length || 110} PART TERDAFTAR)
           </Text>
 
           {/* Trigger Selector */}
@@ -827,14 +911,12 @@ export const InputDefectScreen = ({ navigation }) => {
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]}>
-                {selectedPart ? `${selectedPart.partNumber} - ${selectedPart.partName}` : 'Pilih Part Number'}
+              <Text style={[styles.partNumberTitle, { color: colors.primary }]} numberOfLines={1}>
+                {selectedPart ? selectedPart.partNumber : 'Pilih Part Number'}
               </Text>
-              {selectedPart?.line && (
-                <Text style={[styles.optionMetaText, { color: colors.textSecondary }]}>
-                  Lini: {selectedPart.line}
-                </Text>
-              )}
+              <Text style={[styles.partNameSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                {selectedPart ? `${selectedPart.partName} • Lini: ${selectedPart.line || 'Stamping'}` : 'Ketuk untuk memilih part master'}
+              </Text>
             </View>
 
             {openDropdown === 'part' ? (
@@ -844,7 +926,7 @@ export const InputDefectScreen = ({ navigation }) => {
             )}
           </Pressable>
 
-          {/* Drop Down List Content (Menampilkan SEMUA Part) */}
+          {/* Drop Down List Content */}
           {openDropdown === 'part' && (
             <View
               style={[
@@ -856,14 +938,14 @@ export const InputDefectScreen = ({ navigation }) => {
               <View
                 style={[
                   styles.dropdownSearchBar,
-                  { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+                  { backgroundColor: colors.cardSubtle, borderBottomColor: colors.border },
                 ]}
               >
                 <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   value={partSearchQuery}
                   onChangeText={setPartSearchQuery}
-                  placeholder={`Cari dari ${parts.length || 121} master part...`}
+                  placeholder={`Cari dari ${parts.length || 110} master part...`}
                   placeholderTextColor={colors.textMuted}
                   style={[styles.dropdownSearchInput, { color: colors.textPrimary }]}
                   autoCapitalize="characters"
@@ -897,28 +979,17 @@ export const InputDefectScreen = ({ navigation }) => {
                 )}
               </View>
 
-              {/* Counter Strip */}
-              <View
-                style={[
-                  styles.dropdownCounterStrip,
-                  { backgroundColor: colors.cardSubtle, borderBottomColor: colors.border },
-                ]}
-              >
-                <Text style={[styles.dropdownCounterText, { color: colors.textSecondary }]}>
-                  Menampilkan {displayedParts.length} dari {parts.length || 121} Part Terdaftar
-                </Text>
-              </View>
-
-              {/* Scrollable list of ALL parts */}
+              {/* Scrollable list of ALL parts (Tanpa strip counter redundan) */}
               <ScrollView
                 nestedScrollEnabled={true}
                 style={styles.dropdownScrollView}
                 showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
               >
                 {displayedParts.length === 0 ? (
                   <View style={styles.emptyDropdownState}>
                     <Text style={[styles.emptyDropdownText, { color: colors.textMuted }]}>
-                      Part tidak ditemukan.
+                      Part tidak ditemukan dengan kata kunci "{partSearchQuery}".
                     </Text>
                   </View>
                 ) : (
@@ -932,13 +1003,15 @@ export const InputDefectScreen = ({ navigation }) => {
                           styles.dropdownItem,
                           {
                             borderBottomColor: colors.border,
-                            backgroundColor: isSelected ? colors.primary + '14' : 'transparent',
+                            backgroundColor: isSelected
+                              ? (isDark ? colors.primary + '20' : colors.primary + '12')
+                              : 'transparent',
                           },
                           pressed && { backgroundColor: colors.cardSubtle },
                         ]}
                       >
-                        <View style={{ flex: 1 }}>
-                          <View style={styles.itemTitleRow}>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                             <Text style={[styles.itemCodeText, { color: colors.primary }]}>
                               {p.partNumber}
                             </Text>
@@ -950,14 +1023,16 @@ export const InputDefectScreen = ({ navigation }) => {
                             </Text>
                           </View>
                           {p.line ? (
-                            <Text style={[styles.itemSubText, { color: colors.textSecondary }]}>
+                            <Text style={[styles.itemSubText, { color: colors.textSecondary, marginTop: 2 }]}>
                               Lini: {p.line}
                             </Text>
                           ) : null}
                         </View>
 
-                        {isSelected && (
-                          <CheckCircle2 size={18} color={colors.primary} style={{ marginLeft: 8 }} />
+                        {isSelected ? (
+                          <CheckCircle2 size={18} color={colors.primary} />
+                        ) : (
+                          <View style={[styles.unselectedRadio, { borderColor: colors.border }]} />
                         )}
                       </Pressable>
                     );
@@ -969,11 +1044,11 @@ export const InputDefectScreen = ({ navigation }) => {
         </View>
 
         {/* ========================================================================= */}
-        {/* 2. JENIS CACAT (DEFECT TYPE) - DROP DOWN LIST (ALL 33 DEFECTS)            */}
+        {/* 2. JENIS CACAT (DEFECT TYPE) - DROP DOWN LIST                             */}
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            JENIS CACAT (DEFECT TYPE) * ({defectTypes.length || 33} JENIS TERSEDIA)
+            JENIS CACAT (DEFECT TYPE) * ({defectTypes.length || 21} JENIS)
           </Text>
 
           {/* Trigger Selector */}
@@ -994,14 +1069,40 @@ export const InputDefectScreen = ({ navigation }) => {
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]}>
-                {selectedDefect ? selectedDefect.name : 'Pilih Jenis Cacat'}
-              </Text>
-              {selectedDefect && (
-                <Text style={[styles.optionMetaText, { color: colors.textSecondary }]}>
-                  Kategori: {selectedDefect.category} • Proses Standar: {selectedDefect.proses}
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]}>
+                  {selectedDefect ? selectedDefect.name : 'Pilih Jenis Cacat'}
                 </Text>
-              )}
+                {selectedDefect?.category && (
+                  <View
+                    style={[
+                      styles.categoryPill,
+                      {
+                        backgroundColor: selectedDefect.category === 'Critical'
+                          ? colors.critical + '18'
+                          : colors.warning + '18',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryPillText,
+                        {
+                          color: selectedDefect.category === 'Critical'
+                            ? colors.critical
+                            : (isDark ? '#FBBF24' : '#D97706'),
+                        },
+                      ]}
+                    >
+                      {selectedDefect.category}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={[styles.optionMetaText, { color: colors.textSecondary }]}>
+                {selectedDefect ? `Proses Standar: ${selectedDefect.proses || 'Stamping'}` : 'Ketuk untuk memilih jenis cacat'}
+              </Text>
             </View>
 
             {openDropdown === 'defect' ? (
@@ -1011,7 +1112,7 @@ export const InputDefectScreen = ({ navigation }) => {
             )}
           </Pressable>
 
-          {/* Drop Down List Content (Menampilkan SEMUA 33 Jenis Cacat) */}
+          {/* Drop Down List Content */}
           {openDropdown === 'defect' && (
             <View
               style={[
@@ -1019,82 +1120,106 @@ export const InputDefectScreen = ({ navigation }) => {
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
-              {/* Header Strip */}
+              {/* Quick Search inside Dropdown */}
               <View
                 style={[
-                  styles.dropdownCounterStrip,
+                  styles.dropdownSearchBar,
                   { backgroundColor: colors.cardSubtle, borderBottomColor: colors.border },
                 ]}
               >
-                <Text style={[styles.dropdownCounterText, { color: colors.textSecondary }]}>
-                  Daftar Lengkap {defectTypes.length || 33} Jenis Cacat Manufaktur
-                </Text>
+                <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  value={defectSearchQuery}
+                  onChangeText={setDefectSearchQuery}
+                  placeholder={`Cari dari ${defectTypes.length || 21} jenis cacat...`}
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.dropdownSearchInput, { color: colors.textPrimary }]}
+                  autoCapitalize="words"
+                />
+                {defectSearchQuery ? (
+                  <Pressable onPress={() => setDefectSearchQuery('')} hitSlop={8}>
+                    <X size={16} color={colors.textMuted} />
+                  </Pressable>
+                ) : null}
               </View>
+
               <ScrollView
                 nestedScrollEnabled={true}
                 style={styles.dropdownScrollView}
                 showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
               >
-                {defectTypes.map((def) => {
-                  const isSelected = selectedDefect?.id === def.id;
-                  const isCritical = def.category === 'Critical';
-                  return (
-                    <Pressable
-                      key={def.id}
-                      onPress={() => handleSelectDefect(def)}
-                      style={({ pressed }) => [
-                        styles.dropdownItem,
-                        {
-                          borderBottomColor: colors.border,
-                          backgroundColor: isSelected ? colors.primary + '14' : 'transparent',
-                        },
-                        pressed && { backgroundColor: colors.cardSubtle },
-                      ]}
-                    >
-                      <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text style={[styles.dropdownDefectName, { color: colors.textPrimary }]}>
-                          {def.name}
-                        </Text>
-                        <Text style={[styles.dropdownDefectDesc, { color: colors.textSecondary }]}>
-                          {def.description}
-                        </Text>
-                        <Text style={[styles.itemSubText, { color: colors.textMuted, marginTop: 2 }]}>
-                          Proses: {def.proses}
-                        </Text>
-                      </View>
+                {displayedDefects.length === 0 ? (
+                  <View style={styles.emptyDropdownState}>
+                    <Text style={[styles.emptyDropdownText, { color: colors.textMuted }]}>
+                      Jenis cacat tidak ditemukan dengan kata kunci "{defectSearchQuery}".
+                    </Text>
+                  </View>
+                ) : (
+                  displayedDefects.map((def) => {
+                    const isSelected = selectedDefect?.id === def.id;
+                    const isCritical = def.category === 'Critical';
 
-                      <View style={styles.rightBadgeContainer}>
-                        <View
-                          style={[
-                            styles.severityTag,
-                            {
-                              backgroundColor: isCritical
-                                ? colors.critical + '20'
-                                : colors.warning + '20',
-                              borderColor: isCritical ? colors.critical : colors.warning,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.severityTagText,
-                              { color: isCritical ? colors.critical : colors.warning },
-                            ]}
-                          >
-                            {def.category}
+                    return (
+                      <Pressable
+                        key={def.id}
+                        onPress={() => handleSelectDefect(def)}
+                        style={({ pressed }) => [
+                          styles.dropdownItem,
+                          {
+                            borderBottomColor: colors.border,
+                            backgroundColor: isSelected
+                              ? (isDark ? colors.primary + '20' : colors.primary + '12')
+                              : 'transparent',
+                          },
+                          pressed && { backgroundColor: colors.cardSubtle },
+                        ]}
+                      >
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                          <Text style={[styles.dropdownDefectName, { color: colors.textPrimary, fontWeight: isSelected ? '800' : '700' }]}>
+                            {def.name}
+                          </Text>
+                          <Text style={[styles.itemSubText, { color: colors.textSecondary, marginTop: 2 }]}>
+                            Proses: {def.proses || 'Stamping'}
                           </Text>
                         </View>
-                        {isSelected && (
-                          <CheckCircle2
-                            size={18}
-                            color={colors.primary}
-                            style={{ marginTop: 4 }}
-                          />
-                        )}
-                      </View>
-                    </Pressable>
-                  );
-                })}
+
+                        {/* Right side: Category Badge & Checkmark (Aligned Horizontally) */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <View
+                            style={[
+                              styles.categoryPill,
+                              {
+                                backgroundColor: isCritical
+                                  ? colors.critical + '18'
+                                  : colors.warning + '18',
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.categoryPillText,
+                                {
+                                  color: isCritical
+                                    ? colors.critical
+                                    : (isDark ? '#FBBF24' : '#D97706'),
+                                },
+                              ]}
+                            >
+                              {def.category}
+                            </Text>
+                          </View>
+
+                          {isSelected ? (
+                            <CheckCircle2 size={18} color={colors.primary} />
+                          ) : (
+                            <View style={[styles.unselectedRadio, { borderColor: colors.border }]} />
+                          )}
+                        </View>
+                      </Pressable>
+                    );
+                  })
+                )}
               </ScrollView>
             </View>
           )}
@@ -1299,12 +1424,26 @@ export const InputDefectScreen = ({ navigation }) => {
         )}
 
         {/* ========================================================================= */}
-        {/* 4. JUMLAH PRODUK CACAT (QTY NG) - GLOVE-FRIENDLY STEPPER                 */}
+        {/* 4. JUMLAH PRODUK CACAT (QTY NG) - GLOVE-FRIENDLY STEPPER & PRESETS        */}
         {/* ========================================================================= */}
         <View style={styles.formSection}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            JUMLAH PRODUK CACAT (QTY NG) *
-          </Text>
+          <View style={styles.qtyHeaderRow}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
+              JUMLAH PRODUK CACAT (QTY NG) *
+            </Text>
+            {quantity > 1 && (
+              <Pressable
+                onPress={() => setQuantity(1)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Reset kuantitas ke 1 pcs"
+              >
+                <Text style={[styles.qtyResetLink, { color: colors.primary }]}>
+                  Reset (1 pcs)
+                </Text>
+              </Pressable>
+            )}
+          </View>
           <View
             style={[
               styles.stepperContainer,
@@ -1322,13 +1461,19 @@ export const InputDefectScreen = ({ navigation }) => {
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <Minus size={22} color={colors.textPrimary} />
+              <Minus size={16} color={colors.textPrimary} />
             </Pressable>
 
             <View style={styles.qtyDisplay}>
-              <Text style={[styles.qtyNumber, { color: colors.critical }]}>
-                {quantity}
-              </Text>
+              <TextInput
+                value={String(quantity)}
+                onChangeText={setExactQty}
+                keyboardType="numeric"
+                selectTextOnFocus
+                style={[styles.qtyInput, { color: colors.critical }]}
+                maxLength={5}
+                accessibilityLabel="Input angka kuantitas cacat"
+              />
               <Text style={[styles.qtyUnit, { color: colors.textSecondary }]}>pcs</Text>
             </View>
 
@@ -1343,8 +1488,43 @@ export const InputDefectScreen = ({ navigation }) => {
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <Plus size={22} color={colors.textPrimary} />
+              <Plus size={16} color={colors.textPrimary} />
             </Pressable>
+          </View>
+
+          {/* Quick Increment Preset Chips */}
+          <View style={styles.quickQtyRow}>
+            {[1, 5, 10, 25, 50].map((amt) => {
+              const isActive = quantity === amt;
+              return (
+                <Pressable
+                  key={`qty-${amt}`}
+                  onPress={() => setQuantity(amt)}
+                  style={({ pressed }) => [
+                    styles.quickQtyChip,
+                    {
+                      backgroundColor: isActive ? colors.primary : colors.cardSubtle,
+                      borderColor: isActive ? colors.primary : colors.border,
+                    },
+                    pressed && { opacity: 0.8 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Pilih kuantitas ${amt} pcs`}
+                >
+                  <Text
+                    style={[
+                      styles.quickQtyChipText,
+                      {
+                        color: isActive ? '#FFFFFF' : colors.textPrimary,
+                        fontWeight: isActive ? '800' : '600',
+                      },
+                    ]}
+                  >
+                    {amt}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
@@ -1436,10 +1616,10 @@ export const InputDefectScreen = ({ navigation }) => {
           <SpringButton
             title={submitSuccess ? 'Laporan Berhasil Dicatat!' : 'SIMPAN LAPORAN DEFECT'}
             variant="primary"
-            size="large"
+            size="default"
             loading={submitting}
             disabled={submitting || submitSuccess}
-            icon={submitSuccess ? <CheckCircle2 size={20} color="#FFFFFF" /> : undefined}
+            icon={<CheckCircle2 size={18} color="#FFFFFF" />}
             onPress={handlePressSubmit}
             style={styles.submitButton}
           />
@@ -1492,7 +1672,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   formHeader: {
     marginBottom: 16,
@@ -1593,6 +1773,87 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.caption,
     marginTop: 2,
     fontWeight: '500',
+  },
+  partNumberTitle: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  partNameSub: {
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  categoryPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  categoryPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  opAvatarBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  opAvatarText: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  opUsernameTag: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  operatorListWrap: {
+    overflow: 'hidden',
+  },
+  operatorRowItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  operatorRowAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  operatorRowAvatarText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  operatorRowName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  operatorRowUsername: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  roleTagPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  roleTagPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  unselectedRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    marginLeft: 8,
   },
   dropdownContainer: {
     borderRadius: 14,
@@ -1717,19 +1978,30 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '500',
   },
+  qtyHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  qtyResetLink: {
+    fontSize: typography.sizes.micro + 1,
+    fontWeight: '700',
+  },
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1.5,
-    padding: 10,
-    minHeight: 68,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    height: 48,
   },
   stepButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1737,15 +2009,36 @@ const styles = StyleSheet.create({
   qtyDisplay: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    justifyContent: 'center',
+    flex: 1,
   },
-  qtyNumber: {
-    fontSize: 32,
-    fontWeight: '900',
+  qtyInput: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    minWidth: 40,
+    paddingVertical: 0,
   },
   qtyUnit: {
-    fontSize: typography.sizes.body,
+    fontSize: 12,
     fontWeight: '600',
-    marginLeft: 6,
+    marginLeft: 4,
+  },
+  quickQtyRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 6,
+  },
+  quickQtyChip: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickQtyChipText: {
+    fontSize: 11,
   },
   photoUploadPlaceholder: {
     borderWidth: 1.5,
@@ -1809,11 +2102,13 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitSection: {
-    marginTop: 8,
+    marginTop: -4,
+    marginBottom: 6,
   },
   submitButton: {
     width: '100%',
-    minHeight: 52,
+    minHeight: 48,
+    borderRadius: 14,
   },
   // Date & Backdate Picker Styles
   dateHeaderRow: {

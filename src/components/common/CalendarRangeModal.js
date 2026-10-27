@@ -16,10 +16,8 @@ import {
   Check,
   RotateCcw,
   ArrowRight,
-  Clock,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { typography } from '../../theme/typography';
 import { getLocalDateString } from '../../utils/dateFormatter';
 
 const MONTH_NAMES_ID = [
@@ -65,8 +63,12 @@ const calculateDaysCount = (startStr, endStr) => {
 /**
  * CalendarRangeModal
  * Interactive Pop-up Modal untuk pemilihan rentang tanggal (Date to Date)
- * Ramah operator pabrik (presbyopia & sarung tangan), mendukung dark/light mode,
- * tombol pintasan cepat (Quick Presets), navigasi bulan & tahun.
+ * Didesain sangat praktis & compact (Zero-Scroll):
+ * 1. Header bersih & ringkas dengan tombol close
+ * 2. Range strip 1-baris responsif (Mulai -> Selesai dengan durasi badge)
+ * 3. 4 Pintasan Cepat sebaris (Hari Ini, 7 Hari, 30 Hari, Bulan Ini) tanpa horizontal scroll
+ * 4. Navigasi bulan elegan (< Bulan Tahun >) dengan perpindahan tahun otomatis
+ * 5. Footer seimbang: tombol Reset square, tombol Batal, dan tombol Terapkan yang jelas
  */
 export const CalendarRangeModal = ({
   visible,
@@ -115,7 +117,7 @@ export const CalendarRangeModal = ({
     }
   }, [visible, initialStartDate, initialEndDate, todayStr]);
 
-  // Navigasi Bulan
+  // Navigasi Bulan (Otomatis ganti tahun jika lewat Desember / Januari)
   const handlePrevMonth = () => {
     if (viewMonth === 0) {
       setViewMonth(11);
@@ -134,24 +136,17 @@ export const CalendarRangeModal = ({
     }
   };
 
-  // Navigasi Tahun
-  const handlePrevYear = () => setViewYear((prev) => prev - 1);
-  const handleNextYear = () => setViewYear((prev) => prev + 1);
-
   // Handler klik tanggal pada kalender
   const handleSelectDay = (dateStr) => {
     if (!selectedStart || pickStep === 'done' || pickStep === 'start') {
-      // Memulai pemilihan tanggal awal
       setSelectedStart(dateStr);
       setSelectedEnd('');
       setPickStep('end');
     } else if (pickStep === 'end') {
       if (dateStr >= selectedStart) {
-        // Tanggal akhir valid
         setSelectedEnd(dateStr);
         setPickStep('done');
       } else {
-        // Jika tanggal yang diklik lebih awal dari start, ubah start menjadi tanggal ini
         setSelectedStart(dateStr);
         setSelectedEnd('');
         setPickStep('end');
@@ -170,11 +165,6 @@ export const CalendarRangeModal = ({
     if (presetType === 'today') {
       sStr = today;
       eStr = today;
-    } else if (presetType === 'yesterday') {
-      const d = new Date(now);
-      d.setDate(now.getDate() - 1);
-      sStr = getLocalDateString(d);
-      eStr = sStr;
     } else if (presetType === '7days') {
       const d = new Date(now);
       d.setDate(now.getDate() - 6);
@@ -189,22 +179,12 @@ export const CalendarRangeModal = ({
       const d = new Date(now.getFullYear(), now.getMonth(), 1);
       sStr = getLocalDateString(d);
       eStr = today;
-    } else if (presetType === 'lastMonth') {
-      const firstLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      sStr = getLocalDateString(firstLastMonth);
-      eStr = getLocalDateString(lastLastMonth);
-    } else if (presetType === 'all2026') {
-      // Rentang data sampel pabrik dari April sampai Oktober 2026
-      sStr = '2026-04-01';
-      eStr = today;
     }
 
     setSelectedStart(sStr);
     setSelectedEnd(eStr);
     setPickStep('done');
 
-    // Geser tampilan kalender ke bulan tanggal akhir
     const parts = eStr.split('-').map(Number);
     if (parts.length >= 2) {
       setViewYear(parts[0]);
@@ -225,7 +205,6 @@ export const CalendarRangeModal = ({
     const effectiveStart = selectedStart || todayStr;
     const effectiveEnd = selectedEnd || selectedStart || todayStr;
 
-    // Pastikan start <= end
     if (effectiveStart > effectiveEnd) {
       onApply(effectiveEnd, effectiveStart);
     } else {
@@ -234,19 +213,17 @@ export const CalendarRangeModal = ({
     onClose();
   };
 
-  // Generate Matrix Hari untuk viewMonth & viewYear
+  // Matrix Hari untuk viewMonth & viewYear
   const calendarDays = useMemo(() => {
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay(); // 0 = Min, 1 = Sen, dst.
+    const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
 
     const days = [];
 
-    // Hari kosong di awal bulan (padding)
     for (let i = 0; i < firstDayIndex; i++) {
       days.push({ id: `pad-start-${i}`, isEmpty: true });
     }
 
-    // Hari-hari dalam bulan berjalan
     for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
       const mStr = String(viewMonth + 1).padStart(2, '0');
       const dStr = String(dayNum).padStart(2, '0');
@@ -274,7 +251,13 @@ export const CalendarRangeModal = ({
   }, [viewYear, viewMonth, selectedStart, selectedEnd, todayStr]);
 
   const daysCount = useMemo(() => {
-    return calculateDaysCount(selectedStart, selectedEnd);
+    if (selectedStart && selectedEnd) {
+      return calculateDaysCount(selectedStart, selectedEnd);
+    }
+    if (selectedStart && !selectedEnd) {
+      return 1;
+    }
+    return 0;
   }, [selectedStart, selectedEnd]);
 
   // Cek apakah preset sedang aktif
@@ -284,21 +267,29 @@ export const CalendarRangeModal = ({
     if (presetType === 'today') {
       return selectedStart === today && selectedEnd === today;
     }
-    if (presetType === 'yesterday') {
-      const yest = new Date(now);
-      yest.setDate(now.getDate() - 1);
-      const yestStr = getLocalDateString(yest);
-      return selectedStart === yestStr && selectedEnd === yestStr;
+    if (presetType === '7days') {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 6);
+      return selectedStart === getLocalDateString(d) && selectedEnd === today;
+    }
+    if (presetType === '30days') {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 29);
+      return selectedStart === getLocalDateString(d) && selectedEnd === today;
     }
     if (presetType === 'thisMonth') {
       const first = getLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
       return selectedStart === first && selectedEnd === today;
     }
-    if (presetType === 'all2026') {
-      return selectedStart === '2026-04-01' && selectedEnd === today;
-    }
     return false;
   };
+
+  const PRESETS = [
+    { id: 'today', label: 'Hari Ini' },
+    { id: '7days', label: '7 Hari' },
+    { id: '30days', label: '30 Hari' },
+    { id: 'thisMonth', label: 'Bulan Ini' },
+  ];
 
   return (
     <Modal
@@ -324,16 +315,11 @@ export const CalendarRangeModal = ({
           <View style={[styles.headerRow, { borderBottomColor: colors.border }]}>
             <View style={styles.headerTitleWrap}>
               <View style={[styles.headerIconBox, { backgroundColor: colors.primary + '20' }]}>
-                <CalendarIcon size={18} color={colors.primary} />
+                <CalendarIcon size={16} color={colors.primary} />
               </View>
-              <View>
-                <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-                  Pilih Rentang Tanggal
-                </Text>
-                <Text style={[styles.headerSub, { color: colors.textSecondary }]}>
-                  Analisis data inspeksi & mutu (Date to Date)
-                </Text>
-              </View>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+                Pilih Rentang Tanggal
+              </Text>
             </View>
 
             <Pressable
@@ -344,311 +330,164 @@ export const CalendarRangeModal = ({
                 { backgroundColor: colors.cardSubtle },
                 pressed && { opacity: 0.7 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Tutup modal"
             >
-              <X size={18} color={colors.textSecondary} />
+              <X size={16} color={colors.textSecondary} />
             </Pressable>
           </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
+            bounces={false}
             contentContainerStyle={styles.scrollBody}
           >
-            {/* Range Preview Card */}
+            {/* Compact Date Range Strip */}
             <View
               style={[
-                styles.rangePreviewCard,
+                styles.compactRangeStrip,
                 {
                   backgroundColor: colors.cardSubtle,
                   borderColor: colors.border,
                 },
               ]}
             >
-              <View style={styles.dateBoxesRow}>
-                {/* Dari Tanggal */}
-                <Pressable
-                  onPress={() => setPickStep('start')}
+              {/* Dari Tanggal */}
+              <Pressable
+                onPress={() => setPickStep('start')}
+                style={[
+                  styles.rangeChip,
+                  {
+                    backgroundColor: pickStep === 'start' ? (isDark ? colors.primary + '22' : colors.primary + '12') : colors.card,
+                    borderColor: pickStep === 'start' ? colors.primary : colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.rangeChipLabel, { color: colors.textMuted }]}>
+                  MULAI
+                </Text>
+                <Text
                   style={[
-                    styles.dateBox,
+                    styles.rangeChipValue,
                     {
-                      backgroundColor: colors.background,
-                      borderColor:
-                        pickStep === 'start' ? colors.primary : colors.border,
+                      color: selectedStart ? colors.textPrimary : colors.textMuted,
                     },
                   ]}
+                  numberOfLines={1}
                 >
-                  <Text style={[styles.dateBoxLabel, { color: colors.textMuted }]}>
-                    DARI TANGGAL
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dateBoxValue,
-                      {
-                        color: selectedStart ? colors.textPrimary : colors.textMuted,
-                      },
-                    ]}
-                  >
-                    {selectedStart ? formatPrettyDate(selectedStart) : 'Pilih Mulai'}
-                  </Text>
-                </Pressable>
+                  {selectedStart ? formatPrettyDate(selectedStart) : 'Pilih'}
+                </Text>
+              </Pressable>
 
-                <View style={styles.dateArrowWrap}>
-                  <ArrowRight size={16} color={colors.textSecondary} />
-                </View>
-
-                {/* Sampai Tanggal */}
-                <Pressable
-                  onPress={() => setPickStep('end')}
-                  style={[
-                    styles.dateBox,
-                    {
-                      backgroundColor: colors.background,
-                      borderColor:
-                        pickStep === 'end' ? colors.primary : colors.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.dateBoxLabel, { color: colors.textMuted }]}>
-                    SAMPAI TANGGAL
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dateBoxValue,
-                      {
-                        color: selectedEnd ? colors.textPrimary : colors.textMuted,
-                      },
-                    ]}
-                  >
-                    {selectedEnd ? formatPrettyDate(selectedEnd) : 'Pilih Akhir'}
-                  </Text>
-                </Pressable>
-              </View>
-
-              {/* Status Durasi & Petunjuk */}
-              <View style={styles.durationRow}>
-                {selectedStart && selectedEnd ? (
-                  <View style={[styles.durationBadge, { backgroundColor: colors.primary + '18' }]}>
-                    <Clock size={12} color={colors.primary} style={{ marginRight: 4 }} />
-                    <Text style={[styles.durationBadgeText, { color: colors.primary }]}>
-                      Total Durasi: {daysCount} Hari Analisis
+              {/* Separator Arrow & Days Count */}
+              <View style={styles.rangeCenterWrap}>
+                <ArrowRight size={14} color={colors.textSecondary} />
+                {daysCount > 0 && (
+                  <View style={[styles.rangeBadgePill, { backgroundColor: colors.primary + '18' }]}>
+                    <Text style={[styles.rangeBadgeText, { color: colors.primary }]}>
+                      {daysCount} Hari
                     </Text>
                   </View>
-                ) : (
-                  <Text style={[styles.hintText, { color: colors.warning }]}>
-                    {pickStep === 'start'
-                      ? '👉 Ketuk tanggal awal pada kalender'
-                      : '👉 Ketuk tanggal akhir pada kalender'}
-                  </Text>
                 )}
               </View>
-            </View>
 
-            {/* Quick Presets Chips */}
-            <View style={styles.presetsSection}>
-              <Text style={[styles.presetsTitle, { color: colors.textSecondary }]}>
-                PINTASAN CEPAT
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.presetsScroll}
+              {/* Sampai Tanggal */}
+              <Pressable
+                onPress={() => setPickStep('end')}
+                style={[
+                  styles.rangeChip,
+                  {
+                    backgroundColor: pickStep === 'end' ? (isDark ? colors.primary + '22' : colors.primary + '12') : colors.card,
+                    borderColor: pickStep === 'end' ? colors.primary : colors.border,
+                  },
+                ]}
               >
-                <Pressable
-                  onPress={() => applyPreset('today')}
+                <Text style={[styles.rangeChipLabel, { color: colors.textMuted }]}>
+                  SELESAI
+                </Text>
+                <Text
                   style={[
-                    styles.presetChip,
+                    styles.rangeChipValue,
                     {
-                      backgroundColor: isPresetActive('today')
-                        ? colors.primary
-                        : colors.cardSubtle,
-                      borderColor: isPresetActive('today')
-                        ? colors.primary
-                        : colors.border,
+                      color: selectedEnd ? colors.textPrimary : colors.textMuted,
                     },
                   ]}
+                  numberOfLines={1}
                 >
-                  <Text
-                    style={[
-                      styles.presetChipText,
-                      {
-                        color: isPresetActive('today') ? '#FFFFFF' : colors.textPrimary,
-                        fontWeight: isPresetActive('today') ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    Hari Ini
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => applyPreset('yesterday')}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: isPresetActive('yesterday')
-                        ? colors.primary
-                        : colors.cardSubtle,
-                      borderColor: isPresetActive('yesterday')
-                        ? colors.primary
-                        : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.presetChipText,
-                      {
-                        color: isPresetActive('yesterday') ? '#FFFFFF' : colors.textPrimary,
-                        fontWeight: isPresetActive('yesterday') ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    Kemarin
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => applyPreset('7days')}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: colors.cardSubtle,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.presetChipText, { color: colors.textPrimary }]}>
-                    7 Hari Terakhir
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => applyPreset('thisMonth')}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: isPresetActive('thisMonth')
-                        ? colors.primary
-                        : colors.cardSubtle,
-                      borderColor: isPresetActive('thisMonth')
-                        ? colors.primary
-                        : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.presetChipText,
-                      {
-                        color: isPresetActive('thisMonth') ? '#FFFFFF' : colors.textPrimary,
-                        fontWeight: isPresetActive('thisMonth') ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    Bulan Ini (Okt)
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => applyPreset('lastMonth')}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: colors.cardSubtle,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.presetChipText, { color: colors.textPrimary }]}>
-                    Bulan Lalu (Sep)
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => applyPreset('all2026')}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: isPresetActive('all2026')
-                        ? colors.primary
-                        : colors.cardSubtle,
-                      borderColor: isPresetActive('all2026')
-                        ? colors.primary
-                        : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.presetChipText,
-                      {
-                        color: isPresetActive('all2026') ? '#FFFFFF' : colors.textPrimary,
-                        fontWeight: isPresetActive('all2026') ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    Semua Data (Apr-Okt 2026)
-                  </Text>
-                </Pressable>
-              </ScrollView>
+                  {selectedEnd ? formatPrettyDate(selectedEnd) : 'Pilih'}
+                </Text>
+              </Pressable>
             </View>
 
-            {/* Calendar Controls (Month & Year Navigator) */}
+            {/* Quick Presets (Single Row 4 Pills) */}
+            <View style={styles.presetsRow}>
+              {PRESETS.map((item) => {
+                const active = isPresetActive(item.id);
+                return (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => applyPreset(item.id)}
+                    style={({ pressed }) => [
+                      styles.presetPill,
+                      {
+                        backgroundColor: active ? colors.primary : colors.cardSubtle,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                      pressed && { opacity: 0.8 },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.presetPillText,
+                        {
+                          color: active ? '#FFFFFF' : colors.textPrimary,
+                          fontWeight: active ? '700' : '600',
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Calendar Controls (Clean Month Navigator) */}
             <View style={[styles.calendarNavRow, { borderBottomColor: colors.border }]}>
-              <View style={styles.yearControl}>
-                <Pressable
-                  onPress={handlePrevYear}
-                  hitSlop={8}
-                  style={styles.yearNavBtn}
-                >
-                  <Text style={[styles.yearNavText, { color: colors.textMuted }]}>
-                    « {viewYear - 1}
-                  </Text>
-                </Pressable>
+              <Pressable
+                onPress={handlePrevMonth}
+                hitSlop={12}
+                style={({ pressed }) => [
+                  styles.navArrowBtn,
+                  { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+                  pressed && { opacity: 0.6 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Bulan sebelumnya"
+              >
+                <ChevronLeft size={18} color={colors.textPrimary} />
+              </Pressable>
+
+              <View style={styles.monthTitleWrap}>
+                <Text style={[styles.monthTitleText, { color: colors.textPrimary }]}>
+                  {MONTH_NAMES_ID[viewMonth]} {viewYear}
+                </Text>
               </View>
 
-              <View style={styles.monthNavigator}>
-                <Pressable
-                  onPress={handlePrevMonth}
-                  hitSlop={10}
-                  style={({ pressed }) => [
-                    styles.navArrowBtn,
-                    { backgroundColor: colors.cardSubtle },
-                    pressed && { opacity: 0.6 },
-                  ]}
-                >
-                  <ChevronLeft size={20} color={colors.textPrimary} />
-                </Pressable>
-
-                <View style={styles.monthTitleWrap}>
-                  <Text style={[styles.monthTitleText, { color: colors.textPrimary }]}>
-                    {MONTH_NAMES_ID[viewMonth]} {viewYear}
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={handleNextMonth}
-                  hitSlop={10}
-                  style={({ pressed }) => [
-                    styles.navArrowBtn,
-                    { backgroundColor: colors.cardSubtle },
-                    pressed && { opacity: 0.6 },
-                  ]}
-                >
-                  <ChevronRight size={20} color={colors.textPrimary} />
-                </Pressable>
-              </View>
-
-              <View style={styles.yearControl}>
-                <Pressable
-                  onPress={handleNextYear}
-                  hitSlop={8}
-                  style={styles.yearNavBtn}
-                >
-                  <Text style={[styles.yearNavText, { color: colors.textMuted }]}>
-                    {viewYear + 1} »
-                  </Text>
-                </Pressable>
-              </View>
+              <Pressable
+                onPress={handleNextMonth}
+                hitSlop={12}
+                style={({ pressed }) => [
+                  styles.navArrowBtn,
+                  { backgroundColor: colors.cardSubtle, borderColor: colors.border },
+                  pressed && { opacity: 0.6 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Bulan berikutnya"
+              >
+                <ChevronRight size={18} color={colors.textPrimary} />
+              </Pressable>
             </View>
 
             {/* Weekday Names Header */}
@@ -782,45 +621,48 @@ export const CalendarRangeModal = ({
           <View style={[styles.footerRow, { borderTopColor: colors.border }]}>
             <Pressable
               onPress={handleReset}
+              hitSlop={4}
               style={({ pressed }) => [
-                styles.resetBtn,
+                styles.resetSquareBtn,
                 { borderColor: colors.border, backgroundColor: colors.cardSubtle },
                 pressed && { opacity: 0.7 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Reset ke hari ini"
             >
-              <RotateCcw size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
-              <Text style={[styles.resetBtnText, { color: colors.textSecondary }]}>
-                Reset
+              <RotateCcw size={16} color={colors.textSecondary} />
+            </Pressable>
+
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.cancelBtn,
+                { borderColor: colors.border, backgroundColor: colors.cardSubtle },
+                pressed && { opacity: 0.7 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Batal"
+            >
+              <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>
+                Batal
               </Text>
             </Pressable>
 
-            <View style={styles.footerRightButtons}>
-              <Pressable
-                onPress={onClose}
-                style={({ pressed }) => [
-                  styles.cancelBtn,
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>
-                  Batal
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleApply}
-                style={({ pressed }) => [
-                  styles.applyBtn,
-                  { backgroundColor: colors.primary },
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Check size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.applyBtnText}>
-                  Terapkan Rentang
-                </Text>
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={handleApply}
+              style={({ pressed }) => [
+                styles.applyBtn,
+                { backgroundColor: colors.primary },
+                pressed && { opacity: 0.85 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Terapkan rentang ${daysCount} hari`}
+            >
+              <Check size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.applyBtnText}>
+                {daysCount > 0 ? `Terapkan (${daysCount} Hari)` : 'Terapkan'}
+              </Text>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -840,9 +682,9 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
-    maxWidth: 420,
-    maxHeight: '92%',
-    borderRadius: 20,
+    maxWidth: 400,
+    maxHeight: '94%',
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     ...Platform.select({
@@ -861,8 +703,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   headerTitleWrap: {
@@ -871,160 +713,122 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
-  headerSub: {
-    fontSize: 11,
-    marginTop: 2,
-  },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollBody: {
-    padding: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
-  rangePreviewCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
-    marginBottom: 14,
-  },
-  dateBoxesRow: {
+  compactRangeStrip: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  dateBox: {
-    flex: 1,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  dateBoxLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 3,
-  },
-  dateBoxValue: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  dateArrowWrap: {
-    paddingHorizontal: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  durationRow: {
-    marginTop: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  durationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  durationBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  hintText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  presetsSection: {
-    marginBottom: 14,
-  },
-  presetsTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 6,
     marginBottom: 8,
   },
-  presetsScroll: {
+  rangeChip: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  rangeChipLabel: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  rangeChipValue: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  rangeCenterWrap: {
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rangeBadgePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginTop: 2,
+  },
+  rangeBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  presetsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
+    marginBottom: 8,
   },
-  presetChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+  presetPill: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  presetChipText: {
-    fontSize: 12,
+  presetPillText: {
+    fontSize: 11,
   },
   calendarNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-    marginBottom: 8,
+    paddingVertical: 4,
+    marginBottom: 6,
     borderBottomWidth: 1,
   },
-  yearControl: {
-    width: 60,
-  },
-  yearNavBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-  },
-  yearNavText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  monthNavigator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
   navArrowBtn: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: 8,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   monthTitleWrap: {
-    marginHorizontal: 10,
-    minWidth: 140,
     alignItems: 'center',
   },
   monthTitleText: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
   },
   weekdayRow: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   weekdayCol: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   weekdayText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
   },
   daysGrid: {
@@ -1033,40 +837,40 @@ const styles = StyleSheet.create({
   },
   dayColEmpty: {
     width: '14.28%',
-    height: 44,
+    height: 38,
   },
   dayCol: {
     width: '14.28%',
-    height: 44,
+    height: 38,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
   inRangeBand: {
     position: 'absolute',
-    top: 4,
-    bottom: 4,
+    top: 3,
+    bottom: 3,
     left: 0,
     right: 0,
   },
   halfRangeRight: {
     position: 'absolute',
-    top: 4,
-    bottom: 4,
+    top: 3,
+    bottom: 3,
     left: '50%',
     right: 0,
   },
   halfRangeLeft: {
     position: 'absolute',
-    top: 4,
-    bottom: 4,
+    top: 3,
+    bottom: 3,
     left: 0,
     right: '50%',
   },
   dayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
@@ -1087,58 +891,55 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   dayNumberText: {
-    fontSize: 13,
+    fontSize: 12.5,
   },
   todayDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
     position: 'absolute',
-    bottom: 4,
+    bottom: 2,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderTopWidth: 1,
   },
-  resetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+  resetSquareBtn: {
+    width: 40,
+    height: 40,
     borderRadius: 10,
     borderWidth: 1,
-  },
-  resetBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  footerRightButtons: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
   cancelBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelBtnText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
   },
   applyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flex: 2,
+    height: 40,
     borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
   },
   applyBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
 });

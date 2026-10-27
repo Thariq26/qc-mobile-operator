@@ -286,12 +286,6 @@ export const DashboardScreen = ({ navigation }) => {
     }
   };
 
-  const handleConsultAi = (defectName, process) => {
-    navigation.navigate('AiChat', {
-      initialPrompt: `Part mengalami defect ${defectName} pada proses ${process}. Mohon berikan panduan SOP perbaikan lengkap.`,
-    });
-  };
-
   const topAnomaly = spcData?.topAnomaly || null;
 
   return (
@@ -861,7 +855,6 @@ export const DashboardScreen = ({ navigation }) => {
         }
         process={topAnomaly?.process || 'Stamping'}
         predictionData={rfPrediction}
-        onConsultAi={handleConsultAi}
       />
 
       {/* Pop-up Modal Kalender Rentang Tanggal (Date to Date) */}

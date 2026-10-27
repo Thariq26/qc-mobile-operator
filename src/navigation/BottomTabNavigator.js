@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   ClipboardList,
   Building2,
-  Sparkles,
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -18,7 +17,6 @@ import { ProductionHistoryScreen } from '../screens/production/ProductionHistory
 import { InputDefectScreen } from '../screens/defect/InputDefectScreen';
 import { MyHistoryScreen } from '../screens/history/MyHistoryScreen';
 import { ComplaintsScreen } from '../screens/complaints/ComplaintsScreen';
-import { AiChatScreen } from '../screens/chat/AiChatScreen';
 import { typography } from '../theme/typography';
 import { CustomTabBar } from './CustomTabBar';
 
@@ -26,9 +24,9 @@ const Tab = createBottomTabNavigator();
 
 /**
  * BottomTabNavigator: Role-Based Access Control (RBAC) Navigation
- * - OPERATOR_PRODUKSI: Dashboard Produksi, Input Produksi, Riwayat Produksi, Tanya AI Mesin (4 tab)
- * - STAFF_QC: Dashboard Kualitas, Catat NG/Foto, Riwayat Cacat, Komplain Customer, Tanya AI Kualitas (5 tab)
- * - ADMIN: Full access to all production and QC modules (Dashboard, Input Prod, Catat NG, Riwayat, Komplain, Tanya AI - 6 tab)
+ * - OPERATOR_PRODUKSI: Dashboard Produksi, Input Produksi, Riwayat Produksi (3 tab)
+ * - STAFF_QC: Dashboard Kualitas, Catat NG/Foto, Riwayat Cacat, Komplain Customer (4 tab)
+ * - ADMIN: Full access to all production and QC modules (Dashboard, Input Prod, Catat NG, Riwayat, Komplain - 5 tab)
  */
 export const BottomTabNavigator = () => {
   const { colors, isDark } = useTheme();
@@ -96,8 +94,8 @@ export const BottomTabNavigator = () => {
       )}
 
       {/* --- MENU RIWAYAT PRODUKSI ---
-          - Muncul di bar utama khusus OPERATOR_PRODUKSI (4 tab)
-          - Untuk ADMIN disembunyikan dari bar (tetap bisa dinavigasi via tombol) agar bar tetap maksimal 5 tab rapi */}
+          - Muncul di bar utama khusus OPERATOR_PRODUKSI (3 tab)
+          - Untuk ADMIN disembunyikan dari bar (diakses via switcher di MyHistoryScreen) agar bar tetap maksimal 5 tab rapi */}
       {isOperatorProduksi && (
         <Tab.Screen
           name="ProductionHistory"
@@ -134,25 +132,6 @@ export const BottomTabNavigator = () => {
           }}
         />
       )}
-
-      {/* --- MENU TANYA AI (Semua Role dengan Konteks Berbeda) --- */}
-      <Tab.Screen
-        name="AiChat"
-        component={AiChatScreen}
-        options={{
-          tabBarLabel: isOperatorProduksi
-            ? 'AI Mesin'
-            : isStaffQc
-            ? 'AI Kualitas'
-            : 'Tanya AI',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Sparkles
-              size={focused ? 20 : 18}
-              color={color}
-            />
-          ),
-        }}
-      />
     </Tab.Navigator>
   );
 };

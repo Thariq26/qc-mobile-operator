@@ -17,7 +17,6 @@ import { typography } from '../theme/typography';
  * - Dynamic active capsule around icon
  * - Role-specific accent coloring:
  *   * InputDefect (Catat NG): Critical Red
- *   * AiChat (Tanya AI / AI Mesin / AI Kualitas): AI Purple / Indigo
  *   * Complaints (Komplain): Purple
  *   * InputProduction / History / Dashboard: Primary Industrial Blue
  * - Micro-indicator bar underneath active label

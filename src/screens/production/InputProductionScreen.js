@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Cpu,
   ChevronDown,
+  ChevronRight,
   X,
   Package,
   Check,
@@ -50,6 +51,32 @@ const SHIFTS = [
 
 // Production line filters
 const LINES = ['Semua Lini', 'Stamping', 'Bending', 'Welding', 'Painting', 'Assembly'];
+
+// Helper menentukan lini manufaktur part (Welding vs Stamping)
+const getPartLine = (p) => {
+  if (!p) return 'Stamping';
+  if (p.line && (p.line.toLowerCase().includes('weld') || p.line.toLowerCase().includes('bend'))) {
+    return p.line;
+  }
+  const text = `${p.partName || ''} ${p.partNumber || ''}`.toLowerCase();
+  if (
+    text.includes('grabrail') ||
+    text.includes('cross member') ||
+    text.includes('side member') ||
+    text.includes('subframe') ||
+    text.includes('welding') ||
+    text.includes('frame') ||
+    text.includes('rail') ||
+    text.includes('stay comp') ||
+    text.includes('pillar') ||
+    text.includes('gusset') ||
+    text.includes('pipe') ||
+    text.includes('tower')
+  ) {
+    return 'Welding';
+  }
+  return p.line || 'Stamping';
+};
 
 // Comprehensive Operational Processes (16 Processes across 4 Manufacturing Lines)
 const OPERATIONAL_PROCESSES = [
@@ -138,6 +165,7 @@ export const InputProductionScreen = ({ navigation }) => {
   const [processSearchQuery, setProcessSearchQuery] = useState('');
   const [processCategoryFilter, setProcessCategoryFilter] = useState('Semua');
   const [customProcessTemp, setCustomProcessTemp] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
   // Load complete Master Data on mount
@@ -170,7 +198,7 @@ export const InputProductionScreen = ({ navigation }) => {
                   partId: p0.id,
                   partNumber: p0.partNumber,
                   partName: p0.partName,
-                  partLine: p0.line || 'Stamping',
+                  partLine: getPartLine(p0),
                 },
               ];
             }
@@ -204,7 +232,7 @@ export const InputProductionScreen = ({ navigation }) => {
               partId: part.id,
               partNumber: part.partNumber,
               partName: part.partName,
-              partLine: part.line || 'Stamping',
+              partLine: getPartLine(part),
             };
           }
           return item;
@@ -255,6 +283,7 @@ export const InputProductionScreen = ({ navigation }) => {
     setProcessSearchQuery('');
     setProcessCategoryFilter('Semua');
     setCustomProcessTemp(item?.isCustomProcess ? item.customProcess : '');
+    setShowCustomInput(false);
     setProcessModalVisible(true);
   };
 
@@ -414,11 +443,27 @@ export const InputProductionScreen = ({ navigation }) => {
       const matchesSearch =
         p.partNumber.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
         p.partName.toLowerCase().includes(partSearchQuery.toLowerCase());
+      const pLine = getPartLine(p);
       const matchesLine =
-        partLineFilter === 'Semua' || (p.line || '').toLowerCase() === partLineFilter.toLowerCase();
+        partLineFilter === 'Semua' || pLine.toLowerCase() === partLineFilter.toLowerCase();
       return matchesSearch && matchesLine;
     });
   }, [parts, partSearchQuery, partLineFilter]);
+
+  // Line filter tabs for Part Selection Modal with real counts
+  const partLineTabs = useMemo(() => {
+    const counts = { Semua: parts.length, Stamping: 0, Welding: 0 };
+    parts.forEach((p) => {
+      const cat = getPartLine(p);
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+
+    const standardTabs = ['Semua', 'Stamping', 'Welding'];
+    return standardTabs.map((tab) => ({
+      name: tab,
+      count: counts[tab] || 0,
+    }));
+  }, [parts]);
 
   // Line filter tabs for Machine Selection Modal with real counts
   const machineLineTabs = useMemo(() => {
@@ -760,6 +805,7 @@ export const InputProductionScreen = ({ navigation }) => {
                   {
                     backgroundColor: colors.card,
                     borderColor: colors.border,
+                    marginBottom: index === items.length - 1 ? 0 : 12,
                   },
                 ]}
               >
@@ -793,7 +839,7 @@ export const InputProductionScreen = ({ navigation }) => {
                 {/* 2. PILIH MESIN PRODUKSI (Trigger Card -> Modal 29 Mesin) */}
                 <View style={styles.fieldGroup}>
                   <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                    1. MESIN OPERASIONAL * ({machines.length} MESIN PABRIK TERSEDIA)
+                    1. MESIN OPERASIONAL *
                   </Text>
                   <Pressable
                     onPress={() => handleOpenMachineModal(index)}
@@ -805,22 +851,22 @@ export const InputProductionScreen = ({ navigation }) => {
                         backgroundColor: colors.cardSubtle,
                         borderColor: colors.border,
                       },
-                      pressed && { borderColor: colors.primary },
+                      pressed && { borderColor: colors.primary, backgroundColor: colors.card },
                     ]}
                   >
                     <View style={[styles.selectorIconCircle, { backgroundColor: colors.warning + '18' }]}>
-                      <Cpu size={20} color={colors.warning} />
+                      <Cpu size={18} color={colors.warning} />
                     </View>
                     <View style={{ flex: 1, marginRight: 8 }}>
                       <Text style={[styles.triggerMainTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {item.machineName}
                       </Text>
-                      <Text style={[styles.triggerSubTitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                        Lini: {item.machineLine} • {item.machineType}
+                      <Text style={[styles.triggerSubTitle, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>
+                        Lini: {item.machineLine} • {item.machineType && item.machineType !== 'Peralatan Pabrik' ? item.machineType : 'Mesin Produksi Plant'}
                       </Text>
                     </View>
-                    <View style={[styles.triggerActionChip, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.triggerActionChipText}>Pilih Mesin</Text>
+                    <View style={[styles.triggerChevronBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <ChevronRight size={16} color={colors.textSecondary} />
                     </View>
                   </Pressable>
                 </View>
@@ -828,7 +874,7 @@ export const InputProductionScreen = ({ navigation }) => {
                 {/* 3. PILIH MASTER PART (Trigger Card -> Modal 121 Master Part) */}
                 <View style={styles.fieldGroup}>
                   <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                    2. PART NUMBER & NAMA PART * ({parts.length} MASTER PART TERSEDIA)
+                    2. PART NUMBER & NAMA PART *
                   </Text>
                   <Pressable
                     onPress={() => handleOpenPartModal(index)}
@@ -840,14 +886,14 @@ export const InputProductionScreen = ({ navigation }) => {
                         backgroundColor: colors.cardSubtle,
                         borderColor: colors.border,
                       },
-                      pressed && { borderColor: colors.primary },
+                      pressed && { borderColor: colors.primary, backgroundColor: colors.card },
                     ]}
                   >
                     <View style={[styles.selectorIconCircle, { backgroundColor: colors.primary + '18' }]}>
-                      <Package size={20} color={colors.primary} />
+                      <Package size={18} color={colors.primary} />
                     </View>
                     <View style={{ flex: 1, marginRight: 8 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
                         <View style={[styles.partNumberBadge, { backgroundColor: colors.primary }]}>
                           <Text style={styles.partNumberBadgeText} numberOfLines={1}>{item.partNumber}</Text>
                         </View>
@@ -855,14 +901,12 @@ export const InputProductionScreen = ({ navigation }) => {
                       <Text style={[styles.triggerMainTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {item.partName}
                       </Text>
-                      {item.partLine ? (
-                        <Text style={[styles.triggerSubTitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                          Lini: {item.partLine}
-                        </Text>
-                      ) : null}
+                      <Text style={[styles.triggerSubTitle, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>
+                        Lini: {item.partLine || 'Stamping'}
+                      </Text>
                     </View>
-                    <View style={[styles.triggerActionChip, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.triggerActionChipText}>Pilih Part</Text>
+                    <View style={[styles.triggerChevronBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <ChevronRight size={16} color={colors.textSecondary} />
                     </View>
                   </Pressable>
                 </View>
@@ -1079,15 +1123,13 @@ export const InputProductionScreen = ({ navigation }) => {
           <SpringButton
             title="SIMPAN DATA PRODUKSI"
             variant="primary"
-            size="large"
+            size="default"
             loading={submitting}
             disabled={submitting}
+            icon={<CheckCircle2 size={18} color="#FFFFFF" />}
             onPress={handlePressSubmit}
             style={styles.saveButton}
           />
-          <Text style={[styles.saveFooterNotice, { color: colors.textMuted }]}>
-            Data akan disinkronkan ke Supabase dan langsung memperbarui metrik Dashboard.
-          </Text>
         </View>
       </ScrollView>
 
@@ -1118,14 +1160,14 @@ export const InputProductionScreen = ({ navigation }) => {
                 <View
                   style={[styles.modalHeaderBadge, { backgroundColor: colors.primary + '18' }]}
                 >
-                  <Package size={20} color={colors.primary} />
+                  <Package size={18} color={colors.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]}>
                     PILIH MASTER PART
                   </Text>
-                  <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]}>
-                    {parts.length} Part Tersedia di Database Plant
+                  <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {parts.length} Part • Terpilih: {activeItemForPart ? activeItemForPart.partNumber : 'Belum dipilih'}
                   </Text>
                 </View>
               </View>
@@ -1134,24 +1176,9 @@ export const InputProductionScreen = ({ navigation }) => {
                 hitSlop={12}
                 style={[styles.modalCloseBtn, { backgroundColor: colors.cardSubtle }]}
               >
-                <X size={18} color={colors.textSecondary} />
+                <X size={16} color={colors.textSecondary} />
               </Pressable>
             </View>
-
-            {/* Currently Active Part Indicator */}
-            {activeItemForPart && (
-              <View
-                style={[
-                  styles.activeIndicatorBanner,
-                  { backgroundColor: colors.primary + '12', borderColor: colors.primary + '40' },
-                ]}
-              >
-                <CheckCircle2 size={16} color={colors.primary} style={{ marginRight: 8 }} />
-                <Text style={[styles.activeIndicatorText, { color: colors.primary }]}>
-                  Part Terpilih Saat Ini: {activeItemForPart.partNumber} - {activeItemForPart.partName}
-                </Text>
-              </View>
-            )}
 
             {/* Search Bar */}
             <View
@@ -1160,52 +1187,59 @@ export const InputProductionScreen = ({ navigation }) => {
                 { backgroundColor: colors.cardSubtle, borderColor: colors.border },
               ]}
             >
-              <Search size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 value={partSearchQuery}
                 onChangeText={setPartSearchQuery}
-                placeholder="Cari part number (PT-1001) atau nama part..."
+                placeholder="Cari nomor part atau nama part..."
                 placeholderTextColor={colors.textMuted}
                 style={[styles.modalSearchInput, { color: colors.textPrimary }]}
                 autoCapitalize="characters"
               />
               {partSearchQuery.length > 0 && (
                 <Pressable onPress={() => setPartSearchQuery('')} hitSlop={8}>
-                  <X size={16} color={colors.textMuted} />
+                  <X size={15} color={colors.textMuted} />
                 </Pressable>
               )}
             </View>
 
-            {/* Line Filter Tabs */}
-            <View style={styles.modalFilterRow}>
-              {['Semua', 'Stamping', 'Welding'].map((filterName) => {
-                const isActive = partLineFilter === filterName;
-                return (
-                  <Pressable
-                    key={filterName}
-                    onPress={() => setPartLineFilter(filterName)}
-                    style={[
-                      styles.modalFilterPill,
-                      {
-                        backgroundColor: isActive ? colors.primary : colors.cardSubtle,
-                        borderColor: isActive ? colors.primary : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
+            {/* Line Filter Tabs with real counts */}
+            <View style={styles.modalFilterWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.modalFilterScroll}
+              >
+                {partLineTabs.map((tabItem) => {
+                  const filterLine = tabItem.name;
+                  const isActive = partLineFilter === filterLine;
+                  return (
+                    <Pressable
+                      key={filterLine}
+                      onPress={() => setPartLineFilter(filterLine)}
                       style={[
-                        styles.modalFilterPillText,
+                        styles.modalFilterPill,
                         {
-                          color: isActive ? '#FFFFFF' : colors.textSecondary,
-                          fontWeight: isActive ? '800' : '600',
+                          backgroundColor: isActive ? colors.primary : colors.cardSubtle,
+                          borderColor: isActive ? colors.primary : colors.border,
                         },
                       ]}
                     >
-                      {filterName}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <Text
+                        style={[
+                          styles.modalFilterPillText,
+                          {
+                            color: isActive ? '#FFFFFF' : colors.textSecondary,
+                            fontWeight: isActive ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {filterLine} ({tabItem.count})
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
 
             {/* List of 121 Parts */}
@@ -1259,7 +1293,7 @@ export const InputProductionScreen = ({ navigation }) => {
                           </Text>
                         </View>
                         <Text style={[styles.itemPartLineTag, { color: colors.textMuted }]}>
-                          Lini {item.line || 'Stamping'}
+                          Lini {getPartLine(item)}
                         </Text>
                       </View>
                       <Text
@@ -1309,14 +1343,14 @@ export const InputProductionScreen = ({ navigation }) => {
                 <View
                   style={[styles.modalHeaderBadge, { backgroundColor: colors.warning + '18' }]}
                 >
-                  <Cpu size={20} color={colors.warning} />
+                  <Cpu size={18} color={colors.warning} />
                 </View>
-                <View>
+                <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]}>
                     PILIH MESIN PRODUKSI
                   </Text>
-                  <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]}>
-                    {machines.length} Mesin Operasional PT Galaxy Mandiri Perkasa
+                  <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {machines.length} Mesin • Terpilih: {activeItemForMachine ? activeItemForMachine.machineName : 'Belum dipilih'}
                   </Text>
                 </View>
               </View>
@@ -1325,24 +1359,9 @@ export const InputProductionScreen = ({ navigation }) => {
                 hitSlop={12}
                 style={[styles.modalCloseBtn, { backgroundColor: colors.cardSubtle }]}
               >
-                <X size={18} color={colors.textSecondary} />
+                <X size={16} color={colors.textSecondary} />
               </Pressable>
             </View>
-
-            {/* Currently Active Machine Indicator */}
-            {activeItemForMachine && (
-              <View
-                style={[
-                  styles.activeIndicatorBanner,
-                  { backgroundColor: colors.warning + '12', borderColor: colors.warning + '40' },
-                ]}
-              >
-                <CheckCircle2 size={16} color={colors.warning} style={{ marginRight: 8 }} />
-                <Text style={[styles.activeIndicatorText, { color: colors.warning }]}>
-                  Mesin Terpilih Saat Ini: {activeItemForMachine.machineName} ({activeItemForMachine.machineLine})
-                </Text>
-              </View>
-            )}
 
             {/* Search Bar */}
             <View
@@ -1351,17 +1370,17 @@ export const InputProductionScreen = ({ navigation }) => {
                 { backgroundColor: colors.cardSubtle, borderColor: colors.border },
               ]}
             >
-              <Search size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 value={machineSearchQuery}
                 onChangeText={setMachineSearchQuery}
-                placeholder="Cari mesin (Amada, Komatsu, Robot, Spot...)"
+                placeholder="Cari mesin (Amada, Komatsu, Robot...)"
                 placeholderTextColor={colors.textMuted}
                 style={[styles.modalSearchInput, { color: colors.textPrimary }]}
               />
               {machineSearchQuery.length > 0 && (
                 <Pressable onPress={() => setMachineSearchQuery('')} hitSlop={8}>
-                  <X size={16} color={colors.textMuted} />
+                  <X size={15} color={colors.textMuted} />
                 </Pressable>
               )}
             </View>
@@ -1471,7 +1490,9 @@ export const InputProductionScreen = ({ navigation }) => {
                         </View>
                       </View>
                       <Text style={[styles.machineListType, { color: colors.textMuted }]}>
-                        {item.type || 'Peralatan Pabrik'}
+                        {item.type && item.type !== 'Peralatan Pabrik'
+                          ? item.type
+                          : `Mesin Operasional Plant • Lini ${item.line || 'Stamping'}`}
                       </Text>
                     </View>
                     {isSelected && (
@@ -1512,14 +1533,16 @@ export const InputProductionScreen = ({ navigation }) => {
                 <View
                   style={[styles.modalHeaderBadge, { backgroundColor: colors.primary + '18' }]}
                 >
-                  <Layers size={20} color={colors.primary} />
+                  <Layers size={18} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]}>
                     PILIH PROSES OPERASIONAL
                   </Text>
                   <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                    16 Standar Manufaktur & Opsi Kustom
+                    16 Standar • Terpilih: {activeItemForProcess?.isCustomProcess && activeItemForProcess.customProcess?.trim()
+                      ? `Kustom (${activeItemForProcess.customProcess.trim()})`
+                      : (activeItemForProcess?.processName || 'Belum dipilih')}
                   </Text>
                 </View>
               </View>
@@ -1528,97 +1551,33 @@ export const InputProductionScreen = ({ navigation }) => {
                 hitSlop={12}
                 style={[styles.modalCloseBtn, { backgroundColor: colors.cardSubtle }]}
               >
-                <X size={18} color={colors.textSecondary} />
+                <X size={16} color={colors.textSecondary} />
               </Pressable>
             </View>
 
-            {/* Currently Active Process Indicator */}
-            {activeItemForProcess && (
-              <View
-                style={[
-                  styles.activeIndicatorBanner,
-                  {
-                    backgroundColor: activeItemForProcess.isCustomProcess ? colors.warning + '12' : colors.primary + '12',
-                    borderColor: activeItemForProcess.isCustomProcess ? colors.warning + '40' : colors.primary + '40',
-                  },
-                ]}
-              >
-                <CheckCircle2
-                  size={16}
-                  color={activeItemForProcess.isCustomProcess ? colors.warning : colors.primary}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
-                  style={[
-                    styles.activeIndicatorText,
-                    { color: activeItemForProcess.isCustomProcess ? colors.warning : colors.primary },
-                  ]}
-                  numberOfLines={1}
-                >
-                  Proses Saat Ini: {activeItemForProcess.isCustomProcess && activeItemForProcess.customProcess.trim()
-                    ? `Kustom: ${activeItemForProcess.customProcess.trim()}`
-                    : activeItemForProcess.processName}
-                </Text>
-              </View>
-            )}
-
-            {/* Custom Process Box */}
-            <View style={[styles.modalCustomCard, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                <Sparkles size={14} color={colors.warning} style={{ marginRight: 6 }} />
-                <Text style={[styles.modalCustomCardTitle, { color: colors.textPrimary }]}>
-                  Gunakan Proses Khusus / Kustom:
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <TextInput
-                  value={customProcessTemp}
-                  onChangeText={setCustomProcessTemp}
-                  placeholder="Ketik nama proses khusus (mis: Chamfering...)"
-                  placeholderTextColor={colors.textMuted}
-                  style={[styles.modalCustomInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary, flex: 1 }]}
-                />
-                <Pressable
-                  onPress={() => handleApplyCustomProcess(customProcessTemp)}
-                  disabled={!customProcessTemp.trim()}
-                  style={[
-                    styles.modalCustomApplyBtn,
-                    {
-                      backgroundColor: customProcessTemp.trim() ? colors.warning : colors.cardSubtle,
-                      opacity: customProcessTemp.trim() ? 1 : 0.5,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.modalCustomApplyBtnText, { color: customProcessTemp.trim() ? '#000000' : colors.textMuted }]}>
-                    Terapkan
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Search Bar */}
+            {/* Search Bar - Langsung di Bawah Header */}
             <View
               style={[
                 styles.modalSearchBar,
                 { backgroundColor: colors.cardSubtle, borderColor: colors.border },
               ]}
             >
-              <Search size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 value={processSearchQuery}
                 onChangeText={setProcessSearchQuery}
-                placeholder="Cari proses standar (Blanking, Spot, ED Coating...)"
+                placeholder="Cari proses standar (Blanking, Spot, dsb)..."
                 placeholderTextColor={colors.textMuted}
                 style={[styles.modalSearchInput, { color: colors.textPrimary }]}
               />
               {processSearchQuery.length > 0 && (
                 <Pressable onPress={() => setProcessSearchQuery('')} hitSlop={8}>
-                  <X size={16} color={colors.textMuted} />
+                  <X size={15} color={colors.textMuted} />
                 </Pressable>
               )}
             </View>
 
-            {/* Category Filter Tabs */}
+            {/* Category Filter Tabs + Action + Kustom */}
             <View style={styles.modalFilterWrapper}>
               <ScrollView
                 horizontal
@@ -1627,11 +1586,14 @@ export const InputProductionScreen = ({ navigation }) => {
               >
                 {processCategoryTabs.map((tabItem) => {
                   const filterCat = tabItem.name;
-                  const isActive = processCategoryFilter === filterCat;
+                  const isActive = !showCustomInput && processCategoryFilter === filterCat;
                   return (
                     <Pressable
                       key={filterCat}
-                      onPress={() => setProcessCategoryFilter(filterCat)}
+                      onPress={() => {
+                        setShowCustomInput(false);
+                        setProcessCategoryFilter(filterCat);
+                      }}
                       style={[
                         styles.modalFilterPill,
                         {
@@ -1654,8 +1616,106 @@ export const InputProductionScreen = ({ navigation }) => {
                     </Pressable>
                   );
                 })}
+
+                {/* + Kustom Toggle Pill */}
+                <Pressable
+                  onPress={() => {
+                    setShowCustomInput((prev) => !prev);
+                    if (!showCustomInput && processSearchQuery.trim()) {
+                      setCustomProcessTemp(processSearchQuery.trim());
+                    }
+                  }}
+                  style={[
+                    styles.modalFilterPill,
+                    {
+                      backgroundColor: showCustomInput ? colors.warning : colors.cardSubtle,
+                      borderColor: showCustomInput ? colors.warning : colors.border,
+                    },
+                  ]}
+                >
+                  <Sparkles size={12} color={showCustomInput ? '#000000' : colors.warning} style={{ marginRight: 4 }} />
+                  <Text
+                    style={[
+                      styles.modalFilterPillText,
+                      {
+                        color: showCustomInput ? '#000000' : colors.textPrimary,
+                        fontWeight: showCustomInput ? '800' : '700',
+                      },
+                    ]}
+                  >
+                    {showCustomInput ? 'Tutup Kustom' : '+ Kustom'}
+                  </Text>
+                </Pressable>
               </ScrollView>
             </View>
+
+            {/* Collapsible Compact Custom Process Input */}
+            {showCustomInput && (
+              <View
+                style={[
+                  styles.modalCustomCardCompact,
+                  { backgroundColor: colors.warning + '12', borderColor: colors.warning + '50' },
+                ]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <TextInput
+                    value={customProcessTemp}
+                    onChangeText={setCustomProcessTemp}
+                    placeholder="Nama proses khusus (mis: Chamfering)..."
+                    placeholderTextColor={colors.textMuted}
+                    style={[
+                      styles.modalCustomInputCompact,
+                      { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary },
+                    ]}
+                    autoFocus
+                  />
+                  <Pressable
+                    onPress={() => handleApplyCustomProcess(customProcessTemp)}
+                    disabled={!customProcessTemp.trim()}
+                    style={[
+                      styles.modalCustomApplyBtnCompact,
+                      {
+                        backgroundColor: customProcessTemp.trim() ? colors.warning : colors.cardSubtle,
+                        opacity: customProcessTemp.trim() ? 1 : 0.5,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.modalCustomApplyBtnTextCompact,
+                        { color: customProcessTemp.trim() ? '#000000' : colors.textMuted },
+                      ]}
+                    >
+                      Terapkan
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            {/* Quick 1-Tap Suggestion Banner when typing a non-standard query */}
+            {processSearchQuery.trim().length > 0 && !showCustomInput && (
+              <Pressable
+                onPress={() => handleApplyCustomProcess(processSearchQuery.trim())}
+                style={[
+                  styles.quickCustomSearchBanner,
+                  { backgroundColor: colors.primary + '10', borderColor: colors.primary + '35' },
+                ]}
+              >
+                <Sparkles size={15} color={colors.primary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={[styles.quickCustomSearchTitle, { color: colors.primary }]}>
+                    Gunakan "{processSearchQuery.trim()}"
+                  </Text>
+                  <Text style={[styles.quickCustomSearchSub, { color: colors.textSecondary }]}>
+                    Terapkan langsung sebagai proses kustom
+                  </Text>
+                </View>
+                <View style={[styles.quickCustomApplyChip, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.quickCustomApplyChipText}>Pilih</Text>
+                </View>
+              </Pressable>
+            )}
 
             {/* List of 16 Standard Processes */}
             <FlatList
@@ -1667,10 +1727,37 @@ export const InputProductionScreen = ({ navigation }) => {
               contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
               ListEmptyComponent={
                 <View style={styles.emptySearchContainer}>
-                  <AlertCircle size={28} color={colors.textMuted} style={{ marginBottom: 6 }} />
+                  <AlertCircle size={26} color={colors.textMuted} style={{ marginBottom: 6 }} />
                   <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
-                    Tidak ditemukan proses sesuai kata kunci "{processSearchQuery}"
+                    Tidak ditemukan proses standar "{processSearchQuery}"
                   </Text>
+                  {processSearchQuery.trim().length > 0 && (
+                    <Pressable
+                      onPress={() => handleApplyCustomProcess(processSearchQuery.trim())}
+                      style={[
+                        styles.quickCustomSearchBanner,
+                        {
+                          backgroundColor: colors.warning + '18',
+                          borderColor: colors.warning + '50',
+                          marginTop: 12,
+                          width: '100%',
+                        },
+                      ]}
+                    >
+                      <Sparkles size={15} color={colors.warning} style={{ marginRight: 8 }} />
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={[styles.quickCustomSearchTitle, { color: colors.textPrimary }]}>
+                          Terapkan "{processSearchQuery.trim()}"
+                        </Text>
+                        <Text style={[styles.quickCustomSearchSub, { color: colors.textSecondary }]}>
+                          Simpan sebagai proses khusus / kustom
+                        </Text>
+                      </View>
+                      <View style={[styles.quickCustomApplyChip, { backgroundColor: colors.warning }]}>
+                        <Text style={[styles.quickCustomApplyChipText, { color: '#000000' }]}>Terapkan</Text>
+                      </View>
+                    </Pressable>
+                  )}
                 </View>
               }
               renderItem={({ item: proc }) => {
@@ -1761,7 +1848,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingTop: 12,
-    paddingBottom: 64,
+    paddingBottom: 20,
   },
   headerContextContainer: {
     marginBottom: 16,
@@ -1821,7 +1908,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionBlock: {
-    marginBottom: 18,
+    marginBottom: 12,
   },
   sectionLabel: {
     fontSize: typography.sizes.micro,
@@ -1923,26 +2010,40 @@ const styles = StyleSheet.create({
   selectorTriggerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
-    minHeight: 56,
+    minHeight: 52,
   },
   selectorIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   triggerMainTitle: {
-    fontSize: typography.sizes.cardHeading,
+    fontSize: typography.sizes.body,
     fontWeight: '800',
   },
   triggerSubTitle: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.caption - 1,
     marginTop: 2,
+  },
+  triggerPartLine: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '600',
+  },
+  triggerChevronBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 6,
   },
   triggerActionChip: {
     paddingHorizontal: 10,
@@ -2031,33 +2132,59 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.body,
     fontWeight: '600',
   },
-  modalCustomCard: {
-    padding: 12,
-    borderRadius: 12,
+  modalCustomCardCompact: {
+    padding: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  modalCustomCardTitle: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '800',
-  },
-  modalCustomInput: {
-    height: 42,
+  modalCustomInputCompact: {
+    height: 38,
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     fontSize: typography.sizes.caption,
     fontWeight: '600',
+    flex: 1,
   },
-  modalCustomApplyBtn: {
-    paddingHorizontal: 14,
-    height: 42,
+  modalCustomApplyBtnCompact: {
+    paddingHorizontal: 12,
+    height: 38,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalCustomApplyBtnText: {
-    fontSize: typography.sizes.caption,
+  modalCustomApplyBtnTextCompact: {
+    fontSize: 11.5,
+    fontWeight: '800',
+  },
+  quickCustomSearchBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  quickCustomSearchTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  quickCustomSearchSub: {
+    fontSize: 10.5,
+    marginTop: 1,
+  },
+  quickCustomApplyChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickCustomApplyChipText: {
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: '800',
   },
   processCategoryBadge: {
@@ -2097,22 +2224,18 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   saveContainer: {
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 0,
+    marginBottom: 6,
   },
   saveButton: {
     width: '100%',
-    minHeight: 52,
+    minHeight: 48,
+    borderRadius: 14,
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  saveFooterNotice: {
-    fontSize: typography.sizes.micro,
-    textAlign: 'center',
-    marginTop: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   // Modal Sheet Styles
   modalOverlay: {
@@ -2141,40 +2264,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    marginBottom: 6,
+    paddingVertical: 4,
+    marginBottom: 8,
   },
   modalHeaderBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
   modalHeaderTitle: {
-    fontSize: typography.sizes.screenHeading,
+    fontSize: typography.sizes.screenHeading - 1,
     fontWeight: '900',
     letterSpacing: 0.3,
   },
   modalHeaderSubtitle: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.caption - 1,
     marginTop: 1,
   },
   modalCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   activeIndicatorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 10,
+    display: 'none',
   },
   activeIndicatorText: {
     fontSize: typography.sizes.caption,
@@ -2184,48 +2302,48 @@ const styles = StyleSheet.create({
   modalSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 46,
-    borderRadius: 12,
+    height: 40,
+    borderRadius: 10,
     borderWidth: 1.5,
-    paddingHorizontal: 12,
-    marginBottom: 10,
+    paddingHorizontal: 10,
+    marginBottom: 8,
   },
   modalSearchInput: {
     flex: 1,
-    fontSize: typography.sizes.body,
+    fontSize: typography.sizes.caption + 1,
     fontWeight: '600',
   },
   modalFilterWrapper: {
-    height: 44,
-    marginBottom: 10,
+    height: 36,
+    marginBottom: 8,
     flexShrink: 0,
     justifyContent: 'center',
   },
   modalFilterRow: {
     flexDirection: 'row',
-    height: 44,
+    height: 36,
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    gap: 6,
+    marginBottom: 8,
     flexShrink: 0,
   },
   modalFilterScroll: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 2,
-    gap: 8,
+    gap: 6,
   },
   modalFilterPill: {
-    height: 38,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1.5,
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
   },
   modalFilterPillText: {
-    fontSize: typography.sizes.micro,
+    fontSize: 11,
     fontWeight: '700',
   },
   emptySearchContainer: {
@@ -2242,7 +2360,7 @@ const styles = StyleSheet.create({
   partListItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderRadius: 8,
@@ -2269,18 +2387,18 @@ const styles = StyleSheet.create({
   machineListItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderRadius: 8,
   },
   machineTypeBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   machineListName: {
     fontSize: typography.sizes.body,
@@ -2297,7 +2415,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   machineListType: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.caption - 1,
     marginTop: 2,
   },
 });

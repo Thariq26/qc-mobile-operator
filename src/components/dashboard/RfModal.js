@@ -9,14 +9,14 @@ import {
   TouchableWithoutFeedback,
   Platform,
 } from 'react-native';
-import { Zap, Bot, CheckCircle2, AlertTriangle, ArrowRight, X } from 'lucide-react-native';
+import { Zap, CheckCircle2, AlertTriangle, FileText, X } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { SpringButton } from '../common/SpringButton';
 import { typography } from '../../theme/typography';
 
 /**
  * RfModal: Bottom Sheet Dialog for Random Forest AI Action Recommendation
- * Displays ML model confidence (94.8%), root cause, SOP reference, and Tanya AI shortcut.
+ * Displays ML model confidence (94.8%), root cause, and SOP reference.
  */
 export const RfModal = ({
   visible,
@@ -24,7 +24,6 @@ export const RfModal = ({
   defectName = 'Gompal',
   process = 'Blanking',
   predictionData,
-  onConsultAi,
 }) => {
   const { colors } = useTheme();
   const slideAnim = useRef(new Animated.Value(500)).current;
@@ -166,7 +165,7 @@ export const RfModal = ({
             </View>
 
             <View style={[styles.metaRow, { marginTop: 10 }]}>
-              <Bot size={15} color={colors.aiAccentLight || colors.primary} style={{ marginRight: 6, marginTop: 1 }} />
+              <FileText size={15} color={colors.primary} style={{ marginRight: 6, marginTop: 1 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.metaLabel, { color: colors.textSecondary }]}>
                   Acuan Dokumen Standar:
@@ -181,24 +180,11 @@ export const RfModal = ({
           {/* Actions */}
           <View style={styles.buttonStack}>
             <SpringButton
-              title="Konsultasikan Detail ke Tanya AI"
-              variant="gradient"
-              gradientColors={['#2563EB', '#6366F1', '#7C3AED']}
-              icon={<Bot size={18} color="#FFFFFF" />}
-              iconRight={<ArrowRight size={16} color="#FFFFFF" />}
-              onPress={() => {
-                onClose();
-                if (onConsultAi) onConsultAi(defectName, process);
-              }}
-              style={{ width: '100%' }}
-            />
-
-            <SpringButton
-              title="Tutup Panel Rekomendasi"
-              variant="outline"
-              size="small"
+              title="Mengerti & Tutup Rekomendasi"
+              variant="primary"
+              size="medium"
               onPress={onClose}
-              style={{ width: '100%', marginTop: 8 }}
+              style={{ width: '100%' }}
             />
           </View>
         </Animated.View>
