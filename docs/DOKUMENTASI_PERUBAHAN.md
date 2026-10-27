@@ -28,6 +28,7 @@
 | **14** | **Optimalisasi Spacing Jarak & Tombol Simpan Form** | `src/screens/production/InputProductionScreen.js`<br>`src/screens/defect/InputDefectScreen.js` | `605342d8` | Memangkas jarak kosong (whitespace) berlebih dari 42px (Produksi) dan 24px (Defect) menjadi **12px** terpadu. Menyelaraskan tombol simpan ke tinggi ergonomis **48px** dengan ikon `<CheckCircle2 size={18} />`, memangkas padding bawah scroll ke 20px, dan menghapus teks usang "Supabase". |
 | **15** | **Perbaikan Splash Image Screen Expo Go** | `app.json`<br>`App.js`<br>`assets/splash.png` | `605342d8` | Memperbaiki masalah blank putih pada Expo Go dengan rasio gambar splash proporsional (`resizeMode: contain`), latar belakang gelap `#0F172A`, dan penanganan lifecycle splash screen (`SplashScreen.preventAutoHideAsync()` & `hideAsync()`). |
 | **16** | **Pembersihan Baris Kode Tidak Terpakai** | `src/navigation/BottomTabNavigator.js`<br>`src/components/dashboard/RfModal.js`<br>`src/screens/dashboard/DashboardScreen.js` | `605342d8` | Menghapus impor dan deklarasi state/fungsi yang tidak pernah dipanggil untuk menjaga kebersihan dan performa bundle aplikasi. |
+| **17** | **Optimalisasi Spacing & Tampilan Tombol Aksi AI** | `src/screens/dashboard/DashboardScreen.js` | `605342d8` | Merapatkan jarak kosong sebesar 26px menjadi 12px antara grafik SPC dan tombol AI. Memperbaiki teks tombol yang patah baris (*orphan text*) menjadi 1 baris padat (`🚨 Mitigasi AI: {defect}` / `⚡ Rekomendasi AI: {defect}`), tinggi 48px, dan subteks ringkas. |
 
 ---
 
@@ -267,3 +268,31 @@ Menghapus impor pustaka, variabel, dan deklarasi fungsi yang tidak pernah diguna
 - `src/components/dashboard/RfModal.js`: Pembersihan parameter dan fungsi dummy.
 - `src/screens/dashboard/DashboardScreen.js`: Pembersihan state tak terpakai.
 - Menjaga kebersihan bundel aplikasi dan mempercepat waktu rendering di perangkat mobile.
+
+---
+
+## 13. Optimalisasi Spacing Jarak & Redesain Tombol Aksi AI Dashboard
+
+### Latar Belakang & Masalah
+1. **Penumpukan Margin Kosong**:
+   - Di `DashboardScreen.js`, kartu grafik kendali mutu SPC (`SpcControlChart`) memiliki `marginBottom: 16px`, sementara kontainer tombol AI (`rfActionContainer`) memiliki `marginVertical: 10px`. Akibatnya, tercipta kekosongan whitespace sebesar **26px** di atas tombol.
+2. **Patah Baris Teks yang Canggung (*Awkward Text Wrapping / Orphan Words*)**:
+   - String judul tombol terlalu panjang dan bertele-tele:
+     - `🚨 Mitigasi Cepat AI (Out-of-Control: Setting)` (37 karakter) -> patah menjadi 2 baris dengan kata `Setting)` terisolasi sendirian di baris kedua.
+     - `⚡ Rekomendasi Solusi AI untuk: Setting` (30 karakter) -> patah menjadi 2 baris dengan kata `Setting` sendirian di baris kedua.
+   - Hal ini membuat tombol terlihat canggung, tidak proporsional, dan sulit dibaca secara cepat di lantai pabrik.
+3. **Ukuran Tombol Masif & Keterangan Bertele-tele**:
+   - Ukuran tombol sebelumnya `large` (tinggi 54px) dengan subteks 2 baris yang memakan ruang vertikal berlebih.
+
+### Solusi Teknis
+1. **Merapatkan Jarak Kosong Menjadi 12px**:
+   - Mengatur `rfActionContainer` ke `marginTop: -4, marginBottom: 12`, sehingga jarak bersih dari bagian bawah kartu SPC ke tombol AI menjadi **12px** terpadu (konsisten dengan footer form di seluruh aplikasi).
+2. **Format Teks Ringkas & Bebas Patah Baris (1-Row Full)**:
+   - Status Out-of-Control: Diubah menjadi **`🚨 Mitigasi AI: ${activeDefectForAi}`** (misal: `🚨 Mitigasi AI: Setting`).
+   - Status Normal: Diubah menjadi **`⚡ Rekomendasi AI: ${activeDefectForAi}`** (misal: `⚡ Rekomendasi AI: Setting`).
+   - Teks tampil utuh dalam satu baris dengan visual yang tegas, punchy, dan ergonomis.
+3. **Standarisasi Ukuran & Subteks 1-Baris**:
+   - Menurunkan tinggi tombol ke standar tactile mobile **48px** (`size="default"`, `borderRadius: 14`) dengan shadow lembut yang elegan.
+   - Subteks keterangan di bawah tombol diringkas menjadi 1 baris yang padat dan informatif:
+     - Out-of-Control: *Analisis deviasi proses & SOP mitigasi (${activeProcessForAi})*
+     - Normal: *Optimasi proses otomatis berbasis model Random Forest & SOP Standard*

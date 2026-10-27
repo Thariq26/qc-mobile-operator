@@ -541,11 +541,11 @@ export const DashboardScreen = ({ navigation }) => {
               <SpringButton
                 title={
                   spcData?.status === 'OUT-OF-CONTROL'
-                    ? `🚨 Mitigasi Cepat AI (Out-of-Control: ${activeDefectForAi})`
-                    : `⚡ Rekomendasi Solusi AI untuk: ${activeDefectForAi}`
+                    ? `🚨 Mitigasi AI: ${activeDefectForAi}`
+                    : `⚡ Rekomendasi AI: ${activeDefectForAi}`
                 }
                 variant="gradient"
-                size="large"
+                size="default"
                 loading={rfLoading}
                 gradientColors={
                   spcData?.status === 'OUT-OF-CONTROL'
@@ -559,8 +559,8 @@ export const DashboardScreen = ({ navigation }) => {
               />
               <Text style={[styles.rfButtonCaption, { color: colors.textMuted }]}>
                 {spcData?.status === 'OUT-OF-CONTROL'
-                  ? `Analisis mitigasi deviasi proses untuk: ${activeDefectForAi} (${activeProcessForAi})`
-                  : `Optimasi proses otomatis berbasis model Random Forest & SOP Standard untuk ${activeDefectForAi}`}
+                  ? `Analisis deviasi proses & SOP mitigasi (${activeProcessForAi})`
+                  : `Optimasi proses otomatis berbasis model Random Forest & SOP Standard`}
               </Text>
             </View>
           );
@@ -898,22 +898,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   rfActionContainer: {
-    marginVertical: 10,
+    marginTop: -4,
+    marginBottom: 12,
   },
   rfButton: {
     width: '100%',
-    minHeight: 52,
+    minHeight: 48,
+    borderRadius: 14,
     shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   rfButtonCaption: {
-    fontSize: typography.sizes.caption,
+    fontSize: 11.5,
     textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
+    marginTop: 5,
+    lineHeight: 16,
   },
   dailyProdList: {
     gap: 12,
