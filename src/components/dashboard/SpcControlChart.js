@@ -31,6 +31,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -1018,7 +1019,7 @@ export const SpcControlChart = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    padding: 16,
+    padding: spacing(16),
     borderWidth: 1,
     marginBottom: 16,
   },
@@ -1030,35 +1031,36 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
-    marginRight: 10,
+    marginRight: isCompactScreen ? 6 : 10,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   title: {
-    fontSize: typography.sizes.cardHeading,
+    fontSize: isCompactScreen ? 14 : typography.sizes.cardHeading,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    flexShrink: 1,
   },
   subtitle: {
-    fontSize: typography.sizes.caption,
+    fontSize: isCompactScreen ? 11.5 : typography.sizes.caption,
     marginTop: 3,
-    lineHeight: 18,
+    lineHeight: isCompactScreen ? 16 : 18,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: isCompactScreen ? 7 : 10,
+    paddingVertical: isCompactScreen ? 4 : 5,
     borderRadius: 999,
     borderWidth: 1,
-    minHeight: 28,
+    minHeight: isCompactScreen ? 24 : 28,
   },
   statusBadgeText: {
-    fontSize: typography.sizes.micro,
+    fontSize: isCompactScreen ? 10.5 : typography.sizes.micro,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   defectFilterWrapper: {
     marginBottom: 14,

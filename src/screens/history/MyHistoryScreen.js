@@ -36,6 +36,7 @@ import { defectService } from '../../api/services/defectService';
 import { ProductionHistoryScreen } from '../production/ProductionHistoryScreen';
 import { formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 const { width } = Dimensions.get('window');
 
@@ -671,7 +672,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing(16),
     paddingTop: 8,
   },
   screenHeader: {
@@ -776,7 +777,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    padding: 16,
+    padding: spacing(16),
     borderWidth: 1,
   },
   cardHeader: {

@@ -42,6 +42,7 @@ import { defectService } from '../../api/services/defectService';
 import { productionService } from '../../api/services/productionService';
 import { formatIndonesianDate, getLocalDateString } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 // Shift options
 const SHIFTS = [
@@ -1846,8 +1847,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingTop: 12,
+    padding: spacing(16),
+    paddingTop: spacing(12),
     paddingBottom: 20,
   },
   headerContextContainer: {

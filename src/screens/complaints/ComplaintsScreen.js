@@ -21,6 +21,7 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { complaintService } from '../../api/services/complaintService';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 export const ComplaintsScreen = () => {
   const { colors, isDark } = useTheme();
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   banner: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing(16),
     paddingTop: 12,
     paddingBottom: 14,
     borderBottomWidth: 1,
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listContent: {
-    padding: 16,
+    padding: spacing(16),
     paddingBottom: 32,
   },
   loaderContainer: {
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
   complaintCard: {
     borderRadius: 18,
     borderWidth: 1,
-    padding: 16,
+    padding: spacing(16),
     marginBottom: 14,
   },
   topRow: {

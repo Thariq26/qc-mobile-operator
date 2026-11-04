@@ -18,6 +18,7 @@ import { ChatBubble } from '../../components/chat/ChatBubble';
 import { TypingIndicator } from '../../components/chat/TypingIndicator';
 import { aiService } from '../../api/services/aiService';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 const MACHINE_PROMPTS = [
   'SOP Setting Tonase Amada Press',
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing(16),
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   messageListContent: {
-    padding: 16,
+    padding: spacing(16),
     paddingBottom: 8,
   },
   chipsContainer: {
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   chipsScroll: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing(16),
     gap: 8,
   },
   chipItem: {

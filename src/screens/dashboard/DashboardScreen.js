@@ -39,6 +39,7 @@ import { productionService } from '../../api/services/productionService';
 import { aiService } from '../../api/services/aiService';
 import { getLocalDateString } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 import { useFocusEffect } from '@react-navigation/native';
 
 const TIME_PERIODS = [
@@ -202,6 +203,11 @@ export const DashboardScreen = ({ navigation }) => {
     setSelectedPeriod('custom');
     fetchDashboardData('custom', false, newStart, newEnd, selectedDefect);
   };
+
+  // Inisialisasi awal data dashboard pada web & native mount
+  useEffect(() => {
+    fetchDashboardData(selectedPeriod, false, customStartDate, customEndDate, selectedDefect);
+  }, []);
 
   // Auto re-fetch dashboard metrics whenever user focuses/returns to this tab
   useFocusEffect(
@@ -874,7 +880,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing(16),
     paddingBottom: 28,
   },
   sectionHeader: {
@@ -1047,7 +1053,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   segmentedPillLabel: {
-    fontSize: 13,
+    fontSize: isCompactScreen ? 11.5 : 13,
     textAlign: 'center',
   },
   emptyBox: {

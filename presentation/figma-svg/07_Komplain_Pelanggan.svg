@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#070A12" />
+    </linearGradient>
+    <linearGradient id="primary-btn-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="critical-btn-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#DC2626" />
+    </linearGradient>
+    <linearGradient id="chart-area-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(37, 99, 235, 0.35)" />
+      <stop offset="100%" stop-color="rgba(37, 99, 235, 0.0)" />
+    </linearGradient>
+    <filter id="shadow-card" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    <filter id="shadow-nav" x="-10%" y="-20%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="-4" stdDeviation="8" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+    <filter id="glow-primary" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#3B82F6" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="url(#bg-grad)" />
+  
+    <g id="StatusBar" opacity="0.9">
+      <text x="32" y="34" fill="#F8FAFC" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="14" font-weight="700">09:41</text>
+      <!-- Dynamic Island / Speaker -->
+      <rect x="145" y="11" width="100" height="24" rx="12" fill="#000000" stroke="#1E293B" stroke-width="0.5" />
+      <circle x="228" y="23" r="5" fill="#0F172A" />
+      <circle x="162" y="23" r="4" fill="#0A0F1D" />
+      <!-- Icons Right: Signal, Wifi, Battery -->
+      <g transform="translate(322, 22)" fill="#F8FAFC">
+        <!-- Signal -->
+        <rect x="0" y="7" width="2.5" height="4" rx="0.5" />
+        <rect x="4" y="5" width="2.5" height="6" rx="0.5" />
+        <rect x="8" y="3" width="2.5" height="8" rx="0.5" />
+        <rect x="12" y="0" width="2.5" height="11" rx="0.5" />
+        <!-- Wifi -->
+        <path d="M 20 8 A 4 4 0 0 1 24 8 M 18.5 5.5 A 7 7 0 0 1 25.5 5.5 M 17 3 A 10 10 0 0 1 27 3" fill="none" stroke="#F8FAFC" stroke-width="1.3" stroke-linecap="round" />
+        <!-- Battery -->
+        <rect x="30" y="1" width="20" height="10" rx="2.5" fill="none" stroke="#F8FAFC" stroke-width="1.2" />
+        <rect x="32" y="3" width="14" height="6" rx="1.5" fill="#10B981" />
+        <path d="M 51 4 Q 52 4 52 5 L 52 7 Q 52 8 51 8 Z" fill="#F8FAFC" />
+      </g>
+    </g>
+  
+  
+    <g id="AppHeader">
+      <!-- Top separator border -->
+      <line x1="16" y1="102" x2="374" y2="102" stroke="#1E293B" stroke-width="1" />
+      
+      <!-- Avatar with initials -->
+      <rect x="16" y="54" width="40" height="40" rx="12" fill="#2563EB" />
+      <text x="36" y="79" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">AQ</text>
+      
+      <!-- Company Eyebrow & Username -->
+      <text x="64" y="66" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" letter-spacing="0.5">PT GALAXY MANDIRI PERKASA</text>
+      <text x="64" y="84" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="800">Administrator QC GMP</text>
+      
+      <!-- Role Badge Pill -->
+      <rect x="238" y="72" width="46" height="17" rx="5" fill="rgba(168, 85, 247, 0.2)" stroke="rgba(168, 85, 247, 0.4)" stroke-width="0.8" />
+      <text x="261" y="84" fill="#C084FC" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="800" text-anchor="middle">Admin</text>
+      
+      <!-- Online Status Pill -->
+      <rect x="296" y="64" width="56" height="22" rx="11" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.35)" stroke-width="1" />
+      <circle x="306" y="75" r="3.5" fill="#10B981" />
+      <text x="331" y="79" fill="#34D399" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="800" text-anchor="middle" letter-spacing="0.4">ONLINE</text>
+      
+      <!-- Theme Moon Toggle Button -->
+      <rect x="358" y="62" width="26" height="26" rx="8" fill="#1E293B" stroke="#334155" stroke-width="0.8" />
+      <path d="M 373 70 A 5 5 0 1 1 367 76 A 4.5 4.5 0 0 0 373 70 Z" fill="#F59E0B" />
+    </g>
+  
+
+  <!-- Section Header -->
+  <g id="SectionHeader" transform="translate(16, 118)">
+    <text x="0" y="12" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="18" font-weight="800" letter-spacing="0.4">KOMPLAIN CUSTOMER</text>
+    <!-- Counter Badge: 0 Kasus Aktif -->
+    <rect x="260" y="-3" width="98" height="22" rx="7" fill="rgba(168, 85, 247, 0.15)" stroke="rgba(168, 85, 247, 0.4)" stroke-width="1" />
+    <text x="309" y="12" fill="#C084FC" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" text-anchor="middle">0 Kasus Aktif</text>
+    <text x="0" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="500">Customer Awareness &amp; Mutu • Lini PT Galaxy Mandiri</text>
+  </g>
+
+  <!-- Awareness Warning Box -->
+  <g id="AwarenessBox" transform="translate(16, 168)">
+    <rect x="0" y="0" width="358" height="54" rx="12" fill="#111827" stroke="#334155" stroke-width="1" />
+    <circle cx="22" cy="27" r="10" fill="rgba(245, 158, 11, 0.15)" />
+    <text x="22" y="32" fill="#F59E0B" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="800" text-anchor="middle">!</text>
+    <text x="40" y="22" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">Peringatan Kualitas &amp; Klaim Garansi</text>
+    <text x="40" y="38" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="500">Seluruh operator QC wajib memperhatikan cacat berulang pada nomor part rawan.</text>
+  </g>
+
+  <!-- Prima / Zero Defect State Card -->
+  <g id="ZeroComplaintState" transform="translate(16, 238)">
+    <rect x="0" y="0" width="358" height="240" rx="18" fill="#111827" stroke="#334155" stroke-width="1.2" filter="url(#shadow-card)" />
+
+    <!-- Big Glowing Green Checkmark Circle -->
+    <circle cx="179" cy="70" r="32" fill="rgba(16, 185, 129, 0.12)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1.5" />
+    <circle cx="179" cy="70" r="24" fill="#10B981" />
+    <path d="M 170 70 L 176 76 L 189 63" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+    <text x="179" y="132" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="17" font-weight="800" text-anchor="middle">Tidak Ada Komplain Customer</text>
+    <text x="179" y="156" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="500" text-anchor="middle">Saat ini belum ada catatan komplain customer yang aktif.</text>
+    <text x="179" y="174" fill="#34D399" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700" text-anchor="middle">Kualitas produk perakitan dalam kondisi prima!</text>
+
+    <!-- Audit ISO Compliant Tag -->
+    <rect x="94" y="196" width="170" height="24" rx="6" fill="#1E293B" stroke="#334155" stroke-width="0.8" />
+    <text x="179" y="212" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" text-anchor="middle">✓ Sesuai Standar Audit ISO 9001</text>
+  </g>
+
+  <!-- Critical Parts Watchlist -->
+  <g id="WatchlistCard" transform="translate(16, 494)">
+    <rect x="0" y="0" width="358" height="180" rx="16" fill="#111827" stroke="#334155" stroke-width="1" filter="url(#shadow-card)" />
+    <text x="16" y="26" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="13.5" font-weight="800">PART DALAM PENGAWASAN KETAT</text>
+    <text x="16" y="42" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="500">Berdasarkan histori komplain kuartal sebelumnya</text>
+
+    <!-- Item 1 -->
+    <g transform="translate(16, 54)">
+      <rect x="0" y="0" width="326" height="46" rx="8" fill="#1E293B" />
+      <rect x="8" y="8" width="128" height="15" rx="4" fill="#2563EB" />
+      <text x="72" y="19" fill="#FFFFFF" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">50128-K41A-N000-H1-R</text>
+      <text x="8" y="37" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="700">Stay R Grabrail</text>
+      <rect x="250" y="14" width="68" height="18" rx="5" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="0.8" />
+      <text x="284" y="26.5" fill="#F59E0B" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="800" text-anchor="middle">Cek Burry</text>
+    </g>
+
+    <!-- Item 2 -->
+    <g transform="translate(16, 110)">
+      <rect x="0" y="0" width="326" height="46" rx="8" fill="#1E293B" />
+      <rect x="8" y="8" width="100" height="15" rx="4" fill="#2563EB" />
+      <text x="58" y="19" fill="#FFFFFF" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">JK047793-1310</text>
+      <text x="8" y="37" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="700">Bracket Condensor B (Upper) 1310</text>
+      <rect x="250" y="14" width="68" height="18" rx="5" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="0.8" />
+      <text x="284" y="26.5" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="800" text-anchor="middle">Zero Defect</text>
+    </g>
+  </g>
+
+  
+    <g id="BottomTabBar">
+      <!-- Background Glass Bar -->
+      <rect x="0" y="756" width="390" height="88" fill="#0B0F19" stroke="#1E293B" stroke-width="1" filter="url(#shadow-nav)" />
+      
+      <g id="Tab_Dashboard">
+        
+        <rect x="35" y="773" width="6" height="6" rx="1.5" fill="#64748B" />
+                 <rect x="43" y="773" width="6" height="6" rx="1.5" fill="#64748B" />
+                 <rect x="35" y="781" width="6" height="6" rx="1.5" fill="#64748B" />
+                 <rect x="43" y="781" width="6" height="6" rx="1.5" fill="#64748B" />
+        <text x="42" y="804" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" text-anchor="middle">Dashboard</text>
+      </g>
+    
+      <g id="Tab_InputProduction">
+        
+        <path d="M 111 787 L 111 777 L 116 780 L 116 777 L 121 780 L 121 774 L 125 774 L 125 787 Z" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round" />
+        <text x="118" y="804" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" text-anchor="middle">Input Prod</text>
+      </g>
+    
+      <g id="Tab_InputDefect">
+        
+        <circle cx="195" cy="780" r="8" fill="none" stroke="#64748B" stroke-width="1.6" />
+                 <line x1="195" y1="776" x2="195" y2="784" stroke="#64748B" stroke-width="1.6" stroke-linecap="round" />
+                 <line x1="191" y1="780" x2="199" y2="780" stroke="#64748B" stroke-width="1.6" stroke-linecap="round" />
+        <text x="195" y="804" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" text-anchor="middle">Catat NG</text>
+      </g>
+    
+      <g id="Tab_History">
+        
+        <rect x="266" y="774" width="12" height="14" rx="2" fill="none" stroke="#64748B" stroke-width="1.6" />
+                 <path d="M 269 774 L 269 772 Q 269 771 270 771 L 274 771 Q 275 771 275 772 L 275 774 Z" fill="#64748B" />
+                 <path d="M 269 782 L 271 784 L 275 778" fill="none" stroke="#64748B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="272" y="804" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" text-anchor="middle">Riwayat</text>
+      </g>
+    
+      <g id="Tab_Complaints">
+        <rect x="330" y="768" width="36" height="24" rx="12" fill="rgba(37, 99, 235, 0.2)" stroke="rgba(37, 99, 235, 0.4)" stroke-width="0.8" />
+         <line x1="340" y1="809" x2="356" y2="809" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" />
+        <rect x="341" y="773" width="14" height="15" rx="2" fill="none" stroke="#2563EB" stroke-width="1.6" />
+                 <line x1="345" y1="777" x2="345" y2="779" stroke="#2563EB" stroke-width="1.4" stroke-linecap="round" />
+                 <line x1="351" y1="777" x2="351" y2="779" stroke="#2563EB" stroke-width="1.4" stroke-linecap="round" />
+                 <line x1="345" y1="781" x2="345" y2="783" stroke="#2563EB" stroke-width="1.4" stroke-linecap="round" />
+                 <line x1="351" y1="781" x2="351" y2="783" stroke="#2563EB" stroke-width="1.4" stroke-linecap="round" />
+        <text x="348" y="804" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800" text-anchor="middle">Komplain</text>
+      </g>
+    
+    </g>
+  
+</svg>

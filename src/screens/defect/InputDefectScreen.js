@@ -42,6 +42,7 @@ import { ConfirmDefectModal } from '../../components/common/ConfirmDefectModal';
 import { defectService } from '../../api/services/defectService';
 import { getLocalDateString, formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 // Helper to get standard YYYY-MM-DD string N days ago
 const getDateNDaysAgo = (n) => {
@@ -1671,7 +1672,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing(16),
     paddingBottom: 20,
   },
   formHeader: {
@@ -1687,7 +1688,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   formSection: {
-    marginBottom: 16,
+    marginBottom: spacing(16),
   },
   fieldLabel: {
     fontSize: typography.sizes.micro,

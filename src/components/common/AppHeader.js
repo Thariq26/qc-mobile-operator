@@ -7,6 +7,7 @@ import {
   Animated,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Sun,
   Moon,
@@ -16,6 +17,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 import { OperatorProfileModal } from './OperatorProfileModal';
@@ -42,6 +44,8 @@ const getUserInitials = (name) => {
 export const AppHeader = ({ isOffline = false }) => {
   const { colors, isDark, toggleTheme } = useTheme();
   const { user, isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'ios' ? 44 : 26);
 
   // Modal States
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
@@ -106,6 +110,8 @@ export const AppHeader = ({ isOffline = false }) => {
         {
           backgroundColor: colors.background,
           borderBottomColor: colors.border,
+          paddingTop: topPadding,
+          paddingHorizontal: spacing(16),
         },
       ]}
     >
@@ -269,8 +275,8 @@ export const AppHeader = ({ isOffline = false }) => {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 38,
-    paddingBottom: 12,
+    paddingTop: Platform.OS === 'ios' ? 48 : 32,
+    paddingBottom: 11,
     borderBottomWidth: 1,
   },
   offlineBanner: {
@@ -295,15 +301,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 8,
+    marginRight: isCompactScreen ? 6 : 8,
   },
   logoBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: isCompactScreen ? 34 : 38,
+    height: isCompactScreen ? 34 : 38,
+    borderRadius: isCompactScreen ? 10 : 11,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: isCompactScreen ? 8 : 10,
     elevation: 3,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
@@ -313,7 +319,7 @@ const styles = StyleSheet.create({
   logoBadgeText: {
     color: '#FFFFFF',
     fontWeight: '900',
-    fontSize: 14,
+    fontSize: isCompactScreen ? 13 : 14,
     letterSpacing: 0.5,
   },
   titleColumn: {
@@ -321,7 +327,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   companyEyebrow: {
-    fontSize: 10,
+    fontSize: isCompactScreen ? 9.5 : 10,
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -332,31 +338,31 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   userNameText: {
-    fontSize: 13.5,
+    fontSize: isCompactScreen ? 12.5 : 13.5,
     fontWeight: '800',
     letterSpacing: 0.1,
-    marginRight: 6,
+    marginRight: isCompactScreen ? 4 : 6,
     flexShrink: 1,
   },
   rolePill: {
-    paddingHorizontal: 6,
+    paddingHorizontal: isCompactScreen ? 5 : 6,
     paddingVertical: 1.5,
     borderRadius: 6,
   },
   rolePillText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
   },
   rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: isCompactScreen ? 5 : 6,
   },
   statusTicker: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: isCompactScreen ? 6.5 : 8,
+    paddingVertical: 3.5,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -367,7 +373,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.3,
   },

@@ -21,6 +21,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 /**
  * ConfirmProductionModal: Production Shift Confirmation Dialog

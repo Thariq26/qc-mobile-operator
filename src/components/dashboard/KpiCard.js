@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
+import { spacing, isCompactScreen } from '../../theme/responsive';
 
 /**
  * KpiCard: Bento Grid KPI Metric Card (21st.dev inspired pattern)
@@ -123,12 +124,12 @@ export const KpiCard = ({
 const styles = StyleSheet.create({
   cardWrapper: {
     width: '48.5%',
-    marginBottom: 10,
+    marginBottom: spacing(10),
   },
   container: {
-    padding: 14,
+    padding: spacing(14),
     borderRadius: 16,
-    minHeight: 118,
+    minHeight: isCompactScreen ? 110 : 118,
     justifyContent: 'space-between',
   },
   topRow: {
@@ -162,8 +163,8 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   valueText: {
-    fontSize: typography.sizes.kpi,
-    lineHeight: typography.lineHeights.kpi,
+    fontSize: isCompactScreen ? typography.sizes.kpi - 2 : typography.sizes.kpi,
+    lineHeight: isCompactScreen ? typography.lineHeights.kpi - 2 : typography.lineHeights.kpi,
     fontWeight: '900',
     letterSpacing: -0.5,
   },

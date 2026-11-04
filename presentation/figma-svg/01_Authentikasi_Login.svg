@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#070A12" />
+    </linearGradient>
+    <linearGradient id="primary-btn-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="critical-btn-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#DC2626" />
+    </linearGradient>
+    <linearGradient id="chart-area-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(37, 99, 235, 0.35)" />
+      <stop offset="100%" stop-color="rgba(37, 99, 235, 0.0)" />
+    </linearGradient>
+    <filter id="shadow-card" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    <filter id="shadow-nav" x="-10%" y="-20%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="-4" stdDeviation="8" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+    <filter id="glow-primary" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#3B82F6" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="url(#bg-grad)" />
+  
+    <g id="StatusBar" opacity="0.9">
+      <text x="32" y="34" fill="#F8FAFC" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="14" font-weight="700">09:41</text>
+      <!-- Dynamic Island / Speaker -->
+      <rect x="145" y="11" width="100" height="24" rx="12" fill="#000000" stroke="#1E293B" stroke-width="0.5" />
+      <circle x="228" y="23" r="5" fill="#0F172A" />
+      <circle x="162" y="23" r="4" fill="#0A0F1D" />
+      <!-- Icons Right: Signal, Wifi, Battery -->
+      <g transform="translate(322, 22)" fill="#F8FAFC">
+        <!-- Signal -->
+        <rect x="0" y="7" width="2.5" height="4" rx="0.5" />
+        <rect x="4" y="5" width="2.5" height="6" rx="0.5" />
+        <rect x="8" y="3" width="2.5" height="8" rx="0.5" />
+        <rect x="12" y="0" width="2.5" height="11" rx="0.5" />
+        <!-- Wifi -->
+        <path d="M 20 8 A 4 4 0 0 1 24 8 M 18.5 5.5 A 7 7 0 0 1 25.5 5.5 M 17 3 A 10 10 0 0 1 27 3" fill="none" stroke="#F8FAFC" stroke-width="1.3" stroke-linecap="round" />
+        <!-- Battery -->
+        <rect x="30" y="1" width="20" height="10" rx="2.5" fill="none" stroke="#F8FAFC" stroke-width="1.2" />
+        <rect x="32" y="3" width="14" height="6" rx="1.5" fill="#10B981" />
+        <path d="M 51 4 Q 52 4 52 5 L 52 7 Q 52 8 51 8 Z" fill="#F8FAFC" />
+      </g>
+    </g>
+  
+
+  <!-- Top Right Theme Moon Toggle -->
+  <rect x="338" y="56" width="36" height="36" rx="10" fill="#1E293B" stroke="#334155" stroke-width="1" />
+  <path d="M 358 68 A 7 7 0 1 1 350 76 A 6 6 0 0 0 358 68 Z" fill="#F59E0B" />
+
+  <!-- Center Shield Logo Badge -->
+  <g id="LogoBadge">
+    <rect x="155" y="160" width="80" height="80" rx="24" fill="#1E293B" stroke="#334155" stroke-width="1.5" filter="url(#shadow-card)" />
+    <!-- Glowing Shield Icon -->
+    <path d="M 195 184 L 177 192 L 177 206 Q 177 220 195 228 Q 213 220 213 206 L 213 192 Z" fill="#2563EB" opacity="0.2" />
+    <path d="M 195 184 L 177 192 L 177 206 Q 177 220 195 228 Q 213 220 213 206 L 213 192 Z" fill="none" stroke="#3B82F6" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M 188 206 L 193 211 L 202 201" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Title & Subtitle -->
+  <text x="195" y="278" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="22" font-weight="800" text-anchor="middle" letter-spacing="0.5">QC DEFECT MONITORING</text>
+  <text x="195" y="302" fill="#3B82F6" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="1">PT GALAXY MANDIRI PERKASA</text>
+  <text x="195" y="324" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="500" text-anchor="middle">Handheld Operasional QC Inspector Lantai Produksi</text>
+
+  <!-- Login Form Box -->
+  <g id="LoginForm" transform="translate(24, 356)">
+    <!-- Field 1: Username Operator -->
+    <text x="0" y="0" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.5">USERNAME OPERATOR</text>
+    <rect x="0" y="10" width="342" height="48" rx="12" fill="#111827" stroke="#334155" stroke-width="1.2" />
+    <!-- User Icon -->
+    <circle cx="24" cy="31" r="5" fill="none" stroke="#64748B" stroke-width="1.6" />
+    <path d="M 16 41 Q 16 37 24 37 Q 32 37 32 41" fill="none" stroke="#64748B" stroke-width="1.6" />
+    <text x="44" y="39" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="13.5" font-weight="600">qc_admin</text>
+
+    <!-- Field 2: Kata Sandi -->
+    <text x="0" y="80" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.5">KATA SANDI</text>
+    <rect x="0" y="90" width="342" height="48" rx="12" fill="#111827" stroke="#334155" stroke-width="1.2" />
+    <!-- Lock Icon -->
+    <rect x="18" y="112" width="12" height="10" rx="2" fill="none" stroke="#64748B" stroke-width="1.6" />
+    <path d="M 21 112 L 21 108 Q 21 105 24 105 Q 27 105 27 108 L 27 112" fill="none" stroke="#64748B" stroke-width="1.6" />
+    <!-- Password bullets -->
+    <text x="44" y="119" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" letter-spacing="2">••••••••</text>
+    <!-- Eye Icon -->
+    <path d="M 312 114 Q 320 108 328 114 Q 320 120 312 114 Z" fill="none" stroke="#64748B" stroke-width="1.5" />
+    <circle cx="320" cy="114" r="2.5" fill="#64748B" />
+
+    <!-- Remember Me Checkbox -->
+    <rect x="0" y="156" width="18" height="18" rx="5" fill="#2563EB" />
+    <path d="M 4 165 L 7 168 L 14 161" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="28" y="170" fill="#F8FAFC" font-family="'Plus Jakarta Sans', sans-serif" font-size="12.5" font-weight="700">Ingat Akun Saya</text>
+
+    <!-- Primary Button: Masuk ke Terminal -->
+    <rect x="0" y="196" width="342" height="50" rx="14" fill="url(#primary-btn-grad)" filter="url(#glow-primary)" />
+    <text x="171" y="227" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="14.5" font-weight="800" text-anchor="middle" letter-spacing="0.3">Masuk ke Terminal</text>
+  </g>
+
+  <!-- Footer ISO Standard -->
+  <text x="195" y="780" fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="600" text-anchor="middle">Sistem Mutu ISO 9001:2015 • Shop Floor Control v2.4</text>
+</svg>
