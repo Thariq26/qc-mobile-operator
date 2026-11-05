@@ -3,7 +3,7 @@
     "name": "QC Defect Monitoring App",
     "slug": "qc-defect-monitoring-app",
     "owner": "thariiqs-team",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -12,11 +12,12 @@
       "bundleIdentifier": "com.gmp.qcdefectmonitoring"
     },
     "android": {
+      "package": "com.gmp.qcdefectmonitoring",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0B0F17"
       },
-      "package": "com.gmp.qcdefectmonitoring",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
