@@ -21,7 +21,11 @@ let currentHost = DEFAULT_HOST;
 let cloudBackendUrl =
   process.env.EXPO_PUBLIC_API_URL ||
   Constants.expoConfig?.extra?.cloudBackendUrl ||
-  null;
+  'https://qc-backend-java-production.up.railway.app';
+let cloudAiUrl =
+  process.env.EXPO_PUBLIC_AI_URL ||
+  Constants.expoConfig?.extra?.cloudAiUrl ||
+  'https://qc-ai-service-production.up.railway.app';
 let geminiApiKey =
   process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
   Constants.expoConfig?.extra?.geminiApiKey ||
@@ -55,7 +59,12 @@ export const getBaseUrl = () => {
 };
 
 export const getN8nWebhookUrl = () => `http://${currentHost}:5678/webhook/qc-ai-chat`;
-export const getFastApiUrl = () => `http://${currentHost}:8000`;
+export const getFastApiUrl = () => {
+  if (cloudAiUrl) {
+    return cloudAiUrl.replace(/\/+$/, '');
+  }
+  return `http://${currentHost}:8000`;
+};
 
 export const ENDPOINTS = {
   // Auth

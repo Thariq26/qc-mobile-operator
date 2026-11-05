@@ -61,6 +61,8 @@
       ]
     ],
     "extra": {
+      "cloudBackendUrl": "https://qc-backend-java-production.up.railway.app",
+      "cloudAiUrl": "https://qc-ai-service-production.up.railway.app",
       "eas": {
         "projectId": "418622cf-eb5e-4647-a6b7-23159edb0aa4"
       }
