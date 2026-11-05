@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { ShieldCheck, Lock, User, Eye, EyeOff, Sun, Moon, Check } from 'lucide-react-native';
+import { ShieldCheck, Lock, User, Eye, EyeOff, Sun, Moon, Check, LogIn } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { SpringButton } from '../../components/common/SpringButton';
@@ -191,9 +191,9 @@ export const LoginScreen = () => {
             ]}
           >
             {isDark ? (
-              <Moon size={18} color={colors.warning} />
+              <Moon size={15} color={colors.warning} />
             ) : (
-              <Sun size={18} color={colors.primary} />
+              <Sun size={15} color={colors.primary} />
             )}
           </Pressable>
         </View>
@@ -201,16 +201,13 @@ export const LoginScreen = () => {
         {/* Brand Header */}
         <View style={styles.brandContainer}>
           <View style={[styles.logoIconContainer, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <ShieldCheck size={44} color={colors.primary} />
+            <ShieldCheck size={24} color={colors.primary} />
           </View>
           <Text style={[styles.brandTitle, { color: colors.textPrimary }]}>
             QC DEFECT MONITORING
           </Text>
           <Text style={[styles.companySubtitle, { color: colors.primary }]}>
             PT GALAXY MANDIRI PERKASA
-          </Text>
-          <Text style={[styles.appDesc, { color: colors.textSecondary }]}>
-            Handheld Operasional QC Inspector Lantai Produksi
           </Text>
         </View>
 
@@ -242,7 +239,7 @@ export const LoginScreen = () => {
                 },
               ]}
             >
-              <User size={20} color={focusedField === 'username' ? colors.primary : colors.textMuted} style={styles.fieldIcon} />
+              <User size={16} color={focusedField === 'username' ? colors.primary : colors.textMuted} style={styles.fieldIcon} />
               <TextInput
                 ref={usernameInputRef}
                 value={username}
@@ -274,7 +271,7 @@ export const LoginScreen = () => {
                 },
               ]}
             >
-              <Lock size={20} color={focusedField === 'password' ? colors.primary : colors.textMuted} style={styles.fieldIcon} />
+              <Lock size={16} color={focusedField === 'password' ? colors.primary : colors.textMuted} style={styles.fieldIcon} />
               <TextInput
                 ref={passwordInputRef}
                 value={password}
@@ -295,9 +292,9 @@ export const LoginScreen = () => {
                 style={styles.eyeBtn}
               >
                 {showPassword ? (
-                  <EyeOff size={20} color={colors.textSecondary} />
+                  <EyeOff size={18} color={colors.textSecondary} />
                 ) : (
-                  <Eye size={20} color={colors.textSecondary} />
+                  <Eye size={18} color={colors.textSecondary} />
                 )}
               </Pressable>
             </View>
@@ -322,7 +319,7 @@ export const LoginScreen = () => {
                 },
               ]}
             >
-              {rememberMe ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
+              {rememberMe ? <Check size={12} color="#FFFFFF" strokeWidth={3} /> : null}
             </View>
             <View style={styles.rememberMeTextWrapper}>
               <Text style={[styles.rememberMeTitle, { color: colors.textPrimary }]}>
@@ -333,19 +330,23 @@ export const LoginScreen = () => {
 
           {/* Submit Spring Button */}
           <SpringButton
-            title="Masuk ke Terminal"
+            title="Login"
+            icon={<LogIn size={15} color="#FFFFFF" style={{ marginRight: 6 }} />}
             variant="primary"
-            size="large"
+            size="medium"
             loading={loading}
             onPress={handleLogin}
-            style={{ width: '100%', marginTop: 8 }}
+            style={{ width: '100%', marginTop: 6 }}
           />
         </View>
 
         {/* Footer info */}
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.textMuted }]}>
-            Sistem Mutu ISO 9001:2015 • Shop Floor Control v2.4
+            QC Monitoring Defect V1.1
+          </Text>
+          <Text style={[styles.footerText, { color: colors.textMuted }]}>
+            ®2026
           </Text>
         </View>
       </ScrollView>
@@ -379,59 +380,63 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingBottom: 20,
     justifyContent: 'center',
+    maxWidth: 340,
+    width: '100%',
+    alignSelf: 'center',
   },
   topBar: {
     alignItems: 'flex-end',
-    paddingTop: Platform.OS === 'ios' ? 44 : 24,
-    marginBottom: 8,
+    paddingTop: Platform.OS === 'ios' ? 44 : 12,
+    marginBottom: 2,
   },
   themeToggle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   brandContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   logoIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 13,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   brandTitle: {
-    fontSize: typography.sizes.screenHeading + 4,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontSize: 16.5,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   companySubtitle: {
-    fontSize: typography.sizes.body,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginTop: 3,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    marginTop: 2,
   },
   appDesc: {
-    fontSize: typography.sizes.caption,
-    marginTop: 6,
+    fontSize: 11,
+    marginTop: 3,
     textAlign: 'center',
+    paddingHorizontal: 16,
   },
   errorBanner: {
-    padding: 12,
-    borderRadius: 12,
+    padding: 8,
+    borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   errorText: {
-    fontSize: typography.sizes.caption,
+    fontSize: 11.5,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -440,57 +445,58 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   fieldGroup: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   inputLabel: {
-    fontSize: typography.sizes.micro,
+    fontSize: 9.5,
     fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 6,
+    letterSpacing: 0.4,
+    marginBottom: 4,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
+    height: 42,
+    borderRadius: 10,
+    borderWidth: 1.2,
+    paddingHorizontal: 10,
   },
   fieldIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   textInput: {
     flex: 1,
-    fontSize: typography.sizes.body + 2,
+    fontSize: 13.5,
     fontWeight: '600',
+    paddingVertical: 0,
   },
   eyeBtn: {
-    padding: 6,
+    padding: 5,
   },
   rememberMeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 3,
     paddingHorizontal: 2,
     marginBottom: 8,
-    marginTop: 2,
+    marginTop: 1,
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    borderWidth: 1.8,
+    width: 17,
+    height: 17,
+    borderRadius: 4,
+    borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 7,
   },
   rememberMeTextWrapper: {
     flex: 1,
     justifyContent: 'center',
   },
   rememberMeTitle: {
-    fontSize: typography.sizes.caption,
-    fontWeight: '700',
+    fontSize: 11.5,
+    fontWeight: '600',
     letterSpacing: 0.2,
   },
   rememberMeSubtitle: {
@@ -499,10 +505,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: 'center',
-    marginTop: 28,
+    marginTop: 16,
   },
   footerText: {
-    fontSize: typography.sizes.micro,
+    fontSize: 10,
     fontWeight: '600',
   },
 });

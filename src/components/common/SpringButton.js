@@ -57,10 +57,11 @@ export const SpringButton = ({
 
   // Sizing styles
   const sizeStyles = {
-    small: { minHeight: 40, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
-    default: { minHeight: 48, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
-    large: { minHeight: 54, paddingHorizontal: 24, paddingVertical: 15, borderRadius: 16 },
-  }[size] || { minHeight: 48, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 };
+    small: { minHeight: 38, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
+    medium: { minHeight: 42, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 10 },
+    default: { minHeight: 46, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12 },
+    large: { minHeight: 52, paddingHorizontal: 22, paddingVertical: 14, borderRadius: 14 },
+  }[size] || { minHeight: 42, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 10 };
 
   // Variant styling
   const getVariantStyles = () => {
@@ -130,7 +131,13 @@ export const SpringButton = ({
   );
 
   return (
-    <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
+    <Animated.View
+      style={[
+        { transform: [{ scale: scaleAnim }] },
+        { borderRadius: sizeStyles.borderRadius, overflow: 'hidden' },
+        style,
+      ]}
+    >
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -139,11 +146,19 @@ export const SpringButton = ({
         accessibilityRole="button"
         style={({ pressed }) => [
           styles.baseButton,
-          sizeStyles,
+          { borderRadius: sizeStyles.borderRadius },
+          !isGradient && sizeStyles,
           !isGradient && {
             backgroundColor: vStyles.backgroundColor,
             borderColor: vStyles.borderColor,
             borderWidth: vStyles.borderWidth || 0,
+          },
+          isGradient && {
+            backgroundColor: 'transparent',
+            borderWidth: 0,
+            paddingHorizontal: 0,
+            paddingVertical: 0,
+            minHeight: sizeStyles.minHeight,
           },
           (disabled || loading) && styles.disabled,
           pressed && !disabled && !loading && { opacity: 0.9 },
@@ -171,11 +186,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   gradientFill: {
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   innerContent: {
     flexDirection: 'row',

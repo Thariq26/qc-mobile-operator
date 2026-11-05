@@ -65,7 +65,16 @@ export const resolveDateRange = (period = 'today', customStart = null, customEnd
     } catch (e) {
       dayDiff = 30;
     }
-    return { startDate: validStart, endDate: validEnd, label: `${validStart} s/d ${validEnd}`, daysCount: dayDiff, todayStr };
+    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    let customLabel = `${validStart} s/d ${validEnd}`;
+    try {
+      const sParts = validStart.split('-').map(Number);
+      const eParts = validEnd.split('-').map(Number);
+      const sFmt = sParts[0] === eParts[0] ? `${sParts[2]} ${shortMonths[sParts[1] - 1]}` : `${sParts[2]} ${shortMonths[sParts[1] - 1]} ${sParts[0]}`;
+      const eFmt = `${eParts[2]} ${shortMonths[eParts[1] - 1]} ${eParts[0]}`;
+      customLabel = `${sFmt} – ${eFmt}`;
+    } catch (e) {}
+    return { startDate: validStart, endDate: validEnd, label: customLabel, daysCount: dayDiff, todayStr };
   } else {
     // Default fallback to today
     return { startDate: todayStr, endDate: todayStr, label: 'Hari Ini', daysCount: 1, todayStr };

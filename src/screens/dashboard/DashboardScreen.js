@@ -61,7 +61,7 @@ const formatPrettyRange = (startStr, endStr) => {
     const date2 = new Date(y2, m2 - 1, d2);
     const diffDays = Math.max(1, Math.round((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
-    const sFormatted = `${d1} ${shortMonths[m1 - 1]} ${y1}`;
+    const sFormatted = y1 === y2 ? `${d1} ${shortMonths[m1 - 1]}` : `${d1} ${shortMonths[m1 - 1]} ${y1}`;
     const eFormatted = `${d2} ${shortMonths[m2 - 1]} ${y2}`;
     return `${sFormatted} — ${eFormatted} (${diffDays} Hari)`;
   } catch (e) {
@@ -221,51 +221,33 @@ export const DashboardScreen = ({ navigation }) => {
     fetchDashboardData(selectedPeriod, true, customStartDate, customEndDate, selectedDefect);
   };
 
-  // Judul dinamis untuk Section Status Mesin
-  const getMachineSectionTitle = () => {
+  // Label dinamis badge periode untuk Section Status Mesin
+  const getMachineScopeBadge = () => {
     if (selectedDefect && selectedDefect !== 'ALL') {
-      return isStaffQc
-        ? `STATUS MESIN TERDAMPAK CACAT: ${selectedDefect.toUpperCase()}`
-        : `MESIN TERDAMPAK CACAT: ${selectedDefect.toUpperCase()}`;
+      return `Cacat: ${selectedDefect}`;
     }
-    if (selectedPeriod === 'weekly') {
-      return isStaffQc
-        ? 'STATUS KUALITAS MESIN MINGGU INI (7 HARI TERAKHIR)'
-        : 'STATUS PRODUKSI MESIN MINGGU INI (7 HARI TERAKHIR)';
-    }
-    if (selectedPeriod === 'monthly') {
-      return isStaffQc
-        ? 'STATUS KUALITAS MESIN BULAN INI (30 HARI TERAKHIR)'
-        : 'STATUS PRODUKSI MESIN BULAN INI (30 HARI TERAKHIR)';
-    }
-    if (selectedPeriod === 'custom') {
-      return isStaffQc
-        ? `STATUS KUALITAS MESIN (${customStartDate} s/d ${customEndDate})`
-        : `STATUS PRODUKSI MESIN (${customStartDate} s/d ${customEndDate})`;
-    }
-    return isStaffQc ? 'STATUS KUALITAS MESIN HARI INI' : 'STATUS PRODUKSI MESIN HARI INI';
+    if (selectedPeriod === 'weekly') return '7 Hari Terakhir';
+    if (selectedPeriod === 'monthly') return '30 Hari Terakhir';
+    if (selectedPeriod === 'custom') return 'Rentang Kustom';
+    return 'Hari Ini';
   };
 
-  // Sub-judul dinamis untuk Section Status Mesin
+  // Judul dinamis ringkas untuk Section Status Mesin
+  const getMachineSectionTitle = () => {
+    if (selectedDefect && selectedDefect !== 'ALL') {
+      return isStaffQc ? 'STATUS MESIN TERDAMPAK' : 'MESIN TERDAMPAK CACAT';
+    }
+    return isStaffQc ? 'STATUS KUALITAS MESIN' : 'STATUS PRODUKSI MESIN';
+  };
+
+  // Sub-judul dinamis ringkas untuk Section Status Mesin
   const getMachineSectionSubtitle = () => {
     if (selectedDefect && selectedDefect !== 'ALL') {
-      return `Hanya menampilkan mesin yang mengalami cacat "${selectedDefect}" (${dailyProdData.length} mesin terdampak)`;
-    }
-    if (selectedPeriod === 'weekly') {
-      return isStaffQc
-        ? 'Agregasi Mutu & Performa Cacat Mesin 7 Hari Terakhir'
-        : 'Pencapaian Akumulasi Kuota Mesin 7 Hari Terakhir';
-    }
-    if (selectedPeriod === 'monthly') {
-      return isStaffQc
-        ? 'Agregasi Mutu & Performa Cacat Mesin 30 Hari Terakhir'
-        : 'Pencapaian Akumulasi Kuota Mesin 30 Hari Terakhir';
+      return `${dailyProdData.length} mesin mengalami cacat ${selectedDefect}`;
     }
     return isStaffQc
-      ? 'Monitoring Tingkat Cacat & Performa Kualitas Tiap Mesin'
-      : isAdmin
-      ? 'Seluruh Mesin Pabrik • Aktual vs Target'
-      : 'Pencapaian Target vs Aktual Kuota Operator';
+      ? 'Tingkat cacat & performa mutu tiap lini'
+      : 'Pencapaian target vs kuota aktual lini';
   };
 
   const handleOpenRfPrediction = async (customDefect, customProcess) => {
@@ -326,10 +308,10 @@ export const DashboardScreen = ({ navigation }) => {
 
         {loading ? (
           <View style={styles.kpiGrid}>
-            <SkeletonLoader width="48.5%" height={110} borderRadius={16} />
-            <SkeletonLoader width="48.5%" height={110} borderRadius={16} />
-            <SkeletonLoader width="48.5%" height={110} borderRadius={16} />
-            <SkeletonLoader width="48.5%" height={110} borderRadius={16} />
+            <SkeletonLoader width="48.5%" height={86} borderRadius={12} />
+            <SkeletonLoader width="48.5%" height={86} borderRadius={12} />
+            <SkeletonLoader width="48.5%" height={86} borderRadius={12} />
+            <SkeletonLoader width="48.5%" height={86} borderRadius={12} />
           </View>
         ) : (
           <View style={styles.kpiGrid}>
@@ -353,7 +335,7 @@ export const DashboardScreen = ({ navigation }) => {
 
             {/* KPI 2: Total NG Defect */}
             <KpiCard
-              title="Total NG / Defect"
+              title="Total NG Cacat"
               value={kpiData.totalNg != null ? kpiData.totalNg.toLocaleString('id-ID') : '0'}
               unit="pcs"
               badgeText={isAdmin ? (kpiData.totalNg > 0 ? `${kpiData.totalNg} pcs pabrik` : "Zero NG Pabrik") : (kpiData.totalNg > 0 ? `${kpiData.totalNg} pcs tercatat` : "Nol Cacat (Zero NG)")}
@@ -474,39 +456,42 @@ export const DashboardScreen = ({ navigation }) => {
             })}
           </View>
 
-          {/* Dynamic Active Custom Date Range Badge (Date to Date) */}
+          {/* Dynamic Active Custom Date Range Badge (Compact & Practical) */}
           {selectedPeriod === 'custom' && (
             <Pressable
               onPress={() => setCalendarModalVisible(true)}
               style={({ pressed }) => [
-                styles.activeRangeCard,
+                styles.activeRangeBar,
                 {
-                  backgroundColor: colors.card,
-                  borderColor: isDark ? 'rgba(37, 99, 235, 0.4)' : 'rgba(37, 99, 235, 0.3)',
+                  backgroundColor: isDark ? 'rgba(37, 99, 235, 0.12)' : '#EFF6FF',
+                  borderColor: isDark ? 'rgba(37, 99, 235, 0.35)' : '#BFDBFE',
                 },
-                pressed && { opacity: 0.85 },
+                pressed && { opacity: 0.8 },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Buka Kalender Rentang Tanggal"
             >
-              <View style={styles.activeRangeLeft}>
-                <View style={[styles.activeRangeIconBox, { backgroundColor: colors.primary + '18' }]}>
-                  <CalendarDays size={18} color={colors.primary} />
+              <View style={styles.activeRangeBarLeft}>
+                <View style={[styles.activeRangeIconDot, { backgroundColor: colors.primary }]}>
+                  <CalendarDays size={12} color="#FFFFFF" />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.activeRangeMicro, { color: colors.textSecondary }]}>
-                    RENTANG TERPILIH (DATE TO DATE)
-                  </Text>
-                  <Text style={[styles.activeRangeDateText, { color: colors.textPrimary }]}>
-                    {formatPrettyRange(customStartDate, customEndDate)}
-                  </Text>
-                </View>
+                <Text
+                  style={[styles.activeRangeBarText, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                >
+                  {formatPrettyRange(customStartDate, customEndDate)}
+                </Text>
               </View>
 
-              <View style={[styles.changeRangeBtn, { backgroundColor: colors.primary + '18' }]}>
-                <SlidersHorizontal size={13} color={colors.primary} style={{ marginRight: 5 }} />
-                <Text style={[styles.changeRangeBtnText, { color: colors.primary }]}>
-                  Ubah Tanggal
+              <View
+                style={[
+                  styles.activeRangeBarBtn,
+                  { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.22)' : '#DBEAFE' },
+                ]}
+              >
+                <SlidersHorizontal size={12} color={colors.primary} style={{ marginRight: 4 }} />
+                <Text style={[styles.activeRangeBarBtnText, { color: colors.primary }]}>
+                  Ubah
                 </Text>
               </View>
             </Pressable>
@@ -573,13 +558,28 @@ export const DashboardScreen = ({ navigation }) => {
         })()}
 
         {/* Section 4: Status Produksi Mesin (Operator) vs Status Kualitas Mesin (Staff QC) */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            {getMachineSectionTitle()}
-          </Text>
-          <Text style={[styles.sectionMeta, { color: colors.textSecondary }]}>
-            {getMachineSectionSubtitle()}
-          </Text>
+        <View style={styles.sectionHeaderRow}>
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+              {getMachineSectionTitle()}
+            </Text>
+            <Text style={[styles.sectionMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+              {getMachineSectionSubtitle()}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.sectionBadgePill,
+              {
+                backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                borderColor: isDark ? 'rgba(59, 130, 246, 0.35)' : '#BFDBFE',
+              },
+            ]}
+          >
+            <Text style={[styles.sectionBadgeText, { color: colors.primary }]}>
+              {getMachineScopeBadge()}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.dailyProdList}>
@@ -645,10 +645,10 @@ export const DashboardScreen = ({ navigation }) => {
                       </View>
                     </View>
 
-                    {/* 4 Kolom Metrik Kualitas: Output Mesin, Temuan NG, Defect Rate, Produk Lolos */}
+                    {/* 4 Kolom Metrik Kualitas: Output, Cacat NG, Defect Rate, Produk OK */}
                     <View style={[styles.machineStatsRow, { borderTopColor: colors.border }]}>
                       <View style={styles.statCol}>
-                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Output Mesin</Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Output</Text>
                         <Text style={[styles.statVal, { color: colors.textPrimary }]}>
                           {grossNum.toLocaleString('id-ID')}
                           <Text style={[styles.statUnitInline, { color: colors.textSecondary }]}> pcs</Text>
@@ -657,9 +657,9 @@ export const DashboardScreen = ({ navigation }) => {
 
                       <View style={styles.statCol}>
                         <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                          {selectedDefect && selectedDefect !== 'ALL' ? `NG (${selectedDefect})` : 'Temuan NG'}
+                          {selectedDefect && selectedDefect !== 'ALL' ? `NG (${selectedDefect})` : 'Cacat NG'}
                         </Text>
-                        <Text style={[styles.statVal, { color: colors.textPrimary }]}>
+                        <Text style={[styles.statVal, { color: ngNum > 0 ? colors.critical : colors.textPrimary }]}>
                           {ngNum.toLocaleString('id-ID')}
                           <Text style={[styles.statUnitInline, { color: colors.textSecondary }]}> pcs</Text>
                         </Text>
@@ -667,14 +667,14 @@ export const DashboardScreen = ({ navigation }) => {
 
                       <View style={styles.statCol}>
                         <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Defect Rate</Text>
-                        <Text style={[styles.statVal, { color: colors.textPrimary, fontWeight: '800' }]}>
+                        <Text style={[styles.statVal, { color: machineDefectRate > 2.0 ? colors.critical : colors.textPrimary, fontWeight: '800' }]}>
                           {machineDefectRate}%
                         </Text>
                       </View>
 
                       <View style={styles.statCol}>
-                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Produk Lolos</Text>
-                        <Text style={[styles.statVal, { color: colors.textPrimary, fontWeight: '800' }]}>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Produk OK</Text>
+                        <Text style={[styles.statVal, { color: colors.success, fontWeight: '800' }]}>
                           {netOkNum.toLocaleString('id-ID')}
                           <Text style={[styles.statUnitInline, { color: colors.textSecondary }]}> pcs</Text>
                         </Text>
@@ -683,6 +683,16 @@ export const DashboardScreen = ({ navigation }) => {
 
                     {/* Quality Yield & Tolerance Bar */}
                     <View style={styles.machineProgressWrapper}>
+                      <View style={styles.yieldHeaderRow}>
+                        <Text style={[styles.machineYieldTitle, { color: colors.textPrimary }]}>
+                          Yield Mutu: <Text style={{ color: qcStatusColor, fontWeight: '800' }}>{yieldPercent}%</Text>
+                        </Text>
+                        <View style={[styles.toleranceBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9', borderColor: colors.border }]}>
+                          <Text style={[styles.toleranceText, { color: colors.textSecondary }]}>
+                            Toleransi: ≤2%
+                          </Text>
+                        </View>
+                      </View>
                       <View
                         style={[
                           styles.machineProgressBarTrack,
@@ -698,14 +708,6 @@ export const DashboardScreen = ({ navigation }) => {
                             },
                           ]}
                         />
-                      </View>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={[styles.machineEfficiencyText, { color: colors.textPrimary }]}>
-                          {yieldPercent}% Yield Mutu <Text style={{ color: colors.textSecondary, fontWeight: '500' }}>(Defect: {machineDefectRate}%)</Text>
-                        </Text>
-                        <Text style={{ fontSize: typography.sizes.micro, color: colors.textSecondary, fontWeight: '600' }}>
-                          Batas Toleransi: maks. 2.0%
-                        </Text>
                       </View>
                     </View>
                   </View>
@@ -800,6 +802,16 @@ export const DashboardScreen = ({ navigation }) => {
 
                   {/* Net Efficiency Progress Bar */}
                   <View style={styles.machineProgressWrapper}>
+                    <View style={styles.yieldHeaderRow}>
+                      <Text style={[styles.machineYieldTitle, { color: colors.textPrimary }]}>
+                        Efisiensi Bersih: <Text style={{ color: statusColor, fontWeight: '800' }}>{machine.efficiency}%</Text>
+                      </Text>
+                      <View style={[styles.toleranceBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9', borderColor: colors.border }]}>
+                        <Text style={[styles.toleranceText, { color: colors.textSecondary }]}>
+                          Target: 100%
+                        </Text>
+                      </View>
+                    </View>
                     <View
                       style={[
                         styles.machineProgressBarTrack,
@@ -816,9 +828,6 @@ export const DashboardScreen = ({ navigation }) => {
                         ]}
                       />
                     </View>
-                    <Text style={[styles.machineEfficiencyText, { color: colors.textPrimary }]}>
-                      {machine.efficiency}% Efisiensi Bersih
-                    </Text>
                   </View>
                 </View>
               );
@@ -880,23 +889,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing(16),
-    paddingBottom: 28,
+    padding: spacing(12),
+    paddingBottom: 20,
   },
   sectionHeader: {
-    marginBottom: 12,
-    marginTop: 10,
+    marginBottom: 8,
+    marginTop: 6,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    marginTop: 6,
+  },
+  sectionBadgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 7,
+    borderWidth: 1,
+  },
+  sectionBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   sectionTitle: {
-    fontSize: typography.sizes.body,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 3,
+    letterSpacing: 0.4,
+    marginBottom: 2,
   },
   sectionMeta: {
-    fontSize: typography.sizes.caption,
+    fontSize: 11.5,
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   kpiGrid: {
     flexDirection: 'row',
@@ -904,18 +931,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   rfActionContainer: {
-    marginTop: -4,
-    marginBottom: 12,
+    marginTop: 0,
+    marginBottom: 8,
   },
   rfButton: {
     width: '100%',
-    minHeight: 48,
     borderRadius: 14,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    overflow: 'hidden',
   },
   rfButtonCaption: {
     fontSize: 11.5,
@@ -967,33 +989,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
   },
   statCol: {
     alignItems: 'center',
     flex: 1,
+    paddingHorizontal: 2,
   },
   statLabel: {
-    fontSize: typography.sizes.micro,
+    fontSize: 10,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 3,
+    textAlign: 'center',
   },
   statVal: {
-    fontSize: 15,
+    fontSize: 13.5,
     fontWeight: '800',
+    textAlign: 'center',
   },
   statUnitInline: {
-    fontSize: typography.sizes.micro,
+    fontSize: 9.5,
     fontWeight: '600',
   },
   machineProgressWrapper: {
-    marginTop: 12,
-    gap: 6,
+    marginTop: 10,
+    gap: 4,
+  },
+  yieldHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  machineYieldTitle: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  toleranceBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  toleranceText: {
+    fontSize: 9.5,
+    fontWeight: '700',
   },
   machineProgressBarTrack: {
     width: '100%',
-    height: 8,
+    height: 6,
     borderRadius: 999,
     overflow: 'hidden',
   },
@@ -1007,19 +1052,19 @@ const styles = StyleSheet.create({
   },
   // Unified Time Filter Segmented Tabs
   timeFilterContainer: {
-    marginVertical: 14,
+    marginVertical: 8,
   },
   filterTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
     paddingHorizontal: 2,
   },
   filterTitleText: {
-    fontSize: typography.sizes.micro,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   filterLoadingRow: {
     flexDirection: 'row',
@@ -1032,19 +1077,19 @@ const styles = StyleSheet.create({
   },
   segmentedTrack: {
     flexDirection: 'row',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1.5,
-    padding: 4,
-    gap: 6,
-    minHeight: 46,
+    padding: 3,
+    gap: 4,
+    minHeight: 36,
   },
   segmentedPill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    minHeight: 38,
-    borderRadius: 9,
+    paddingVertical: 4,
+    minHeight: 30,
+    borderRadius: 8,
   },
   segmentedPillActive: {
     shadowOffset: { width: 0, height: 2 },
@@ -1053,7 +1098,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   segmentedPillLabel: {
-    fontSize: isCompactScreen ? 11.5 : 13,
+    fontSize: isCompactScreen ? 11 : 12,
     textAlign: 'center',
   },
   emptyBox: {
@@ -1076,48 +1121,44 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
-  activeRangeCard: {
+  activeRangeBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginTop: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
   },
-  activeRangeLeft: {
+  activeRangeBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 10,
+    marginRight: 8,
   },
-  activeRangeIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
+  activeRangeIconDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     alignItems: 'center',
-    marginRight: 10,
+    justifyContent: 'center',
+    marginRight: 8,
   },
-  activeRangeMicro: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  activeRangeDateText: {
+  activeRangeBarText: {
     fontSize: 12,
     fontWeight: '700',
+    flex: 1,
   },
-  changeRangeBtn: {
+  activeRangeBarBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  changeRangeBtnText: {
-    fontSize: 12,
+  activeRangeBarBtnText: {
+    fontSize: 11,
     fontWeight: '800',
   },
 });

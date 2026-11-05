@@ -727,7 +727,7 @@ export const InputProductionScreen = ({ navigation }) => {
         {/* B. Pilihan Shift Kerja Operasional */}
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-            PILIH SHIFT KERJA OPERASIONAL *
+            PILIH SHIFT KERJA OPERASIONAL °
           </Text>
           <View style={styles.shiftGrid}>
             {SHIFTS.map((s) => {
@@ -774,10 +774,10 @@ export const InputProductionScreen = ({ navigation }) => {
           <View style={styles.itemsHeaderRow}>
             <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginBottom: 0 }]} numberOfLines={1}>
-                DETAIL PRODUKSI PER MESIN ({items.length} MESIN)
+                DETAIL PRODUKSI PER MESIN
               </Text>
-              <Text style={[styles.sectionHint, { color: colors.textMuted }]} numberOfLines={1}>
-                Tersedia 29 Mesin & 121 Master Part PT GMP
+              <Text style={[styles.sectionHint, { color: colors.textSecondary }]} numberOfLines={1}>
+                {items.length} MESIN
               </Text>
             </View>
             <Pressable
@@ -840,7 +840,7 @@ export const InputProductionScreen = ({ navigation }) => {
                 {/* 2. PILIH MESIN PRODUKSI (Trigger Card -> Modal 29 Mesin) */}
                 <View style={styles.fieldGroup}>
                   <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                    1. MESIN OPERASIONAL *
+                    1. MESIN OPERASIONAL °
                   </Text>
                   <Pressable
                     onPress={() => handleOpenMachineModal(index)}
@@ -875,7 +875,7 @@ export const InputProductionScreen = ({ navigation }) => {
                 {/* 3. PILIH MASTER PART (Trigger Card -> Modal 121 Master Part) */}
                 <View style={styles.fieldGroup}>
                   <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                    2. PART NUMBER & NAMA PART *
+                    2. PART NUMBER & NAMA PART °
                   </Text>
                   <Pressable
                     onPress={() => handleOpenPartModal(index)}
@@ -916,7 +916,7 @@ export const InputProductionScreen = ({ navigation }) => {
                 <View style={styles.fieldGroup}>
                   <View style={styles.processHeaderBar}>
                     <Text style={[styles.subFieldLabel, { color: colors.textSecondary, marginBottom: 0, flex: 1, marginRight: 8 }]} numberOfLines={1}>
-                      3. PROSES OPERASIONAL *
+                      3. PROSES OPERASIONAL °
                     </Text>
                     <View
                       style={[
@@ -1059,7 +1059,7 @@ export const InputProductionScreen = ({ navigation }) => {
                   {/* Target Produksi */}
                   <View style={styles.qtyColumnItem}>
                     <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                      TARGET (PCS) *
+                      TARGET (PCS) °
                     </Text>
                     <View
                       style={[
@@ -1085,7 +1085,7 @@ export const InputProductionScreen = ({ navigation }) => {
                   {/* Hasil Aktual Mesin */}
                   <View style={styles.qtyColumnItem}>
                     <Text style={[styles.subFieldLabel, { color: colors.textSecondary }]}>
-                      HASIL AKTUAL (PCS) *
+                      HASIL AKTUAL (PCS) °
                     </Text>
                     <View
                       style={[

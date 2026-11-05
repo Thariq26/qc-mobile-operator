@@ -14,9 +14,20 @@ export const AppNavigator = () => {
   const { colors } = useTheme();
 
   useEffect(() => {
-    if (!isLoading) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
+    let isMounted = true;
+    const hideSplashGracefully = async () => {
+      if (!isLoading) {
+        // Tahan splash screen selama 2.4 detik agar logo dan identitas aplikasi terlihat jelas dan profesional
+        await new Promise((resolve) => setTimeout(resolve, 2400));
+        if (isMounted) {
+          SplashScreen.hideAsync().catch(() => {});
+        }
+      }
+    };
+    hideSplashGracefully();
+    return () => {
+      isMounted = false;
+    };
   }, [isLoading]);
 
   if (isLoading) {

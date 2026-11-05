@@ -31,16 +31,16 @@ export const typography = {
 
   // Font sizes yang otomatis menyesuaikan ukuran layar handphone pengguna
   sizes: {
-    kpi: ms(28),            // Hero numbers (e.g. 1.250 pcs, 98.4%) - clearly visible from arm's length
-    h1: ms(22),             // Top page titles
-    h2: ms(19),             // Section headers
-    h3: ms(17),             // Card headings & prominent subheaders
-    screenHeading: ms(19),  // Screen headers
-    cardHeading: ms(16),    // Machine names, card titles
-    body: ms(14),           // Standard readable body text, form values
-    caption: ms(13),        // Subtitles, secondary notes, dates, filters
-    micro: ms(12),          // Badges, chips, indicators
-    tabLabel: ms(12),       // Nav/tab labels
+    kpi: ms(22),            // Hero numbers (e.g. 1.250 pcs, 98.4%) - practical & compact
+    h1: ms(20),             // Top page titles
+    h2: ms(17),             // Section headers
+    h3: ms(15),             // Card headings & prominent subheaders
+    screenHeading: ms(17),  // Screen headers
+    cardHeading: ms(14),    // Machine names, card titles
+    body: ms(13),           // Standard readable body text, form values
+    caption: ms(12),        // Subtitles, secondary notes, dates, filters
+    micro: ms(11),          // Badges, chips, indicators
+    tabLabel: ms(11),       // Nav/tab labels
   },
 
   // Font weights

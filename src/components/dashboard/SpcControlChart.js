@@ -41,6 +41,44 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
  * and Lower Control Limit (LCL) with 3-Sigma ISO statistical limits.
  * Clean, uncluttered layout with Top 10 Defect Stratified filter and analytical line chart.
  */
+/**
+ * Format string rentang waktu agar ringkas dan ramah dibaca (e.g. 1 Apr – 6 Nov 2026)
+ */
+const formatFriendlyPeriod = (rawLabel) => {
+  if (!rawLabel) return 'Hari Ini';
+  if (rawLabel === 'today' || rawLabel === 'Hari Ini') return 'Hari Ini';
+  if (rawLabel === 'yesterday' || rawLabel === 'Kemarin') return 'Kemarin';
+  if (rawLabel === 'weekly' || rawLabel === '7 Hari Terakhir') return '7 Hari Terakhir';
+  if (rawLabel === 'monthly' || rawLabel === 'Bulan Ini') return 'Bulan Ini';
+
+  if (typeof rawLabel === 'string' && rawLabel.includes('s/d')) {
+    const parts = rawLabel.split('s/d').map((s) => s.trim());
+    if (parts.length === 2) {
+      const [startStr, endStr] = parts;
+      const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+      try {
+        const [y1, m1, d1] = startStr.split('-').map(Number);
+        const [y2, m2, d2] = endStr.split('-').map(Number);
+        if (y1 && m1 && d1 && y2 && m2 && d2) {
+          const sFmt = y1 === y2 ? `${d1} ${shortMonths[m1 - 1]}` : `${d1} ${shortMonths[m1 - 1]} ${y1}`;
+          const eFmt = `${d2} ${shortMonths[m2 - 1]} ${y2}`;
+          return `${sFmt} – ${eFmt}`;
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (typeof rawLabel === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawLabel.trim())) {
+    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    try {
+      const [y, m, d] = rawLabel.trim().split('-').map(Number);
+      return `${d} ${shortMonths[m - 1]} ${y}`;
+    } catch (e) {}
+  }
+
+  return rawLabel;
+};
+
 export const SpcControlChart = ({
   spcData = {},
   loading = false,
@@ -69,6 +107,7 @@ export const SpcControlChart = ({
       : activePeriod === 'custom'
       ? 'Date to Date'
       : 'Hari Ini');
+  const friendlyPeriod = formatFriendlyPeriod(periodLabel);
 
   const points = spcData?.points || [];
   const uclVal = spcData?.ucl != null ? spcData.ucl : 0;
@@ -377,18 +416,18 @@ export const SpcControlChart = ({
         <View style={styles.titleContainer}>
           <View style={styles.titleRow}>
             <Activity
-              size={18}
+              size={16}
               color={colors.primary}
               style={{ marginRight: 6 }}
             />
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              SPC CONTROL CHART (p-CHART)
+              SPC CONTROL CHART
             </Text>
           </View>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
             {activeDefect && activeDefect !== 'ALL'
-              ? `Proporsi Cacat ${activeDefect} & Batas Kendali 3-Sigma • ${periodLabel}`
-              : `Proporsi Semua Cacat & Batas Kendali 3-Sigma • ${periodLabel}`}
+              ? `p-Chart • Cacat: ${activeDefect}`
+              : `p-Chart • ${friendlyPeriod}`}
           </Text>
         </View>
 
@@ -412,21 +451,21 @@ export const SpcControlChart = ({
         >
           {!hasData ? (
             <>
-              <Info size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
+              <Info size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
               <Text style={[styles.statusBadgeText, { color: colors.textSecondary }]}>
                 BELUM ADA DATA
               </Text>
             </>
           ) : isOutOfControl ? (
             <>
-              <AlertTriangle size={13} color={colors.critical} style={{ marginRight: 4 }} />
+              <AlertTriangle size={11} color={colors.critical} style={{ marginRight: 3 }} />
               <Text style={[styles.statusBadgeText, { color: colors.critical }]}>
                 OUT-OF-CONTROL
               </Text>
             </>
           ) : (
             <>
-              <CheckCircle2 size={13} color={colors.success} style={{ marginRight: 4 }} />
+              <CheckCircle2 size={11} color={colors.success} style={{ marginRight: 3 }} />
               <Text style={[styles.statusBadgeText, { color: colors.success }]}>
                 IN-CONTROL
               </Text>
@@ -441,9 +480,9 @@ export const SpcControlChart = ({
           {/* Section Header Strip */}
           <View style={styles.defectFilterHeader}>
             <View style={styles.defectHeaderLeft}>
-              <ChartBar size={15} color={colors.primary} style={{ marginRight: 6 }} />
+              <ChartBar size={14} color={colors.primary} style={{ marginRight: 5 }} />
               <Text style={[styles.defectHeaderTitle, { color: colors.textPrimary }]}>
-                STRATIFIKASI CACAT UTAMA
+                STRATIFIKASI CACAT
               </Text>
               <View
                 style={[
@@ -461,7 +500,7 @@ export const SpcControlChart = ({
             </View>
             <View style={styles.defectHeaderRight}>
               <Text style={[styles.defectScrollHint, { color: colors.textMuted }]}>
-                Geser & Pilih →
+                Geser →
               </Text>
             </View>
           </View>
@@ -498,7 +537,7 @@ export const SpcControlChart = ({
               accessibilityRole="button"
               accessibilityLabel="Filter semua jenis cacat akumulasi"
             >
-              <View style={styles.defectCardTopRow}>
+              <View style={styles.defectCardHeaderRow}>
                 <View
                   style={[
                     styles.defectRankBadge,
@@ -517,9 +556,9 @@ export const SpcControlChart = ({
                   ]}
                 >
                   <Filter
-                    size={11}
+                    size={10}
                     color={activeDefect === 'ALL' ? '#FFFFFF' : colors.primary}
-                    style={{ marginRight: 4 }}
+                    style={{ marginRight: 3 }}
                   />
                   <Text
                     style={[
@@ -531,22 +570,22 @@ export const SpcControlChart = ({
                   </Text>
                 </View>
 
-                <Text
-                  style={[
-                    styles.defectCardName,
-                    { color: activeDefect === 'ALL' ? '#FFFFFF' : colors.textPrimary },
-                  ]}
-                  numberOfLines={1}
-                >
-                  Semua Cacat
-                </Text>
-
                 {activeDefect === 'ALL' && (
                   <View style={styles.defectActiveCheck}>
-                    <Check size={12} color="#FFFFFF" strokeWidth={3} />
+                    <Check size={11} color="#FFFFFF" strokeWidth={3} />
                   </View>
                 )}
               </View>
+
+              <Text
+                style={[
+                  styles.defectCardName,
+                  { color: activeDefect === 'ALL' ? '#FFFFFF' : colors.textPrimary },
+                ]}
+                numberOfLines={1}
+              >
+                Semua Cacat
+              </Text>
 
               <View style={styles.defectMetricsRow}>
                 <Text
@@ -573,7 +612,7 @@ export const SpcControlChart = ({
                     { color: activeDefect === 'ALL' ? '#E0E7FF' : colors.primary },
                   ]}
                 >
-                  100% Total
+                  100%
                 </Text>
               </View>
 
@@ -634,7 +673,7 @@ export const SpcControlChart = ({
                   accessibilityRole="button"
                   accessibilityLabel={`Filter cacat ${defect.name}, ${defect.count} pcs, ${pVal} persen`}
                 >
-                  <View style={styles.defectCardTopRow}>
+                  <View style={styles.defectCardHeaderRow}>
                     <View
                       style={[
                         styles.defectRankBadge,
@@ -658,22 +697,22 @@ export const SpcControlChart = ({
                       </Text>
                     </View>
 
-                    <Text
-                      style={[
-                        styles.defectCardName,
-                        { color: isSelected ? '#FFFFFF' : colors.textPrimary },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {defect.name}
-                    </Text>
-
                     {isSelected && (
                       <View style={styles.defectActiveCheck}>
-                        <Check size={12} color="#FFFFFF" strokeWidth={3} />
+                        <Check size={11} color="#FFFFFF" strokeWidth={3} />
                       </View>
                     )}
                   </View>
+
+                  <Text
+                    style={[
+                      styles.defectCardName,
+                      { color: isSelected ? '#FFFFFF' : colors.textPrimary },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {defect.name}
+                  </Text>
 
                   <View style={styles.defectMetricsRow}>
                     <Text
@@ -700,7 +739,7 @@ export const SpcControlChart = ({
                         { color: isSelected ? '#E0E7FF' : colors.textSecondary },
                       ]}
                     >
-                      {pVal}% Porsi
+                      {pVal}%
                     </Text>
                   </View>
 
@@ -743,9 +782,9 @@ export const SpcControlChart = ({
           >
             <View style={styles.activeContextLeft}>
               {activeDefect === 'ALL' ? (
-                <Layers size={15} color={colors.primary} style={{ marginRight: 6 }} />
+                <Layers size={14} color={colors.primary} style={{ marginRight: 6 }} />
               ) : (
-                <Flame size={15} color="#EF4444" style={{ marginRight: 6 }} />
+                <Flame size={14} color="#EF4444" style={{ marginRight: 6 }} />
               )}
               <Text
                 style={[
@@ -756,15 +795,13 @@ export const SpcControlChart = ({
               >
                 {activeDefect === 'ALL' ? (
                   <>
-                    Analisis:{' '}
                     <Text style={{ fontWeight: '800', color: colors.primary }}>
-                      Semua Jenis Cacat
+                      Semua Cacat
                     </Text>{' '}
                     ({totalAllDefect} pcs)
                   </>
                 ) : (
                   <>
-                    Fokus Cacat:{' '}
                     <Text
                       style={{
                         fontWeight: '800',
@@ -774,7 +811,7 @@ export const SpcControlChart = ({
                       {activeDefect}
                     </Text>
                     {activeDefectObj
-                      ? ` • ${activeDefectObj.count} pcs (${activeDefectObj.percentage}%)`
+                      ? ` (${activeDefectObj.count} pcs • ${activeDefectObj.percentage}%)`
                       : ''}
                   </>
                 )}
@@ -802,22 +839,6 @@ export const SpcControlChart = ({
                 </Text>
               </View>
 
-              {isScrollable && (
-                <View
-                  style={[
-                    styles.scrollHintBadge,
-                    {
-                      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
-                      borderColor: isDark ? 'rgba(59, 130, 246, 0.35)' : '#BFDBFE',
-                    },
-                  ]}
-                >
-                  <Text style={[styles.scrollHintText, { color: colors.primary }]}>
-                    Geser ⟷
-                  </Text>
-                </View>
-              )}
-
               {activeDefect !== 'ALL' && (
                 <Pressable
                   onPress={() => onSelectDefect && onSelectDefect('ALL')}
@@ -826,7 +847,7 @@ export const SpcControlChart = ({
                   accessibilityRole="button"
                   accessibilityLabel="Reset filter ke semua cacat"
                 >
-                  <RotateCcw size={12} color={colors.textSecondary} style={{ marginRight: 3 }} />
+                  <RotateCcw size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
                   <Text style={[styles.resetFilterText, { color: colors.textSecondary }]}>
                     Reset
                   </Text>
@@ -1019,7 +1040,7 @@ export const SpcControlChart = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    padding: spacing(16),
+    padding: spacing(14),
     borderWidth: 1,
     marginBottom: 16,
   },
@@ -1027,40 +1048,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   titleContainer: {
     flex: 1,
-    marginRight: isCompactScreen ? 6 : 10,
+    marginRight: 8,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'nowrap',
   },
   title: {
-    fontSize: isCompactScreen ? 14 : typography.sizes.cardHeading,
+    fontSize: isCompactScreen ? 12.5 : 13,
     fontWeight: '800',
-    letterSpacing: 0.2,
-    flexShrink: 1,
+    letterSpacing: 0.1,
   },
   subtitle: {
-    fontSize: isCompactScreen ? 11.5 : typography.sizes.caption,
-    marginTop: 3,
-    lineHeight: isCompactScreen ? 16 : 18,
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: isCompactScreen ? 7 : 10,
-    paddingVertical: isCompactScreen ? 4 : 5,
-    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
-    minHeight: isCompactScreen ? 24 : 28,
+    minHeight: 22,
+    alignSelf: 'flex-start',
   },
   statusBadgeText: {
-    fontSize: isCompactScreen ? 10.5 : typography.sizes.micro,
+    fontSize: 9.5,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.1,
   },
   defectFilterWrapper: {
     marginBottom: 14,
@@ -1106,10 +1128,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingTop: 8,
     paddingBottom: 8,
-    minWidth: 152,
-    minHeight: 70,
+    minWidth: 165,
+    minHeight: 82,
     justifyContent: 'space-between',
   },
   defectCardChipActive: {
@@ -1123,38 +1145,36 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     transform: [{ scale: 0.97 }],
   },
-  defectCardTopRow: {
+  defectCardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   defectRankBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingVertical: 1.5,
+    borderRadius: 5,
     borderWidth: 1,
-    marginRight: 6,
   },
   defectRankText: {
-    fontSize: typography.sizes.micro,
+    fontSize: 9.5,
     fontWeight: '800',
   },
   defectCardName: {
-    flex: 1,
-    fontSize: typography.sizes.caption,
+    fontSize: 12.5,
     fontWeight: '800',
+    marginBottom: 4,
   },
   defectActiveCheck: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
   },
   defectMetricsRow: {
     flexDirection: 'row',
@@ -1251,33 +1271,33 @@ const styles = StyleSheet.create({
   },
   limitsBar: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
+    gap: 6,
+    marginBottom: 12,
   },
   limitChip: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    minHeight: 44,
+    paddingVertical: 5,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    borderWidth: 1.2,
+    minHeight: 32,
   },
   limitDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
   },
   limitLabel: {
-    fontSize: typography.sizes.micro,
+    fontSize: 10,
     fontWeight: '700',
-    marginRight: 5,
+    marginRight: 3,
   },
   limitValue: {
-    fontSize: typography.sizes.body,
+    fontSize: 12,
     fontWeight: '800',
   },
   chartWrapper: {

@@ -446,13 +446,23 @@ export const InputDefectScreen = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.formHeader}>
-          <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
-            CATAT CACAT PRODUK (NG)
-          </Text>
-          <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-            Formulir inspeksi kualitas real-time lini perakitan PT Galaxy Mandiri
-          </Text>
+        <View style={styles.titleRow}>
+          <View
+            style={[
+              styles.headerIconWrapper,
+              { backgroundColor: colors.primary + '1A', borderColor: colors.primary + '40' },
+            ]}
+          >
+            <AlertTriangle size={22} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+              CATAT CACAT PRODUK (NG)
+            </Text>
+            <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+              Form inspeksi kualitas
+            </Text>
+          </View>
         </View>
 
         {/* ========================================================================= */}
@@ -460,9 +470,20 @@ export const InputDefectScreen = ({ navigation }) => {
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <View style={styles.dateHeaderRow}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginBottom: 0, flex: 1, marginRight: 8 }]} numberOfLines={1}>
-              TANGGAL TEMUAN CACAT (BACKDATE) *
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  { color: colors.textSecondary, marginBottom: 0, letterSpacing: 0.5 },
+                ]}
+                numberOfLines={1}
+              >
+                TANGGAL TEMUAN CACAT
+              </Text>
+              <Text style={{ color: colors.critical || '#EF4444', fontSize: 13, fontWeight: '800', marginLeft: 4 }}>
+                °
+              </Text>
+            </View>
             <View style={styles.dateInfoBadge}>
               <Info size={11} color={colors.primary} style={{ marginRight: 3 }} />
               <Text style={[styles.dateInfoBadgeText, { color: colors.primary }]}>
@@ -572,7 +593,7 @@ export const InputDefectScreen = ({ navigation }) => {
           <View style={[styles.dateActiveCard, { backgroundColor: colors.card, borderColor: dateError ? colors.critical : colors.border }]}>
             <View style={styles.dateActiveLeft}>
               <View style={[styles.dateIconWrapper, { backgroundColor: colors.primary + '15' }]}>
-                <Calendar size={18} color={colors.primary} />
+                <Calendar size={14} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.dateActiveText, { color: colors.textPrimary }]}>
@@ -645,7 +666,7 @@ export const InputDefectScreen = ({ navigation }) => {
                   ]}
                 >
                   <Clock
-                    size={15}
+                    size={13}
                     color={isSelected ? '#FFFFFF' : colors.textSecondary}
                     style={{ marginRight: 6 }}
                   />
@@ -671,9 +692,20 @@ export const InputDefectScreen = ({ navigation }) => {
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <View style={styles.sectionTitleRow}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary, flex: 1, marginRight: 8, marginBottom: 0 }]} numberOfLines={1}>
-              OPERATOR LINI PRODUKSI * ({operators.length} USER)
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  { color: colors.textSecondary, marginBottom: 0, letterSpacing: 0.5 },
+                ]}
+                numberOfLines={1}
+              >
+                OPERATOR LINI PRODUKSI
+              </Text>
+              <Text style={{ color: colors.critical || '#EF4444', fontSize: 13, fontWeight: '800', marginLeft: 4 }}>
+                •
+              </Text>
+            </View>
             <View
               style={[
                 styles.traceabilityBadge,
@@ -683,8 +715,9 @@ export const InputDefectScreen = ({ navigation }) => {
                 },
               ]}
             >
+              <CheckCircle2 size={11} color={colors.primary} style={{ marginRight: 4 }} />
               <Text style={[styles.traceabilityBadgeText, { color: colors.primary }]}>
-                Traceability
+                {operators.length > 0 ? `${operators.length} User • Traceability` : 'Traceability ISO'}
               </Text>
             </View>
           </View>
@@ -712,20 +745,76 @@ export const InputDefectScreen = ({ navigation }) => {
               )}
             </View>
 
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                <Text style={[styles.selectedOptionText, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {selectedOperator?.fullName || operatorName || 'Pilih Operator Produksi'}
-                </Text>
-                {selectedOperator?.username ? (
-                  <Text style={[styles.opUsernameTag, { color: colors.textSecondary }]}>
-                    @{selectedOperator.username}
+            <View style={{ flex: 1, marginLeft: 10, justifyContent: 'center' }}>
+              {selectedOperator?.fullName || operatorName ? (
+                <>
+                  <Text
+                    style={[styles.selectedOptionText, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {selectedOperator?.fullName || operatorName}
                   </Text>
-                ) : null}
-              </View>
-              <Text style={[styles.optionMetaText, { color: colors.textSecondary }]}>
-                {formatRoleLabel(selectedOperator?.role)}
-              </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+                    {selectedOperator?.username ? (
+                      <Text
+                        style={[styles.opUsernameTag, { color: colors.textSecondary, marginRight: 6 }]}
+                        numberOfLines={1}
+                      >
+                        @{selectedOperator.username}
+                      </Text>
+                    ) : null}
+
+                    {selectedOperator?.username && (
+                      <View
+                        style={{
+                          width: 3,
+                          height: 3,
+                          borderRadius: 1.5,
+                          backgroundColor: colors.textMuted || '#94A3B8',
+                          marginRight: 6,
+                        }}
+                      />
+                    )}
+
+                    <View
+                      style={[
+                        styles.roleTagPill,
+                        {
+                          backgroundColor:
+                            selectedOperator?.role && String(selectedOperator.role).toUpperCase().includes('ADMIN')
+                              ? (isDark ? 'rgba(168, 85, 247, 0.18)' : 'rgba(168, 85, 247, 0.12)')
+                              : (isDark ? 'rgba(59, 130, 246, 0.18)' : 'rgba(59, 130, 246, 0.12)'),
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.roleTagPillText,
+                          {
+                            color:
+                              selectedOperator?.role && String(selectedOperator.role).toUpperCase().includes('ADMIN')
+                                ? (isDark ? '#C084FC' : '#7C3AED')
+                                : (isDark ? '#60A5FA' : '#2563EB'),
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {formatRoleLabel(selectedOperator?.role)}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.selectedOptionText, { color: colors.textMuted }]}>
+                    Pilih Operator Produksi
+                  </Text>
+                  <Text style={[styles.optionMetaText, { color: colors.textSecondary, marginTop: 2 }]}>
+                    Ketuk untuk memilih operator bertugas
+                  </Text>
+                </>
+              )}
             </View>
 
             {openDropdown === 'operator' ? (
@@ -882,7 +971,7 @@ export const InputDefectScreen = ({ navigation }) => {
           )}
 
           <Text style={[styles.fieldHintText, { color: colors.textSecondary }]}>
-            Pilih nama operator lini bertugas untuk kebutuhan mampu telusur riwayat kerja mesin (ISO 9001:2015).
+            Pilih operator lini untuk ketertelusuran riwayat mesin
           </Text>
         </View>
 
@@ -891,7 +980,7 @@ export const InputDefectScreen = ({ navigation }) => {
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            PART NUMBER / NAMA PART * ({parts.length || 110} PART TERDAFTAR)
+            PART NUMBER / NAMA PART °
           </Text>
 
           {/* Trigger Selector */}
@@ -1049,7 +1138,7 @@ export const InputDefectScreen = ({ navigation }) => {
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            JENIS CACAT (DEFECT TYPE) * ({defectTypes.length || 21} JENIS)
+            DEFECT TYPE °
           </Text>
 
           {/* Trigger Selector */}
@@ -1233,7 +1322,7 @@ export const InputDefectScreen = ({ navigation }) => {
           {/* A. Proses Produksi Drop Down */}
           <View style={{ flex: 1, marginRight: 6 }}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              PROSES PRODUKSI *
+              PROSES PRODUKSI °
             </Text>
 
             <Pressable
@@ -1278,7 +1367,7 @@ export const InputDefectScreen = ({ navigation }) => {
           {/* B. Mesin / Line Drop Down */}
           <View style={{ flex: 1, marginLeft: 6 }}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              MESIN / LINE
+              MESIN / LINE °
             </Text>
 
             <Pressable
@@ -1430,7 +1519,7 @@ export const InputDefectScreen = ({ navigation }) => {
         <View style={styles.formSection}>
           <View style={styles.qtyHeaderRow}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
-              JUMLAH PRODUK CACAT (QTY NG) *
+              JUMLAH PRODUK CACAT °
             </Text>
             {quantity > 1 && (
               <Pressable
@@ -1590,7 +1679,7 @@ export const InputDefectScreen = ({ navigation }) => {
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            CATATAN OPERATOR (REMARKS / AREA KERUSAKAN)
+            CATATAN OPERATOR
           </Text>
           <TextInput
             value={remarks}
@@ -1672,29 +1761,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing(16),
-    paddingBottom: 20,
+    padding: spacing(12),
+    paddingBottom: 28,
   },
-  formHeader: {
-    marginBottom: 16,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  headerIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   screenTitle: {
     fontSize: typography.sizes.screenHeading + 2,
-    fontWeight: '800',
+    fontWeight: '900',
     letterSpacing: 0.3,
   },
   screenSubtitle: {
     fontSize: typography.sizes.caption,
     marginTop: 2,
+    fontWeight: '600',
   },
   formSection: {
-    marginBottom: spacing(16),
+    marginBottom: spacing(10),
   },
   fieldLabel: {
-    fontSize: typography.sizes.micro,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 6,
+    letterSpacing: 0.4,
+    marginBottom: 5,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -1703,8 +1804,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   traceabilityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 2.5,
     borderRadius: 6,
     borderWidth: 1,
   },
@@ -1729,8 +1832,8 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   fieldHintText: {
-    fontSize: typography.sizes.micro,
-    marginTop: 6,
+    fontSize: 10.5,
+    marginTop: 3,
     marginLeft: 4,
   },
   shiftGrid: {
@@ -1742,20 +1845,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 7,
+    minHeight: 36,
+    borderRadius: 9,
     borderWidth: 1.5,
   },
   shiftButtonText: {
-    fontSize: typography.sizes.body,
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   dropdownSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
     borderWidth: 1.5,
-    minHeight: 60,
+    minHeight: 46,
   },
   selectorIconBadge: {
     width: 36,
@@ -1766,8 +1872,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectedOptionText: {
-    fontSize: typography.sizes.cardHeading,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   optionMetaText: {
@@ -1795,19 +1901,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   opAvatarBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   opAvatarText: {
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   opUsernameTag: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   operatorListWrap: {
@@ -1841,12 +1947,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   roleTagPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 5,
   },
   roleTagPillText: {
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontWeight: '700',
   },
   unselectedRadio: {
@@ -2103,8 +2209,8 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitSection: {
-    marginTop: -4,
-    marginBottom: 6,
+    marginTop: 16,
+    marginBottom: 16,
   },
   submitButton: {
     width: '100%',
@@ -2134,10 +2240,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
     borderWidth: 1.5,
-    marginBottom: 8,
+    minHeight: 42,
+    marginBottom: 6,
   },
   dateActiveLeft: {
     flexDirection: 'row',
@@ -2146,47 +2254,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   dateActiveText: {
-    fontSize: typography.sizes.body,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   dateActiveSub: {
-    fontSize: typography.sizes.micro,
-    marginTop: 2,
+    fontSize: 10.5,
+    marginTop: 1,
     fontWeight: '500',
   },
   dateStatusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   dateStatusPillText: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
   },
   dateSegmentedTrack: {
     flexDirection: 'row',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1.5,
-    padding: 4,
-    gap: 6,
-    minHeight: 46,
-    marginBottom: 10,
+    padding: 3,
+    gap: 4,
+    minHeight: 36,
+    marginBottom: 6,
   },
   dateSegmentedPill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    minHeight: 38,
-    borderRadius: 9,
+    paddingVertical: 4,
+    minHeight: 30,
+    borderRadius: 8,
   },
   dateSegmentedPillActive: {
     shadowOffset: { width: 0, height: 2 },
@@ -2195,7 +2303,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   dateSegmentedPillText: {
-    fontSize: 13,
+    fontSize: 11.5,
     textAlign: 'center',
   },
 });

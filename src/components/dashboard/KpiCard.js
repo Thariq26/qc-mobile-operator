@@ -76,7 +76,10 @@ export const KpiCard = ({
         <View style={styles.topRow}>
           <View style={styles.titleWithDot}>
             <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
-            <Text style={[styles.title, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.title, { color: colors.textSecondary }]}
+              numberOfLines={2}
+            >
               {title}
             </Text>
           </View>
@@ -124,66 +127,71 @@ export const KpiCard = ({
 const styles = StyleSheet.create({
   cardWrapper: {
     width: '48.5%',
-    marginBottom: spacing(10),
+    marginBottom: spacing(8),
   },
   container: {
-    padding: spacing(14),
-    borderRadius: 16,
-    minHeight: isCompactScreen ? 110 : 118,
+    padding: spacing(10),
+    borderRadius: 12,
+    minHeight: isCompactScreen ? 82 : 88,
     justifyContent: 'space-between',
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 20,
   },
   titleWithDot: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 4,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
   },
   title: {
-    fontSize: typography.sizes.micro,
+    flex: 1,
+    fontSize: 9,
+    lineHeight: 12,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     textTransform: 'uppercase',
   },
   iconContainer: {
-    opacity: 0.85,
+    opacity: 0.9,
+    marginLeft: 2,
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   valueText: {
-    fontSize: isCompactScreen ? typography.sizes.kpi - 2 : typography.sizes.kpi,
-    lineHeight: isCompactScreen ? typography.lineHeights.kpi - 2 : typography.lineHeights.kpi,
+    fontSize: isCompactScreen ? 19 : 21,
+    lineHeight: isCompactScreen ? 23 : 25,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
   unitText: {
-    fontSize: typography.sizes.caption,
+    fontSize: 11,
     fontWeight: '600',
     marginLeft: 3,
   },
   badgePill: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 5,
     borderWidth: 1,
-    marginTop: 2,
+    marginTop: 1,
   },
   badgeText: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '800',
+    fontSize: 9.5,
+    fontWeight: '700',
   },
 });
 
