@@ -1,64 +1,48 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import * as SplashScreen from 'expo-splash-screen';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { BottomTabNavigator } from './BottomTabNavigator';
+import { AnimatedSplashScreen } from '../components/splash/AnimatedSplashScreen';
 
 const Stack = createNativeStackNavigator();
 
 export const AppNavigator = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const { colors } = useTheme();
-
-  useEffect(() => {
-    let isMounted = true;
-    const hideSplashGracefully = async () => {
-      if (!isLoading) {
-        // Tahan splash screen selama 2.4 detik agar logo dan identitas aplikasi terlihat jelas dan profesional
-        await new Promise((resolve) => setTimeout(resolve, 2400));
-        if (isMounted) {
-          SplashScreen.hideAsync().catch(() => {});
-        }
-      }
-    };
-    hideSplashGracefully();
-    return () => {
-      isMounted = false;
-    };
-  }, [isLoading]);
-
-  if (isLoading) {
-    return (
-      <View style={[styles.loadingRoot, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const [isSplashDone, setIsSplashDone] = useState(false);
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        animation: 'fade',
-      }}
-    >
-      {isAuthenticated ? (
-        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-      ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+    <View style={styles.root}>
+      {/* 1. Navigator utama terpasang penuh sehingga viewport terisi 100% tanpa risiko collapse */}
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+        }}
+      >
+        {isAuthenticated ? (
+          <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+        ) : (
+          <Stack.Screen name="Login" component={LoginScreen} />
+        )}
+      </Stack.Navigator>
+
+      {/* 2. Splash screen beranimasi menutupi layar penuh hingga animasi & auth siap */}
+      {!isSplashDone && (
+        <AnimatedSplashScreen
+          isAuthReady={!isLoading}
+          onFinish={() => setIsSplashDone(true)}
+        />
       )}
-    </Stack.Navigator>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  loadingRoot: {
+  root: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#0B0F17',
   },
 });
 

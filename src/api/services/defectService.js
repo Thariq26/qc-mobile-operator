@@ -156,7 +156,7 @@ export const defectService = {
     return await getLocalCache(CACHE_KEYS.MACHINES);
   },
 
-  getOperators: async (role = null) => {
+  getOperators: async (role = 'OPERATOR_PRODUKSI') => {
     // Delegated to single source of truth in userService
     return userService.getOperators(role);
   },

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "QC Defect Monitoring App",
+    "name": "MONIDA",
     "slug": "qc-defect-monitoring-app",
     "owner": "thariiqs-team",
     "version": "1.1.0",
@@ -15,7 +15,7 @@
       "package": "com.gmp.qcdefectmonitoring",
       "versionCode": 2,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0F17"
       },
       "permissions": [

@@ -220,12 +220,18 @@ export const InputDefectScreen = ({ navigation }) => {
   // Load master data on mount
   useEffect(() => {
     const loadMasterData = async () => {
-      const [partsList, defectsList, machinesList, operatorsList] = await Promise.all([
+      const [partsList, defectsList, machinesList, rawOperatorsList] = await Promise.all([
         defectService.getParts(),
         defectService.getDefectTypes(),
         defectService.getMachines(),
-        defectService.getOperators(),
+        defectService.getOperators('OPERATOR_PRODUKSI'),
       ]);
+
+      // Filter ketat traceability: hanya tampilkan user dengan role Operator Produksi (kecualikan ADMIN/QC)
+      const operatorsList = (rawOperatorsList || []).filter((op) => {
+        const r = String(op.role || '').toUpperCase();
+        return r.includes('OPERATOR') && !r.includes('ADMIN');
+      });
 
       setParts(partsList);
       setDefectTypes(defectsList);
@@ -246,8 +252,10 @@ export const InputDefectScreen = ({ navigation }) => {
         setSelectedMachine(machinesList[0].name);
       }
       if (operatorsList.length > 0) {
-        setSelectedOperator(operatorsList[0]);
-        setOperatorName(operatorsList[0].fullName);
+        const matchUser = operatorsList.find((op) => op.username === user?.username || op.fullName === user?.fullName);
+        const defaultOp = matchUser || operatorsList[0];
+        setSelectedOperator(defaultOp);
+        setOperatorName(defaultOp.fullName);
       }
     };
 
@@ -382,8 +390,10 @@ export const InputDefectScreen = ({ navigation }) => {
         setRemarks('');
         setPhotoUri(null);
         if (operators.length > 0) {
-          setSelectedOperator(operators[0]);
-          setOperatorName(operators[0].fullName);
+          const matchUser = operators.find((op) => op.username === user?.username || op.fullName === user?.fullName);
+          const defaultOp = matchUser || operators[0];
+          setSelectedOperator(defaultOp);
+          setOperatorName(defaultOp.fullName);
         }
         Alert.alert(
           'Sukses Dicatat',
@@ -761,7 +771,7 @@ export const InputDefectScreen = ({ navigation }) => {
                         style={[styles.opUsernameTag, { color: colors.textSecondary, marginRight: 6 }]}
                         numberOfLines={1}
                       >
-                        @{selectedOperator.username}
+                        {selectedOperator.username}
                       </Text>
                     ) : null}
 
@@ -923,7 +933,7 @@ export const InputDefectScreen = ({ navigation }) => {
                             </Text>
                             {op.username ? (
                               <Text style={[styles.operatorRowUsername, { color: colors.textSecondary }]}>
-                                @{op.username}
+                                - {op.username}
                               </Text>
                             ) : null}
                           </View>

@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   StyleSheet,
   KeyboardAvoidingView,
   ScrollView,
@@ -201,13 +202,17 @@ export const LoginScreen = () => {
         {/* Brand Header */}
         <View style={styles.brandContainer}>
           <View style={[styles.logoIconContainer, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
-            <ShieldCheck size={24} color={colors.primary} />
+            <Image
+              source={require('../../../assets/adaptive-icon.png')}
+              style={{ width: 34, height: 34 }}
+              resizeMode="contain"
+            />
           </View>
           <Text style={[styles.brandTitle, { color: colors.textPrimary }]}>
-            QC DEFECT MONITORING
+            MONIDA
           </Text>
           <Text style={[styles.companySubtitle, { color: colors.primary }]}>
-            PT GALAXY MANDIRI PERKASA
+            MONITORING DEFECT ANALYSIS SYSTEM
           </Text>
         </View>
 
@@ -413,14 +418,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   brandTitle: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 2,
   },
   companySubtitle: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
     marginTop: 2,
   },
   appDesc: {

@@ -11,29 +11,32 @@ export const userService = {
    * Dilengkapi cache dinamis lokal (AsyncStorage) untuk kemampuan fallback offline.
    * Endpoint: GET /api/users/operators
    */
-  getOperators: async (role = null) => {
+  getOperators: async (role = 'OPERATOR_PRODUKSI') => {
     try {
-      const params = role ? { role } : {};
+      const params = role && role !== 'ALL' ? { role } : {};
       const response = await apiClient.get(ENDPOINTS.USERS_OPERATORS, { params });
       if (Array.isArray(response.data) && response.data.length > 0) {
-        // Filter nama user berdasarkan role OPERATOR_PRODUKSI dan ADMIN
+        // Filter nama user: hanya tampilkan user dengan role Operator Produksi (kecualikan Admin)
         const filtered = response.data.filter((op) => {
-          if (!op.role) return true;
+          if (!op.role) return false;
           const r = String(op.role).toUpperCase().trim();
           if (role && role !== 'ALL') {
             const target = String(role).toUpperCase().trim();
+            if (target === 'OPERATOR_PRODUKSI' || target === 'OPERATOR') {
+              return r.includes('OPERATOR') && !r.includes('ADMIN');
+            }
             if (target === 'ADMIN') return r.includes('ADMIN');
-            if (target === 'OPERATOR_PRODUKSI') return r.includes('OPERATOR');
           }
-          return r.includes('OPERATOR') || r.includes('ADMIN');
+          // Default: hanya user dengan role OPERATOR (bukan ADMIN)
+          return r.includes('OPERATOR') && !r.includes('ADMIN');
         });
 
-        const listToMap = filtered.length > 0 ? filtered : response.data;
+        const listToMap = filtered;
         const mapped = listToMap.map((op, idx) => ({
           id: op.id || idx + 1,
           username: op.username || `user_${idx + 1}`,
           fullName: op.fullName || op.name || op.username,
-          role: op.role || (op.username?.toLowerCase().includes('admin') ? 'ADMIN' : 'OPERATOR_PRODUKSI'),
+          role: op.role || 'OPERATOR_PRODUKSI',
           line: op.line || 'Lini Produksi',
         }));
 
@@ -50,10 +53,17 @@ export const userService = {
       console.warn('userService: Gagal mengambil daftar operator dari backend, membaca cache lokal:', err?.message);
     }
 
-    // Fallback: baca dari cache lokal (hasil sinkronisasi database sebelumnya)
+    // Fallback: baca dari cache lokal (pastikan data cache juga difilter hanya operator)
     try {
       const raw = await AsyncStorage.getItem(CACHE_KEY_OPERATORS);
-      return raw ? JSON.parse(raw) : [];
+      if (raw) {
+        const cached = JSON.parse(raw);
+        return cached.filter((op) => {
+          const r = String(op.role || '').toUpperCase();
+          return r.includes('OPERATOR') && !r.includes('ADMIN');
+        });
+      }
+      return [];
     } catch (e) {
       return [];
     }
