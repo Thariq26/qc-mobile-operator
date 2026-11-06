@@ -203,8 +203,8 @@ export const LoginScreen = () => {
         <View style={styles.brandContainer}>
           <View style={[styles.logoIconContainer, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
             <Image
-              source={require('../../../assets/adaptive-icon.png')}
-              style={{ width: 34, height: 34 }}
+              source={require('../../../assets/logo-brand.png')}
+              style={{ width: 27, height: 33 }}
               resizeMode="contain"
             />
           </View>
@@ -212,7 +212,7 @@ export const LoginScreen = () => {
             MONIDA
           </Text>
           <Text style={[styles.companySubtitle, { color: colors.primary }]}>
-            MONITORING DEFECT ANALYSIS SYSTEM
+            MONITORING & DEFECT ANALYSIS
           </Text>
         </View>
 
