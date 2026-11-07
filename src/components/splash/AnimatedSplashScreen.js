@@ -160,9 +160,17 @@ export const AnimatedSplashScreen = ({ onFinish, isAuthReady = true }) => {
       }
     }, 1900);
 
+    // 5. Safety fallback: jaminan mutlak splash pasti tertutup maksimal 2.8 detik agar tidak pernah blank putih
+    const safetyTimer = setTimeout(() => {
+      if (isMounted && !isExiting.current) {
+        triggerExit();
+      }
+    }, 2800);
+
     return () => {
       isMounted = false;
       clearTimeout(exitTimer);
+      clearTimeout(safetyTimer);
       floatLoop.stop();
     };
   }, []);

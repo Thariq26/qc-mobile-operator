@@ -3,6 +3,12 @@ import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { AuthProvider } from './src/context/AuthContext';
+import { AppNavigator } from './src/navigation/AppNavigator';
 
 // Tahan splash screen selama inisialisasi awal autentikasi aplikasi
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -13,12 +19,6 @@ Text.defaultProps.maxFontSizeMultiplier = 1.25;
 
 if (TextInput.defaultProps == null) TextInput.defaultProps = {};
 TextInput.defaultProps.maxFontSizeMultiplier = 1.25;
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { ThemeProvider, useTheme } from './src/context/ThemeContext';
-import { AuthProvider } from './src/context/AuthContext';
-import { AppNavigator } from './src/navigation/AppNavigator';
 
 function NavigationWrapper() {
   const { colors, isDark } = useTheme();
@@ -47,7 +47,7 @@ export default function App() {
   useEffect(() => {
     async function onFetchUpdateAsync() {
       try {
-        if (__DEV__) return;
+        if (__DEV__ || !Updates.isEnabled) return;
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
           await Updates.fetchUpdateAsync();
