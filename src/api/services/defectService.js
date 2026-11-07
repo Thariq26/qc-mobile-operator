@@ -45,13 +45,15 @@ let localHistoryBuffer = [];
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Filter out legacy dummy entries
+        // Only keep genuinely offline pending records and filter out demo/stale items
         localHistoryBuffer = parsed.filter((item) => {
+          const isPendingOffline = item.isOffline === true || (item.status && item.status.includes('Offline'));
           const isDemo =
             (item.createdBy === 'budi_qc' && item.remarks && item.remarks.includes('clearance aus')) ||
             (item.namaMesin === 'Amada Press 01' && item.quantity === 8 && item.defectName === 'Gompal');
-          return !isDemo && (item.id < 101 || item.id > 105);
+          return isPendingOffline && !isDemo && (item.id < 101 || item.id > 105);
         });
+        await persistLocalDefectBuffer();
       }
     }
   } catch (e) {
@@ -200,25 +202,24 @@ export const defectService = {
     try {
       const response = await apiClient.post(ENDPOINTS.NG_DATA, payload);
       
-      // Also add to local history buffer for immediate UI feedback
-      const newRecord = {
-        id: response.data?.id || Date.now(),
-        partNumber: payload.partNumber || `PT-${payload.partId}`,
-        partName: payload.partName || 'Auto Bracket',
-        defectName: payload.defectName || 'Gompal',
-        proses: payload.proses || 'Blanking',
-        quantity: payload.quantity || 1,
-        operatorName: payload.operatorName || 'Operator',
-        createdBy: payload.username || payload.createdBy || 'operator',
-        defectDate: payload.defectDate || getLocalDateString(),
-        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        shift: payload.shift || 'Shift 1',
-        namaMesin: payload.namaMesin || 'Amada Press 01',
-        remarks: payload.remarks || '',
-        photoUrl: payload.photoUrl || null,
-        status: 'Synced to Cloud',
-      };
-      localHistoryBuffer = [newRecord, ...localHistoryBuffer.filter((i) => i.id !== newRecord.id)];
+      // Clean up any matching offline pending record since it is now successfully saved in cloud
+      const serverId = response.data?.id;
+      const targetDate = payload.defectDate || getLocalDateString();
+      const targetShift = payload.shift || 'Shift 1';
+      const targetMachine = payload.namaMesin || '';
+      const targetDefect = payload.defectName || '';
+      const targetQty = Number(payload.quantity || 1);
+
+      localHistoryBuffer = localHistoryBuffer.filter((i) => {
+        if (serverId && i.id === serverId) return false;
+        const matchesData =
+          i.defectDate === targetDate &&
+          i.shift === targetShift &&
+          i.namaMesin === targetMachine &&
+          i.defectName === targetDefect &&
+          Number(i.quantity) === targetQty;
+        return !matchesData;
+      });
       await persistLocalDefectBuffer();
 
       return response.data;
@@ -255,13 +256,29 @@ export const defectService = {
    * Auto-sync pending offline defects when online connection restored
    */
   syncOfflineDefects: async () => {
-    const offlineItems = localHistoryBuffer.filter((i) => i.isOffline || i.status?.includes('Offline'));
+    const offlineItems = localHistoryBuffer.filter((i) => i.isOffline === true || i.status?.includes('Offline'));
     if (offlineItems.length === 0) return { synced: 0 };
 
     let syncedCount = 0;
+    const syncedIds = new Set();
+
     for (const item of offlineItems) {
       try {
-        await apiClient.post(ENDPOINTS.NG_DATA, {
+        let finalPhotoUrl = item.photoUrl;
+
+        // Re-upload photo if it was saved locally as a file URI during offline mode
+        if (
+          finalPhotoUrl &&
+          (finalPhotoUrl.startsWith('file://') || finalPhotoUrl.startsWith('content://'))
+        ) {
+          try {
+            finalPhotoUrl = await defectService.uploadPhoto(finalPhotoUrl);
+          } catch (uploadErr) {
+            console.warn(`[Sync NG] Re-upload photo failed for defect ${item.id}:`, uploadErr?.message);
+          }
+        }
+
+        const payload = {
           partId: item.partId,
           partNumber: item.partNumber,
           partName: item.partName,
@@ -275,23 +292,56 @@ export const defectService = {
           shift: item.shift,
           namaMesin: item.namaMesin,
           remarks: item.remarks,
-          photoUrl: item.photoUrl,
-        });
-        item.status = 'Synced to Cloud';
-        item.isOffline = false;
-        syncedCount++;
+          photoUrl: finalPhotoUrl,
+        };
+
+        const res = await apiClient.post(ENDPOINTS.NG_DATA, payload);
+        if (res.status === 200 || res.status === 201 || res.data) {
+          syncedIds.add(item.id);
+          syncedCount++;
+        }
       } catch (e) {
         console.warn(`Sync failed for offline defect ${item.id}:`, e?.message);
       }
     }
-    if (syncedCount > 0) {
+
+    if (syncedIds.size > 0) {
+      // Remove successfully synced items from local buffer to prevent stale duplicates
+      localHistoryBuffer = localHistoryBuffer.filter((i) => !syncedIds.has(i.id));
       await persistLocalDefectBuffer();
     }
     return { synced: syncedCount };
   },
 
+  /**
+   * Get count of currently unsynced offline defect records
+   */
+  getPendingOfflineCount: () => {
+    return localHistoryBuffer.filter((i) => i.isOffline === true || i.status?.includes('Offline')).length;
+  },
+
+  /**
+   * Clear offline defect buffer (used to reset corrupted / stuck records)
+   */
+  clearOfflineBuffer: async () => {
+    localHistoryBuffer = [];
+    try {
+      await AsyncStorage.removeItem(DEFECT_STORAGE_KEY);
+    } catch (e) {
+      console.warn('Failed clearing local defect buffer:', e);
+    }
+    return true;
+  },
+
   getHistory: async (filterPeriod = 'all', username = null, role = null) => {
     try {
+      // 0. Auto-sync any pending offline records before fetching fresh data
+      try {
+        await defectService.syncOfflineDefects();
+      } catch (syncErr) {
+        // Silently continue if offline
+      }
+
       const isAdmin = (role && role.toUpperCase() === 'ADMIN') || (username && username.toLowerCase() === 'admin');
       const params = {};
       if (role) params.role = role;
@@ -316,15 +366,26 @@ export const defectService = {
           remarks: item.remarks || '',
           photoUrl: item.photoUrl,
           status: 'Synced to Cloud',
+          isOffline: false,
         }));
         
         // Filter by user if operator
         const userFiltered = isAdmin ? mapped : filterDefectsByUser(mapped, username);
 
-        // Merge with any freshly added local records not yet returned
-        const existingIds = new Set(userFiltered.map(m => m.id));
+        // Deduplicate and prune local buffer
+        const serverIds = new Set(userFiltered.map((m) => m.id));
+        const serverKeys = new Set(
+          userFiltered.map((m) => `${m.defectDate}_${m.shift}_${m.namaMesin}_${m.defectName}_${m.quantity}`)
+        );
+
         const filteredBuffer = isAdmin ? localHistoryBuffer : filterDefectsByUser(localHistoryBuffer, username);
-        const combined = [...filteredBuffer.filter(loc => !existingIds.has(loc.id)), ...userFiltered];
+        const unmergedOffline = filteredBuffer.filter((loc) => {
+          if (!loc.isOffline && !(loc.status && loc.status.includes('Offline'))) return false;
+          if (serverIds.has(loc.id)) return false;
+          const key = `${loc.defectDate}_${loc.shift}_${loc.namaMesin}_${loc.defectName}_${loc.quantity}`;
+          return !serverKeys.has(key);
+        });
+        const combined = [...unmergedOffline, ...userFiltered];
         return applyPeriodFilter(combined, filterPeriod);
       }
       return applyPeriodFilter(isAdmin ? localHistoryBuffer : filterDefectsByUser(localHistoryBuffer, username), filterPeriod);
@@ -360,31 +421,34 @@ export const defectService = {
           remarks: item.remarks || '',
           photoUrl: item.photoUrl,
           status: 'Synced to Cloud',
+          isOffline: false,
         }));
       }
 
-      // Merge with any freshly added local offline records
-      const existingIds = new Set(mapped.map((m) => m.id));
-      const offlineList = (localHistoryBuffer || []).map((item) => ({
-        id: item.id,
-        partId: item.partId,
-        partNumber: item.partNumber || `PT-${item.partId}`,
-        partName: item.partName || 'Auto Bracket',
-        defectName: item.defectName || 'Gompal',
-        proses: item.proses || 'Blanking',
-        quantity: Number(item.quantity || 0),
-        operatorName: item.operatorName || item.createdBy || 'Operator',
-        createdBy: item.createdBy,
-        defectDate: item.defectDate ? String(item.defectDate).split('T')[0] : getLocalDateString(),
-        time: item.time || '12:00',
-        shift: item.shift || 'Shift 1',
-        namaMesin: item.namaMesin || 'Amada Press 01',
-        remarks: item.remarks || '',
-        photoUrl: item.photoUrl,
-        status: item.status || 'Cached Locally (Offline)',
-      }));
+      // Server IDs and composite keys to prevent any duplicate merging
+      const serverIds = new Set(mapped.map((m) => m.id));
+      const serverKeys = new Set(
+        mapped.map((m) => `${m.defectDate}_${m.shift}_${m.namaMesin}_${m.defectName}_${m.quantity}`)
+      );
 
-      return [...offlineList.filter((loc) => !existingIds.has(loc.id)), ...mapped];
+      // Prune local buffer: remove any records that are already on the server or not offline
+      const prevCount = localHistoryBuffer.length;
+      localHistoryBuffer = (localHistoryBuffer || []).filter((loc) => {
+        if (!loc.isOffline && !(loc.status && loc.status.includes('Offline'))) return false;
+        if (serverIds.has(loc.id)) return false;
+        const key = `${loc.defectDate}_${loc.shift}_${loc.namaMesin}_${loc.defectName}_${loc.quantity}`;
+        return !serverKeys.has(key);
+      });
+      if (localHistoryBuffer.length !== prevCount) {
+        await persistLocalDefectBuffer();
+      }
+
+      // Only merge genuinely pending offline items
+      const unmergedOffline = localHistoryBuffer.filter(
+        (loc) => loc.isOffline === true || (loc.status && loc.status.includes('Offline'))
+      );
+
+      return [...unmergedOffline, ...mapped];
     } catch (e) {
       console.warn('Failed loading shop floor defects from cloud:', e?.message);
       return (localHistoryBuffer || []).map((item) => ({

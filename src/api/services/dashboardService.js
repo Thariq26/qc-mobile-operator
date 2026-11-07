@@ -146,7 +146,7 @@ export const dashboardService = {
 
       // Sinkronisasi KPI murni sesuai rentang waktu aktif (Daily, Weekly, Date to Date)
       let totalProd = sumProdList;
-      let totalNg = Math.max(sumProdNg, sumDefectList);
+      let totalNg = sumDefectList;
       let totalComplaints = 0;
 
       // 3. Total Kasus Komplain
@@ -581,16 +581,15 @@ export const dashboardService = {
           .filter((m) => m.totalNg > 0)
           .sort((a, b) => b.totalNg - a.totalNg);
       } else {
-        // Jika 'ALL': Tampilkan mesin yang memiliki temuan cacat terlebih dahulu
-        const withDefects = filteredMachines
-          .filter((m) => m.totalNg > 0)
-          .sort((a, b) => b.totalNg - a.totalNg);
-
-        if (withDefects.length > 0) {
-          filteredMachines = withDefects;
-        } else {
-          filteredMachines = filteredMachines.slice(0, 8);
-        }
+        // Jika 'ALL': Tampilkan SEMUA mesin yang aktif berproduksi pada periode ini.
+        // Urutkan mesin dengan temuan cacat terlebih dahulu (prioritas perhatian QC),
+        // disusul oleh mesin-mesin yang beroperasi bersih tanpa cacat / zero-defect (On Target).
+        filteredMachines.sort((a, b) => {
+          if (b.totalNg !== a.totalNg) {
+            return b.totalNg - a.totalNg;
+          }
+          return b.grossProduced - a.grossProduced;
+        });
       }
 
       // Hitung metrik agregasi final untuk tiap mesin (Defect Rate, Net Produced, Variance, Status)
