@@ -39,6 +39,7 @@ import { SpringButton } from '../../components/common/SpringButton';
 import { PhotoModal } from '../../components/common/PhotoModal';
 import { CalendarDateModal } from '../../components/common/CalendarDateModal';
 import { ConfirmDefectModal } from '../../components/common/ConfirmDefectModal';
+import { FloatingToast } from '../../components/common/FloatingToast';
 import { defectService } from '../../api/services/defectService';
 import { getLocalDateString, formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
@@ -212,6 +213,14 @@ export const InputDefectScreen = ({ navigation }) => {
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [toastConfig, setToastConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'success',
+    actionLabel: null,
+    onAction: null,
+  });
 
   const toggleDropdown = (name) => {
     setOpenDropdown((prev) => (prev === name ? null : name));
@@ -383,29 +392,35 @@ export const InputDefectScreen = ({ navigation }) => {
 
       setConfirmModalVisible(false);
       setSubmitSuccess(true);
-      setTimeout(() => {
-        setSubmitSuccess(false);
-        // Reset form
-        setQuantity(1);
-        setRemarks('');
-        setPhotoUri(null);
-        if (operators.length > 0) {
-          const matchUser = operators.find((op) => op.username === user?.username || op.fullName === user?.fullName);
-          const defaultOp = matchUser || operators[0];
-          setSelectedOperator(defaultOp);
-          setOperatorName(defaultOp.fullName);
-        }
-        Alert.alert(
-          'Sukses Dicatat',
-          `Data cacat ${payload.quantity} pcs ${payload.defectName} (${payload.proses}) berhasil disimpan ke database!`,
-          [
-            { text: 'Catat Lagi', style: 'cancel' },
-            { text: 'Lihat Riwayat', onPress: () => navigation.navigate('History') },
-          ]
-        );
-      }, 1200);
+      setTimeout(() => setSubmitSuccess(false), 1500);
+
+      // Reset form langsung ke kondisi awal (Opsi 1: Non-blocking)
+      setQuantity(1);
+      setRemarks('');
+      setPhotoUri(null);
+      if (operators.length > 0) {
+        const matchUser = operators.find((op) => op.username === user?.username || op.fullName === user?.fullName);
+        const defaultOp = matchUser || operators[0];
+        setSelectedOperator(defaultOp);
+        setOperatorName(defaultOp.fullName);
+      }
+
+      // Tampilkan Notifikasi Melayang Otomatis (Floating Toast - Opsi 1)
+      setToastConfig({
+        visible: true,
+        title: 'Sukses Dicatat!',
+        message: `Data cacat ${payload.quantity} pcs ${payload.defectName} (${payload.proses}) berhasil disimpan!`,
+        type: 'success',
+        actionLabel: 'Riwayat',
+        onAction: () => navigation.navigate('History'),
+      });
     } catch (err) {
-      Alert.alert('Gagal Menyimpan', err?.message || 'Terjadi kesalahan saat menyimpan laporan defect.');
+      setToastConfig({
+        visible: true,
+        title: 'Gagal Menyimpan',
+        message: err?.message || 'Terjadi kesalahan saat menyimpan laporan defect.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1761,6 +1776,17 @@ export const InputDefectScreen = ({ navigation }) => {
           remarks,
           hasPhoto: !!photoUri,
         }}
+      />
+
+      {/* Floating Success Toast (Opsi 1) */}
+      <FloatingToast
+        visible={toastConfig.visible}
+        title={toastConfig.title}
+        message={toastConfig.message}
+        type={toastConfig.type}
+        actionLabel={toastConfig.actionLabel}
+        onAction={toastConfig.onAction}
+        onClose={() => setToastConfig((prev) => ({ ...prev, visible: false }))}
       />
     </KeyboardAvoidingView>
   );

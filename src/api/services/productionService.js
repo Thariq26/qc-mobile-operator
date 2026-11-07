@@ -17,15 +17,20 @@ let localProductionBuffer = [];
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Filter out legacy dummy entries
-        localProductionBuffer = parsed.filter((item) => {
-          const isDemo =
-            item.id === 1 ||
-            item.id === 2 ||
-            (item.createdBy === 'budi_qc' && item.targetQuantity === 4000 && item.producedQuantity === 4150) ||
-            (item.createdBy === 'budi_qc' && item.targetQuantity === 3000 && item.producedQuantity === 2880);
-          return !isDemo;
-        });
+        // Filter out legacy dummy entries and sanitize offline flags
+        localProductionBuffer = parsed
+          .filter((item) => {
+            const isDemo =
+              item.id === 1 ||
+              item.id === 2 ||
+              (item.createdBy === 'budi_qc' && item.targetQuantity === 4000 && item.producedQuantity === 4150) ||
+              (item.createdBy === 'budi_qc' && item.targetQuantity === 3000 && item.producedQuantity === 2880);
+            return !isDemo;
+          })
+          .map((item) => ({
+            ...item,
+            isOffline: Boolean(item.isOffline),
+          }));
       }
     }
   } catch (e) {
@@ -86,14 +91,10 @@ export const productionService = {
             status,
             operatorName: payload.operatorName || 'Operator',
             createdBy: payload.username || payload.createdBy || 'operator',
+            isOffline: false,
           });
         });
         await persistLocalBuffer();
-
-        // Automatically schedule background sync retry in 5 seconds
-        setTimeout(() => {
-          productionService.syncOfflineProduction().catch(() => {});
-        }, 5000);
       }
 
       return response.data;
@@ -174,10 +175,8 @@ export const productionService = {
    * Automatically groups unsynced items and sends them via /api/production/batch
    */
   syncOfflineProduction: async () => {
-    // Identify pending items (either explicitly marked offline or temporary local timestamp IDs)
-    const pendingItems = localProductionBuffer.filter(
-      (i) => i.isOffline === true || (typeof i.id === 'number' && i.id > 1000000000)
-    );
+    // Identify strictly offline pending items
+    const pendingItems = localProductionBuffer.filter((i) => i.isOffline === true);
 
     if (pendingItems.length === 0) return { synced: 0 };
 
@@ -250,6 +249,26 @@ export const productionService = {
   },
 
   /**
+   * Get count of currently unsynced offline production items
+   */
+  getPendingOfflineCount: () => {
+    return localProductionBuffer.filter((i) => i.isOffline === true).length;
+  },
+
+  /**
+   * Clear offline production buffer (used to reset corrupted / stuck records)
+   */
+  clearOfflineBuffer: async () => {
+    localProductionBuffer = [];
+    try {
+      await AsyncStorage.removeItem(PROD_STORAGE_KEY);
+    } catch (e) {
+      console.warn('Failed clearing local production buffer:', e);
+    }
+    return true;
+  },
+
+  /**
    * Fetch production records (filtered by logged-in user if specified)
    */
   getProductionList: async (username, role, options = {}) => {
@@ -311,12 +330,24 @@ export const productionService = {
         // Filter by user only if operator and shouldGetAll is false
         const userFiltered = shouldGetAll ? rawMapped : filterProductionByUser(rawMapped, username);
 
-        // Merge with local buffer items that haven't been returned by backend
+        // Merge with local buffer items that are strictly offline and not yet in backend
         const existingIds = new Set(userFiltered.map((m) => m.id));
+        const existingKeys = new Set(
+          userFiltered.map((m) => `${m.productionDate}_${m.shift}_${m.machineName}_${m.partId || m.partNumber}_${m.processName}`)
+        );
+
         const localCandidates = shouldGetAll
           ? localProductionBuffer
           : filterProductionByUser(localProductionBuffer, username);
-        const unmergedLocal = localCandidates.filter((loc) => !existingIds.has(loc.id));
+
+        // Only merge items that are genuinely pending offline and not already persisted on server
+        const unmergedLocal = localCandidates.filter((loc) => {
+          if (!loc.isOffline) return false;
+          if (existingIds.has(loc.id)) return false;
+          const key = `${loc.productionDate}_${loc.shift}_${loc.machineName}_${loc.partId || loc.partNumber}_${loc.processName}`;
+          return !existingKeys.has(key);
+        });
+
         const combined = [...unmergedLocal, ...userFiltered];
 
         // Synchronize with shop floor QC defects (dynamically computes totalNg, netProduced, variance, efficiency, status)

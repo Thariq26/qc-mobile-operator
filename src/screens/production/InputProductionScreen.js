@@ -38,6 +38,7 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { SpringButton } from '../../components/common/SpringButton';
 import { AchievementMeter } from '../../components/production/AchievementMeter';
 import { ConfirmProductionModal } from '../../components/common/ConfirmProductionModal';
+import { FloatingToast } from '../../components/common/FloatingToast';
 import { defectService } from '../../api/services/defectService';
 import { productionService } from '../../api/services/productionService';
 import { formatIndonesianDate, getLocalDateString } from '../../utils/dateFormatter';
@@ -149,6 +150,14 @@ export const InputProductionScreen = ({ navigation }) => {
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [toastConfig, setToastConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'success',
+    actionLabel: null,
+    onAction: null,
+  });
 
   // Modal Control States
   const [partModalVisible, setPartModalVisible] = useState(false);
@@ -617,42 +626,42 @@ export const InputProductionScreen = ({ navigation }) => {
 
       setConfirmModalVisible(false);
 
-      Alert.alert(
-        'Produksi Berhasil Dicatat!',
-        `Data ${items.length} mesin (${selectedShift}) berhasil disimpan ke sistem!`,
-        [
-          {
-            text: 'Lihat Dashboard',
-            onPress: () => navigation.navigate('Dashboard'),
-          },
-          {
-            text: 'Input Baru',
-            style: 'cancel',
-            onPress: () => {
-              // Reset items
-              setItems([
-                {
-                  id: Date.now(),
-                  machineName: machines[0]?.name || 'Amada Press 01',
-                  machineLine: machines[0]?.line || 'Stamping',
-                  machineType: machines[0]?.type || 'Mechanical Press 150 Ton',
-                  partId: parts[0]?.id || 1,
-                  partNumber: parts[0]?.partNumber || 'PT-1001',
-                  partName: parts[0]?.partName || 'Front Bracket A',
-                  partLine: parts[0]?.line || 'Stamping',
-                  processName: 'Blanking',
-                  isCustomProcess: false,
-                  customProcess: '',
-                  targetQuantity: '',
-                  producedQuantity: '',
-                },
-              ]);
-            },
-          },
-        ]
-      );
+      // Reset items langsung ke kondisi awal siap input baru (Opsi 1: Non-blocking)
+      setItems([
+        {
+          id: Date.now(),
+          machineName: machines[0]?.name || 'Amada Press 01',
+          machineLine: machines[0]?.line || 'Stamping',
+          machineType: machines[0]?.type || 'Mechanical Press 150 Ton',
+          partId: parts[0]?.id || 1,
+          partNumber: parts[0]?.partNumber || 'PT-1001',
+          partName: parts[0]?.partName || 'Front Bracket A',
+          partLine: parts[0]?.line || 'Stamping',
+          processName: 'Blanking',
+          isCustomProcess: false,
+          customProcess: '',
+          targetQuantity: '',
+          producedQuantity: '',
+        },
+      ]);
+
+      // Tampilkan Notifikasi Melayang Otomatis (Floating Toast - Opsi 1)
+      setToastConfig({
+        visible: true,
+        title: 'Produksi Berhasil Dicatat!',
+        message: `Data ${items.length} mesin (${selectedShift}) berhasil disimpan ke sistem!`,
+        type: 'success',
+        actionLabel: 'Dashboard',
+        onAction: () => navigation.navigate('Dashboard'),
+      });
     } catch (err) {
       setErrorMessage(err?.message || 'Gagal menyimpan data produksi. Silakan periksa jaringan.');
+      setToastConfig({
+        visible: true,
+        title: 'Gagal Menyimpan',
+        message: err?.message || 'Periksa koneksi jaringan server.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1837,6 +1846,17 @@ export const InputProductionScreen = ({ navigation }) => {
           operatorName: user?.fullName || user?.username || 'Operator',
           items,
         }}
+      />
+
+      {/* Floating Success Toast (Opsi 1) */}
+      <FloatingToast
+        visible={toastConfig.visible}
+        title={toastConfig.title}
+        message={toastConfig.message}
+        type={toastConfig.type}
+        actionLabel={toastConfig.actionLabel}
+        onAction={toastConfig.onAction}
+        onClose={() => setToastConfig((prev) => ({ ...prev, visible: false }))}
       />
     </KeyboardAvoidingView>
   );

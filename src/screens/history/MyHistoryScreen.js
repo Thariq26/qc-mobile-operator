@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import {
   Factory,
@@ -33,6 +34,7 @@ import { useAuth } from '../../context/AuthContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { defectService } from '../../api/services/defectService';
+import { getBaseUrl } from '../../api/endpoints';
 import { ProductionHistoryScreen } from '../production/ProductionHistoryScreen';
 import { formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
@@ -52,7 +54,7 @@ const { width } = Dimensions.get('window');
  */
 export const MyHistoryScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
-  const { user, isAdmin } = useAuth();
+  const { user, token, isAdmin } = useAuth();
 
   // Mode Riwayat khusus Admin: 'production' | 'defect'
   const [adminTab, setAdminTab] = useState('production');
@@ -65,6 +67,35 @@ export const MyHistoryScreen = ({ navigation }) => {
 
   // Fullscreen Image Preview Modal
   const [previewImageUri, setPreviewImageUri] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Helper untuk mengubah nama file atau relative path menjadi URL gambar yang valid
+  const resolvePhotoUri = (uri) => {
+    if (!uri) return null;
+    const trimmed = String(uri).trim();
+    if (
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('file://') ||
+      trimmed.startsWith('data:')
+    ) {
+      return trimmed;
+    }
+    const baseUrl = getBaseUrl();
+    const serverRoot = baseUrl.replace(/\/api\/?$/, '');
+    const cleanUri = trimmed.replace(/^\/+/, '');
+    if (cleanUri.startsWith('uploads/')) {
+      return `${serverRoot}/${cleanUri}`;
+    }
+    return `${serverRoot}/api/upload/${cleanUri}`;
+  };
+
+  const handleOpenPhoto = (uri) => {
+    setImageLoading(true);
+    setImageError(false);
+    setPreviewImageUri(uri);
+  };
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -277,7 +308,7 @@ export const MyHistoryScreen = ({ navigation }) => {
 
             {item.photoUrl ? (
               <Pressable
-                onPress={() => setPreviewImageUri(item.photoUrl)}
+                onPress={() => handleOpenPhoto(item.photoUrl)}
                 hitSlop={6}
                 style={[
                   styles.photoBtn,
@@ -618,13 +649,50 @@ export const MyHistoryScreen = ({ navigation }) => {
               >
                 <X size={26} color="#FFFFFF" />
               </Pressable>
-              {previewImageUri ? (
-                <Image
-                  source={{ uri: previewImageUri }}
-                  style={styles.fullImage}
-                  resizeMode="contain"
-                />
-              ) : null}
+
+              {/* Loading Spinner */}
+              {imageLoading && !imageError && (
+                <View style={styles.imageLoadingBox}>
+                  <ActivityIndicator size="large" color="#38BDF8" />
+                  <Text style={styles.imageLoadingText}>Memuat foto bukti cacat...</Text>
+                </View>
+              )}
+
+              {/* Error State Fallback */}
+              {imageError ? (
+                <View style={styles.imageErrorBox}>
+                  <View style={styles.imageErrorIconCircle}>
+                    <AlertTriangle size={36} color="#F59E0B" />
+                  </View>
+                  <Text style={styles.imageErrorTitle}>Foto Bukti Tidak Tersedia</Text>
+                  <Text style={styles.imageErrorDesc}>
+                    File foto tidak ditemukan di server atau cache lokal perangkat telah dibersihkan.
+                  </Text>
+                  <Pressable
+                    style={styles.imageErrorCloseBtn}
+                    onPress={() => setPreviewImageUri(null)}
+                  >
+                    <Text style={styles.imageErrorCloseBtnText}>Tutup Preview</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                previewImageUri && (
+                  <Image
+                    source={{
+                      uri: resolvePhotoUri(previewImageUri),
+                      headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    }}
+                    style={[styles.fullImage, imageLoading && { opacity: 0 }]}
+                    resizeMode="contain"
+                    onLoadStart={() => setImageLoading(true)}
+                    onLoadEnd={() => setImageLoading(false)}
+                    onError={() => {
+                      setImageLoading(false);
+                      setImageError(true);
+                    }}
+                  />
+                )
+              )}
             </View>
           </Modal>
         </View>
@@ -1068,6 +1136,62 @@ const styles = StyleSheet.create({
     width: width - 32,
     height: width * 1.2,
     borderRadius: 12,
+  },
+  imageLoadingBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageLoadingText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    marginTop: 12,
+    fontFamily: typography.fontFamily,
+  },
+  imageErrorBox: {
+    backgroundColor: '#1E293B',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    maxWidth: width - 48,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  imageErrorIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  imageErrorTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: typography.fontFamily,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  imageErrorDesc: {
+    color: '#94A3B8',
+    fontSize: 12.5,
+    fontFamily: typography.fontFamily,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  imageErrorCloseBtn: {
+    backgroundColor: '#334155',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  imageErrorCloseBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: typography.fontFamily,
   },
 });
 
