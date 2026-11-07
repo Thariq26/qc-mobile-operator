@@ -106,6 +106,8 @@ export const DashboardScreen = ({ navigation }) => {
 
   // State Filter Jenis Defect untuk Stratified p-Chart (Drilldown Top 10)
   const [selectedDefect, setSelectedDefect] = useState('ALL');
+  // State Titik / Mesin Terpilih pada SPC Control Chart
+  const [selectedSpcPointIndex, setSelectedSpcPointIndex] = useState(null);
 
   // Random Forest Modal State
   const [rfModalVisible, setRfModalVisible] = useState(false);
@@ -155,6 +157,7 @@ export const DashboardScreen = ({ navigation }) => {
   // Handler pergantian jenis cacat pada Stratified p-Chart & Status Mesin Terdampak
   const handleSelectDefect = async (defectName) => {
     setSelectedDefect(defectName);
+    setSelectedSpcPointIndex(null);
     setFilterLoading(true);
     try {
       const [spc, dailyProd] = await Promise.all([
@@ -505,6 +508,8 @@ export const DashboardScreen = ({ navigation }) => {
           period={selectedPeriod}
           selectedDefect={selectedDefect}
           onSelectDefect={handleSelectDefect}
+          selectedPointIndex={selectedSpcPointIndex}
+          onSelectPoint={(idx) => setSelectedSpcPointIndex(idx)}
         />
 
         {/* Section 3: Random Forest AI Action Button (Hanya tampil jika ada temuan cacat / anomali riil) */}
@@ -514,7 +519,13 @@ export const DashboardScreen = ({ navigation }) => {
             spcData.points.length > 0 &&
             Number(spcData?.totalProduced || 0) > 0;
           const isStratified = selectedDefect && selectedDefect !== 'ALL';
-          const topDefectName = spcData?.topAnomaly?.topDefect;
+          const points = spcData?.points || [];
+          const activePoint =
+            selectedSpcPointIndex != null && points[selectedSpcPointIndex]
+              ? points[selectedSpcPointIndex]
+              : spcData?.topAnomaly || (points.length > 0 ? points[points.length - 1] : null);
+
+          const topDefectName = activePoint?.topDefect || spcData?.topAnomaly?.topDefect;
           const hasAnyDefect = isStratified || Boolean(topDefectName) || Number(spcData?.totalNg || 0) > 0;
 
           // Jangan tampilkan tombol mitigasi AI jika belum ada data inspeksi atau kondisi pabrik Zero Defect
@@ -524,22 +535,24 @@ export const DashboardScreen = ({ navigation }) => {
 
           const activeDefectForAi = isStratified
             ? selectedDefect
-            : (topDefectName || 'Cacat Dominan');
-          const activeProcessForAi = spcData?.topAnomaly?.process || 'Stamping';
+            : (activePoint?.topDefect || topDefectName || 'Cacat Dominan');
+          const activeProcessForAi = activePoint?.process || spcData?.topAnomaly?.process || 'Stamping';
+          const activeMachineName = activePoint?.machineName || null;
+          const isPointOutOfControl = activePoint?.isOutOfControl || spcData?.status === 'OUT-OF-CONTROL';
 
           return (
             <View style={styles.rfActionContainer}>
               <SpringButton
                 title={
-                  spcData?.status === 'OUT-OF-CONTROL'
-                    ? `🚨 Mitigasi AI: ${activeDefectForAi}`
-                    : `⚡ Rekomendasi AI: ${activeDefectForAi}`
+                  isPointOutOfControl
+                    ? `🚨 Mitigasi AI: ${activeDefectForAi}${activeMachineName ? ` (${activeMachineName})` : ''}`
+                    : `⚡ Rekomendasi AI: ${activeDefectForAi}${activeMachineName ? ` (${activeMachineName})` : ''}`
                 }
                 variant="gradient"
                 size="default"
                 loading={rfLoading}
                 gradientColors={
-                  spcData?.status === 'OUT-OF-CONTROL'
+                  isPointOutOfControl
                     ? ['#DC2626', '#EA580C', '#B91C1C']
                     : ['#2563EB', '#6366F1', '#7C3AED']
                 }
@@ -549,9 +562,9 @@ export const DashboardScreen = ({ navigation }) => {
                 style={styles.rfButton}
               />
               <Text style={[styles.rfButtonCaption, { color: colors.textMuted }]}>
-                {spcData?.status === 'OUT-OF-CONTROL'
-                  ? `Analisis deviasi proses & SOP mitigasi (${activeProcessForAi})`
-                  : `Optimasi proses otomatis berbasis model Random Forest & SOP Standard`}
+                {isPointOutOfControl
+                  ? `Analisis deviasi proses & SOP mitigasi (${activeProcessForAi}${activeMachineName ? ` • ${activeMachineName}` : ''})`
+                  : `Optimasi proses otomatis berbasis model Random Forest & SOP Standard (${activeProcessForAi}${activeMachineName ? ` • ${activeMachineName}` : ''})`}
               </Text>
             </View>
           );
@@ -602,12 +615,29 @@ export const DashboardScreen = ({ navigation }) => {
                 const qcStatusText = isQualityGood ? 'Kualitas Baik' : 'Perlu Investigasi';
                 const yieldPercent = grossNum > 0 ? Number(((netOkNum / grossNum) * 100).toFixed(1)) : 100;
 
+                const isSelectedInSpc =
+                  selectedSpcPointIndex != null &&
+                  (spcData?.points?.[selectedSpcPointIndex]?.machineName || '').toLowerCase() === (machine.machineName || '').toLowerCase();
+
                 return (
-                  <View
+                  <Pressable
                     key={machine.id}
-                    style={[
+                    onPress={() => {
+                      const ptIdx = spcData?.points?.findIndex(
+                        (p) => (p.machineName || '').toLowerCase() === (machine.machineName || '').toLowerCase()
+                      );
+                      if (ptIdx !== -1 && ptIdx != null) {
+                        setSelectedSpcPointIndex(ptIdx);
+                      }
+                    }}
+                    style={({ pressed }) => [
                       styles.machineCard,
-                      { backgroundColor: colors.card, borderColor: colors.border },
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: isSelectedInSpc ? colors.primary : colors.border,
+                        borderWidth: isSelectedInSpc ? 1.8 : 1,
+                        opacity: pressed ? 0.9 : 1,
+                      },
                     ]}
                   >
                     {/* Header: Nama Mesin, Line & Proses, Lencana Status Kualitas */}
@@ -710,7 +740,7 @@ export const DashboardScreen = ({ navigation }) => {
                         />
                       </View>
                     </View>
-                  </View>
+                  </Pressable>
                 );
               }
 

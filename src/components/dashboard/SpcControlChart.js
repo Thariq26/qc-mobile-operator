@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Pressable,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import Svg, {
   Line,
@@ -32,8 +32,6 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
 import { spacing, isCompactScreen } from '../../theme/responsive';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 /**
  * SpcControlChart: Statistical Process Control (p-Chart)
@@ -86,9 +84,32 @@ export const SpcControlChart = ({
   selectedDefect = 'ALL',
   onSelectDefect,
   onMitigateAi,
+  selectedPointIndex: controlledPointIndex,
+  onSelectPoint,
 }) => {
+  const { width: windowWidth } = useWindowDimensions();
+  const [containerWidth, setContainerWidth] = useState(0);
   const { colors, isDark } = useTheme();
-  const [selectedPointIndex, setSelectedPointIndex] = useState(null);
+  const [internalPointIndex, setInternalPointIndex] = useState(null);
+
+  const selectedPointIndex =
+    controlledPointIndex !== undefined ? controlledPointIndex : internalPointIndex;
+
+  const handlePointPress = (idx, pt) => {
+    if (controlledPointIndex === undefined) {
+      setInternalPointIndex(idx);
+    }
+    if (onSelectPoint) {
+      onSelectPoint(idx, pt);
+    }
+  };
+
+  const handleChartLayout = (event) => {
+    const { width } = event.nativeEvent.layout;
+    if (width > 0 && Math.abs(width - containerWidth) > 1) {
+      setContainerWidth(width);
+    }
+  };
 
   const activeDefect = selectedDefect || spcData?.selectedDefect || 'ALL';
   const topDefects = Array.isArray(spcData?.topDefects) ? spcData.topDefects : [];
@@ -157,10 +178,12 @@ export const SpcControlChart = ({
   };
 
   // SVG Chart Geometry
-  const cardPadding = 16;
-  const availableWidth = Math.max(280, SCREEN_WIDTH - 32 - cardPadding * 2);
-  const padLeft = 42;
-  const padRight = 24;
+  const cardPadding = spacing(14);
+  const availableWidth = containerWidth > 0
+    ? containerWidth
+    : Math.max(280, windowWidth - spacing(12) * 2 - cardPadding * 2);
+  const padLeft = 46;
+  const padRight = 36;
   const padTop = 18;
   const padBottom = 48;
   const chartHeight = 175;
@@ -169,7 +192,7 @@ export const SpcControlChart = ({
   const chartWidth = isScrollable
     ? Math.max(availableWidth, padLeft + padRight + points.length * minPointSpacing)
     : availableWidth;
-  const plotW = chartWidth - padLeft - padRight;
+  const plotW = Math.max(10, chartWidth - padLeft - padRight);
   const plotH = chartHeight - padTop - padBottom;
 
   // Compute maximum Y bound for scaling (auto-adapts for stratified small percentages)
@@ -185,7 +208,10 @@ export const SpcControlChart = ({
 
   const getX = (idx, total) => {
     if (total <= 1) return padLeft + plotW / 2;
-    return padLeft + (idx / (total - 1)) * plotW;
+    // Berikan ruang nafas jika titik hanya 2-3 mesin agar titik & teks tidak menempel ke batas sumbu Y
+    const innerMargin = total <= 3 ? Math.min(32, plotW * 0.12) : 0;
+    const effectivePlotW = plotW - innerMargin * 2;
+    return padLeft + innerMargin + (idx / (total - 1)) * effectivePlotW;
   };
 
   // Build SVG path string connecting all data points
@@ -201,7 +227,7 @@ export const SpcControlChart = ({
   });
 
   const renderSvgChart = () => (
-    <Svg width={chartWidth} height={chartHeight}>
+    <Svg width={chartWidth} height={chartHeight} style={{ overflow: 'hidden' }}>
       {/* Background Chart Area */}
       <Rect
         x={padLeft}
@@ -305,7 +331,7 @@ export const SpcControlChart = ({
         return (
           <G
             key={pt.id || idx}
-            onPress={() => setSelectedPointIndex(idx)}
+            onPress={() => handlePointPress(idx, pt)}
           >
             {/* Touch hit area for fingers / gloves */}
             <Circle
@@ -950,12 +976,13 @@ export const SpcControlChart = ({
           </Text>
         </View>
       ) : (
-        <View style={styles.chartWrapper}>
+        <View style={styles.chartWrapper} onLayout={handleChartLayout}>
           {isScrollable ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.scrollChartContainer}
+              style={styles.scrollChartWrapper}
             >
               {renderSvgChart()}
             </ScrollView>
@@ -1043,6 +1070,7 @@ const styles = StyleSheet.create({
     padding: spacing(14),
     borderWidth: 1,
     marginBottom: 16,
+    overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1304,6 +1332,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginTop: 4,
+    overflow: 'hidden',
+  },
+  scrollChartWrapper: {
+    width: '100%',
+    overflow: 'hidden',
   },
   scrollChartContainer: {
     paddingRight: 20,
