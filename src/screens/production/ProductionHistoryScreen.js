@@ -21,13 +21,15 @@ import {
   WifiOff,
   Calendar,
   X,
+  RotateCcw,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { productionService } from '../../api/services/productionService';
-import { formatIndonesianDate, formatTime, getLocalDateString } from '../../utils/dateFormatter';
+import { CalendarRangeModal } from '../../components/common/CalendarRangeModal';
+import { formatIndonesianDate, formatTime, getLocalDateString, formatPrettyRange } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
 
 const { width } = Dimensions.get('window');
@@ -43,6 +45,16 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
   const [productionList, setProductionList] = useState([]);
   const [filterPeriod, setFilterPeriod] = useState('today'); // 'today' | 'week' | 'all'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Date to Date Custom State & Interactive Calendar Modal
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return getLocalDateString(start);
+  });
+  const [customEndDate, setCustomEndDate] = useState(getLocalDateString());
+  const [isCustomDateActive, setIsCustomDateActive] = useState(false);
+  const [calendarModalVisible, setCalendarModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -92,6 +104,13 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const itemDateStr = item.productionDate ? String(item.productionDate).split('T')[0] : '';
       return itemDateStr >= getLocalDateString(sevenDaysAgo);
+    } else if (filterPeriod === 'all') {
+      if (isCustomDateActive && customStartDate && customEndDate) {
+        const itemDateStr = item.productionDate ? String(item.productionDate).split('T')[0] : '';
+        if (itemDateStr < customStartDate || itemDateStr > customEndDate) {
+          return false;
+        }
+      }
     }
 
     return true;
@@ -365,10 +384,17 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
                   { id: 'all', label: 'Semua' },
                 ].map((tab) => {
                   const isSelected = filterPeriod === tab.id;
+                  const hasActiveDateRange = tab.id === 'all' && isCustomDateActive;
                   return (
                     <Pressable
                       key={tab.id}
-                      onPress={() => setFilterPeriod(tab.id)}
+                      onPress={() => {
+                          if (tab.id === 'all' && filterPeriod === 'all') {
+                            setCalendarModalVisible(true);
+                          } else {
+                            setFilterPeriod(tab.id);
+                          }
+                        }}
                       style={[
                         styles.filterTab,
                         isSelected && [
@@ -377,23 +403,150 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
                         ],
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.filterTabText,
-                          {
-                            color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                            fontWeight: isSelected ? '800' : '600',
-                          },
-                        ]}
-                      >
-                        {tab.label}
-                      </Text>
+                      <View style={styles.filterTabInnerRow}>
+                        <Text
+                          style={[
+                            styles.filterTabText,
+                            {
+                              color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                              fontWeight: isSelected ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {tab.label}
+                        </Text>
+                        {hasActiveDateRange && (
+                          <View
+                            style={[
+                              styles.activeDateDot,
+                              {
+                                backgroundColor: isSelected ? '#FFFFFF' : colors.primary,
+                              },
+                            ]}
+                          />
+                        )}
+                      </View>
                     </Pressable>
                   );
                 })}
               </View>
 
-              {/* 3. Search Bar */}
+              {/* 2b. Date to Date Filter Strip (Praktis & Dinamis) */}
+                {filterPeriod === 'all' && (
+                  <Pressable
+                    onPress={() => setCalendarModalVisible(true)}
+                    style={[
+                      styles.dateRangeStrip,
+                      {
+                        backgroundColor: isCustomDateActive
+                          ? (isDark ? '#1E293B' : '#EFF6FF')
+                          : (isDark ? '#101726' : '#F8FAFC'),
+                        borderColor: isCustomDateActive
+                          ? colors.primary
+                          : (isDark ? '#1E293B' : '#E2E8F0'),
+                      },
+                    ]}
+                  >
+                    <View style={styles.dateRangeLeft}>
+                      <View
+                        style={[
+                          styles.dateRangeIconBox,
+                          {
+                            backgroundColor: isCustomDateActive
+                              ? colors.primary
+                              : (isDark ? '#1E293B' : '#FFFFFF'),
+                            borderColor: isCustomDateActive
+                              ? colors.primary
+                              : (isDark ? '#334155' : '#CBD5E1'),
+                          },
+                        ]}
+                      >
+                        <Calendar
+                          size={14}
+                          color={isCustomDateActive ? '#FFFFFF' : colors.primary}
+                        />
+                      </View>
+                      <View style={styles.dateRangeTextCol}>
+                        <View style={styles.dateRangeHeaderRow}>
+                          <Text
+                            style={[
+                              styles.dateRangeLabel,
+                              {
+                                color: isCustomDateActive ? colors.primary : colors.textSecondary,
+                              },
+                            ]}
+                          >
+                            {isCustomDateActive ? 'RENTANG AKTIF' : 'FILTER RENTANG TANGGAL'}
+                          </Text>
+                          {isCustomDateActive && (
+                            <View style={[styles.activePillBadge, { backgroundColor: colors.primary + '20' }]}>
+                              <Text style={[styles.activePillText, { color: colors.primary }]}>Date to Date</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text
+                          style={[
+                            styles.dateRangeValue,
+                            {
+                              color: isCustomDateActive
+                                ? (isDark ? '#F8FAFC' : '#0F172A')
+                                : colors.textSecondary,
+                            },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {isCustomDateActive
+                            ? formatPrettyRange(customStartDate, customEndDate)
+                            : 'Semua Rekaman • Ketuk untuk filter rentang tanggal'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.dateRangeActionRow}>
+                      {isCustomDateActive && (
+                        <Pressable
+                          onPress={(e) => {
+                            if (e && e.stopPropagation) e.stopPropagation();
+                            setIsCustomDateActive(false);
+                          }}
+                          style={[
+                            styles.dateRangeResetBtn,
+                            {
+                              backgroundColor: isDark ? '#334155' : '#E2E8F0',
+                              borderColor: isDark ? '#475569' : '#CBD5E1',
+                            },
+                          ]}
+                          hitSlop={6}
+                        >
+                          <RotateCcw size={11} color={colors.textPrimary} style={{ marginRight: 4 }} />
+                          <Text style={[styles.dateRangeResetText, { color: colors.textPrimary }]}>
+                            Reset
+                          </Text>
+                        </Pressable>
+                      )}
+                      <View
+                        style={[
+                          styles.dateRangePickerBtn,
+                          {
+                            backgroundColor: isCustomDateActive ? colors.primary : colors.primary + '18',
+                            borderColor: isCustomDateActive ? colors.primary : colors.primary + '35',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dateRangePickerBtnText,
+                            { color: isCustomDateActive ? '#FFFFFF' : colors.primary },
+                          ]}
+                        >
+                          {isCustomDateActive ? 'Ubah' : 'Filter Tanggal'}
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                )}
+
+                {/* 3. Search Bar */}
               <View style={[styles.searchBox, { backgroundColor: colors.cardSubtle, borderColor: colors.border }]}>
                 <Search size={15} color={colors.textSecondary} style={{ marginRight: 8 }} />
                 <TextInput
@@ -476,6 +629,20 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
           }
         />
       </View>
+
+      {/* Pop-up Modal Kalender Rentang Tanggal (Date to Date) */}
+      <CalendarRangeModal
+        visible={calendarModalVisible}
+        onClose={() => setCalendarModalVisible(false)}
+        onApply={(newStart, newEnd) => {
+          setCustomStartDate(newStart);
+          setCustomEndDate(newEnd);
+          setIsCustomDateActive(true);
+          setCalendarModalVisible(false);
+        }}
+        initialStartDate={customStartDate}
+        initialEndDate={customEndDate}
+      />
     </View>
   );
 };
@@ -827,6 +994,105 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 18,
   },
+  // --- Date to Date Filter Strip (Praktis, Dinamis & Ergonomis) ---
+  dateRangeStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    marginTop: 4,
+    marginBottom: 10,
+    minHeight: 48,
+  },
+  dateRangeLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  dateRangeIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+  },
+  dateRangeTextCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  dateRangeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  dateRangeLabel: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  activePillBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  activePillText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+  },
+  dateRangeValue: {
+    fontSize: typography.sizes.caption,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  dateRangeActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dateRangeResetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 7,
+    borderWidth: 1,
+  },
+  dateRangeResetText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  dateRangePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 7,
+    borderWidth: 1,
+  },
+  dateRangePickerBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  filterTabInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeDateDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginLeft: 5,
+  },
+
 });
 
 export default ProductionHistoryScreen;

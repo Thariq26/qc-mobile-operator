@@ -163,6 +163,28 @@ export const normalizeDateString = (input) => {
   return str;
 };
 
+/**
+ * Format rentang dua tanggal YYYY-MM-DD ke string ringkas Indonesia
+ * Contoh: "1 Jan — 7 Nov 2026 (311 Hari)"
+ */
+export const formatPrettyRange = (startStr, endStr) => {
+  if (!startStr || !endStr) return 'Pilih Rentang Tanggal';
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+  try {
+    const [y1, m1, d1] = startStr.split('-').map(Number);
+    const [y2, m2, d2] = endStr.split('-').map(Number);
+    const date1 = new Date(y1, m1 - 1, d1);
+    const date2 = new Date(y2, m2 - 1, d2);
+    const diffDays = Math.max(1, Math.round((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+    const sFormatted = y1 === y2 ? `${d1} ${shortMonths[m1 - 1]}` : `${d1} ${shortMonths[m1 - 1]} ${y1}`;
+    const eFormatted = `${d2} ${shortMonths[m2 - 1]} ${y2}`;
+    return `${sFormatted} — ${eFormatted} (${diffDays} Hari)`;
+  } catch (e) {
+    return `${startStr} s/d ${endStr}`;
+  }
+};
+
 export default {
   formatIndonesianDate,
   formatShortDate,
@@ -170,4 +192,5 @@ export default {
   formatDateTime,
   getLocalDateString,
   normalizeDateString,
+  formatPrettyRange,
 };
