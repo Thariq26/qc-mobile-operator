@@ -96,11 +96,9 @@ export const MyHistoryScreen = ({ navigation }) => {
     }
     const baseUrl = getBaseUrl();
     const serverRoot = baseUrl.replace(/\/api\/?$/, '');
-    const cleanUri = trimmed.replace(/^\/+/, '');
-    if (cleanUri.startsWith('uploads/')) {
-      return `${serverRoot}/${cleanUri}`;
-    }
-    return `${serverRoot}/api/upload/${cleanUri}`;
+    // Hapus awalan '/' atau 'uploads/' agar selalu tepat memanggil endpoint /api/upload/{filename}
+    const cleanFilename = trimmed.replace(/^\/+/, '').replace(/^uploads\//i, '');
+    return `${serverRoot}/api/upload/${cleanFilename}`;
   };
 
   const handleOpenPhoto = (uri) => {
