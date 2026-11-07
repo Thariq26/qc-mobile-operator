@@ -119,7 +119,7 @@ const formatRoleLabel = (role) => {
  */
 export const InputDefectScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   // Master Data
   const [parts, setParts] = useState([]);

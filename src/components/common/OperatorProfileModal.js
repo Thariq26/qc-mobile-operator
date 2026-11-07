@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Pressable,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import {
-  User,
   KeyRound,
   LogOut,
   Moon,
@@ -17,6 +17,9 @@ import {
   X,
   BadgeCheck,
   ChevronRight,
+  Clock,
+  ShieldCheck,
+  Smartphone,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -30,8 +33,22 @@ const getUserInitials = (name) => {
 };
 
 /**
- * OperatorProfileModal: Shop Floor QC Profile & Quick Actions Drawer
- * Desain Praktis, Kompak, & Ergonomis
+ * Menghitung shift kerja aktif secara real-time berdasarkan jam operasional pabrik.
+ */
+const getCurrentShiftInfo = () => {
+  const hour = new Date().getHours();
+  if (hour >= 7 && hour < 15) {
+    return { name: 'Shift 1', time: '07:00 – 15:00 WIB', color: '#10B981' };
+  } else if (hour >= 15 && hour < 23) {
+    return { name: 'Shift 2', time: '15:00 – 23:00 WIB', color: '#3B82F6' };
+  } else {
+    return { name: 'Shift 3', time: '23:00 – 07:00 WIB', color: '#8B5CF6' };
+  }
+};
+
+/**
+ * OperatorProfileModal: Profil Pengguna & Pengaturan Cepat
+ * Praktis, Responsif (Tablet Landscape & Mobile Portrait), & Dinamis.
  */
 export const OperatorProfileModal = ({
   visible,
@@ -39,8 +56,13 @@ export const OperatorProfileModal = ({
   onOpenChangePassword,
   onOpenLogout,
 }) => {
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { colors, isDark, setTheme } = useTheme();
   const { user, isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
+  const { width } = useWindowDimensions();
+
+  // Mode tablet jika lebar layar >= 600 (seperti tablet landscape pada gambar)
+  const isTablet = width >= 600;
+  const currentShift = getCurrentShiftInfo();
 
   const roleLabel = isOperatorProduksi
     ? 'Operator Produksi'
@@ -54,201 +76,355 @@ export const OperatorProfileModal = ({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType={isTablet ? 'fade' : 'slide'}
       onRequestClose={onClose}
     >
-      <View style={[styles.overlay, { backgroundColor: colors.backdrop }]}>
+      <View
+        style={[
+          styles.overlay,
+          isTablet ? styles.overlayCentered : styles.overlayBottom,
+          { backgroundColor: colors.backdrop },
+        ]}
+      >
         <Pressable style={styles.backdropTouch} onPress={onClose} />
 
         <View
           style={[
-            styles.drawerCard,
+            styles.cardContainer,
+            isTablet ? styles.cardTablet : styles.cardMobile,
             {
               backgroundColor: colors.card,
               borderColor: colors.border,
             },
           ]}
         >
-          {/* 1. Drag Handle Bar */}
-          <View style={styles.handleContainer}>
-            <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-          </View>
-
-          {/* 2. Compact Integrated Profile Header */}
-          <View style={styles.profileHeaderRow}>
-            <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>
-                {getUserInitials(user?.fullName || user?.username)}
-              </Text>
+          {/* Drag Handle Bar untuk Mobile Phone */}
+          {!isTablet && (
+            <View style={styles.handleContainer}>
+              <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
             </View>
+          )}
 
-            <View style={styles.profileDetails}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {user?.fullName || user?.username || 'User'}
-                </Text>
-                <BadgeCheck size={16} color={colors.primary} style={{ marginLeft: 5 }} />
-              </View>
-
-              <View style={styles.roleUsernameRow}>
-                <View
-                  style={[
-                    styles.rolePill,
-                    { backgroundColor: colors.primary + '16', borderColor: colors.primary + '30' },
-                  ]}
-                >
-                  <Text style={[styles.rolePillText, { color: colors.primary }]}>
-                    {roleLabel}
+          {/* 1. Integrated Header with Avatar & Details */}
+          <View style={styles.headerSection}>
+            <View style={styles.headerRow}>
+              {/* Avatar dengan Online Active Badge */}
+              <View style={styles.avatarWrapper}>
+                <View style={[styles.avatarBox, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.avatarText}>
+                    {getUserInitials(user?.fullName || user?.username)}
                   </Text>
                 </View>
-                {user?.username ? (
-                  <Text style={[styles.usernameText, { color: colors.textSecondary }]}>
-                    {user.username}
-                  </Text>
-                ) : null}
+                <View
+                  style={[
+                    styles.onlineStatusDot,
+                    {
+                      backgroundColor: '#10B981',
+                      borderColor: colors.card,
+                    },
+                  ]}
+                />
               </View>
 
-              <View style={styles.plantRow}>
-                <Building2 size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
-                <Text style={[styles.plantText, { color: colors.textMuted }]} numberOfLines={1}>
-                  PT Galaxy Mandiri Perkasa
-                </Text>
+              {/* Detail Identitas Pengguna */}
+              <View style={styles.userMetaCol}>
+                <View style={styles.nameBadgeRow}>
+                  <Text
+                    style={[styles.fullNameText, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {user?.fullName || user?.username || 'User'}
+                  </Text>
+                  <BadgeCheck size={18} color={colors.primary} style={styles.verifiedIcon} />
+                </View>
+
+                <View style={styles.roleChipsRow}>
+                  <View
+                    style={[
+                      styles.roleChip,
+                      {
+                        backgroundColor: colors.primary + '18',
+                        borderColor: colors.primary + '35',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.roleChipText, { color: colors.primary }]}>
+                      {roleLabel}
+                    </Text>
+                  </View>
+
+                  {user?.username && (
+                    <Text style={[styles.usernameText, { color: colors.textSecondary }]}>
+                      @{user.username}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.plantRow}>
+                  <Building2 size={13} color={colors.textMuted} style={{ marginRight: 5 }} />
+                  <Text
+                    style={[styles.plantText, { color: colors.textMuted }]}
+                    numberOfLines={1}
+                  >
+                    PT Galaxy Mandiri Perkasa • Stamping Plant
+                  </Text>
+                </View>
               </View>
+
+              {/* Tombol Tutup X */}
+              <Pressable
+                onPress={onClose}
+                hitSlop={12}
+                accessibilityLabel="Tutup profil"
+                style={({ pressed }) => [
+                  styles.closeBtn,
+                  {
+                    backgroundColor: colors.cardSubtle,
+                    borderColor: colors.border,
+                  },
+                  pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+                ]}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </Pressable>
             </View>
 
-            {/* Tombol Tutup X */}
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityLabel="Tutup profil"
-              style={({ pressed }) => [
-                styles.closeButton,
-                { backgroundColor: colors.cardSubtle, borderColor: colors.border },
-                pressed && { opacity: 0.7 },
-              ]}
-            >
-              <X size={16} color={colors.textSecondary} />
-            </Pressable>
+            {/* 2. Dynamic Real-time Status Strip (Shift Kerja & Sesi) */}
+            <View style={styles.statusGridRow}>
+              {/* Tile Shift Aktif */}
+              <View
+                style={[
+                  styles.statusTile,
+                  {
+                    backgroundColor: colors.cardSubtle,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={[styles.tileIconBox, { backgroundColor: currentShift.color + '1A' }]}>
+                  <Clock size={15} color={currentShift.color} />
+                </View>
+                <View style={styles.tileTextCol}>
+                  <Text style={[styles.tileLabel, { color: colors.textMuted }]}>
+                    Shift Kerja Aktif
+                  </Text>
+                  <Text
+                    style={[styles.tileValue, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {currentShift.name} ({currentShift.time.split(' ')[0]})
+                  </Text>
+                </View>
+              </View>
+
+              {/* Tile Status Sesi */}
+              <View
+                style={[
+                  styles.statusTile,
+                  {
+                    backgroundColor: colors.cardSubtle,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={[styles.tileIconBox, { backgroundColor: '#10B9811A' }]}>
+                  <ShieldCheck size={15} color="#10B981" />
+                </View>
+                <View style={styles.tileTextCol}>
+                  <Text style={[styles.tileLabel, { color: colors.textMuted }]}>
+                    Status Sesi
+                  </Text>
+                  <Text
+                    style={[styles.tileValue, { color: '#10B981' }]}
+                    numberOfLines={1}
+                  >
+                    Terotentikasi • Online
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
 
-          {/* Divider Pemisah */}
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {/* Section Divider */}
+          <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
 
-          {/* 3. Grouped Settings Card (Praktis dalam 1 Kartu Terpadu) */}
-          <Text style={[styles.sectionHeading, { color: colors.textMuted }]}>
-            PENGATURAN & KEAMANAN
-          </Text>
+          {/* 3. Pengaturan & Keamanan Group */}
+          <View style={styles.sectionBody}>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
+              PENGATURAN & KEAMANAN
+            </Text>
 
-          <View
-            style={[
-              styles.settingsGroupCard,
-              { backgroundColor: colors.cardSubtle, borderColor: colors.border },
-            ]}
-          >
-            {/* Ubah Kata Sandi */}
+            {/* A. Menu Ubah Kata Sandi */}
             <Pressable
               onPress={() => {
                 onClose();
                 onOpenChangePassword();
               }}
               style={({ pressed }) => [
-                styles.settingRow,
-                pressed && { backgroundColor: colors.border + '60' },
+                styles.actionMenuCard,
+                {
+                  backgroundColor: colors.cardSubtle,
+                  borderColor: colors.border,
+                },
+                pressed && { opacity: 0.8, backgroundColor: colors.border + '50' },
               ]}
             >
-              <View style={[styles.iconBox, { backgroundColor: colors.primary + '18' }]}>
-                <KeyRound size={17} color={colors.primary} />
+              <View style={[styles.menuIconBox, { backgroundColor: colors.primary + '18' }]}>
+                <KeyRound size={18} color={colors.primary} />
               </View>
-              <View style={styles.settingTextCol}>
-                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
+              <View style={styles.menuTextCol}>
+                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
                   Ubah Kata Sandi
                 </Text>
-                <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>
-                  Perbarui kata sandi login akun Anda
+                <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>
+                  Perbarui kata sandi login akun Anda secara berkala
                 </Text>
               </View>
               <ChevronRight size={18} color={colors.textMuted} />
             </Pressable>
 
-            {/* Garis Pemisah Tipis Antar Menu */}
-            <View style={[styles.innerDivider, { backgroundColor: colors.border }]} />
-
-            {/* Tema Tampilan with Interactive Indicator Pill */}
-            <Pressable
-              onPress={toggleTheme}
-              style={({ pressed }) => [
-                styles.settingRow,
-                pressed && { backgroundColor: colors.border + '60' },
+            {/* B. Segmented Dynamic Theme Selector */}
+            <View
+              style={[
+                styles.themeSelectorCard,
+                {
+                  backgroundColor: colors.cardSubtle,
+                  borderColor: colors.border,
+                },
               ]}
             >
-              <View
-                style={[
-                  styles.iconBox,
-                  { backgroundColor: isDark ? colors.warning + '18' : colors.primary + '18' },
-                ]}
-              >
-                {isDark ? (
-                  <Moon size={17} color={colors.warning} />
-                ) : (
-                  <Sun size={17} color={colors.primary} />
-                )}
-              </View>
-              <View style={styles.settingTextCol}>
-                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                  Tema Tampilan
-                </Text>
-                <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>
-                  {isDark ? 'Mode Gelap (Obsidian) aktif' : 'Mode Terang (Clean Slate) aktif'}
-                </Text>
+              <View style={styles.themeInfoRow}>
+                <View
+                  style={[
+                    styles.menuIconBox,
+                    {
+                      backgroundColor: isDark
+                        ? colors.warning + '18'
+                        : colors.primary + '18',
+                    },
+                  ]}
+                >
+                  {isDark ? (
+                    <Moon size={18} color={colors.warning} />
+                  ) : (
+                    <Sun size={18} color={colors.primary} />
+                  )}
+                </View>
+                <View style={styles.menuTextCol}>
+                  <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+                    Tema Tampilan
+                  </Text>
+                  <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>
+                    {isDark
+                      ? 'Mode Gelap aktif (Nyaman di mata lini pabrik)'
+                      : 'Mode Terang aktif (Tampilan Clean Slate)'}
+                  </Text>
+                </View>
               </View>
 
-              {/* Status Pill Toggle */}
+              {/* Segmented Selector Buttons: Terang | Gelap */}
               <View
                 style={[
-                  styles.themeTogglePill,
+                  styles.themeSegmentContainer,
                   {
-                    backgroundColor: isDark ? colors.warning + '18' : colors.primary + '18',
-                    borderColor: isDark ? colors.warning + '40' : colors.primary + '40',
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
                   },
                 ]}
               >
-                {isDark ? (
-                  <Moon size={11} color={colors.warning} style={{ marginRight: 4 }} />
-                ) : (
-                  <Sun size={11} color={colors.primary} style={{ marginRight: 4 }} />
-                )}
-                <Text
+                <Pressable
+                  onPress={() => setTheme('light')}
                   style={[
-                    styles.themeToggleText,
-                    { color: isDark ? colors.warning : colors.primary },
+                    styles.segmentOption,
+                    !isDark && [
+                      styles.segmentOptionActive,
+                      {
+                        backgroundColor: colors.primary,
+                        borderColor: colors.primary,
+                      },
+                    ],
                   ]}
                 >
-                  {isDark ? 'Gelap' : 'Terang'}
-                </Text>
-              </View>
-            </Pressable>
-          </View>
+                  <Sun
+                    size={14}
+                    color={!isDark ? '#FFFFFF' : colors.textMuted}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      { color: !isDark ? '#FFFFFF' : colors.textSecondary },
+                      !isDark && { fontWeight: '800' },
+                    ]}
+                  >
+                    Terang
+                  </Text>
+                </Pressable>
 
-          {/* 4. Action Button: Logout Ringkas */}
-          <Pressable
-            onPress={() => {
-              onClose();
-              onOpenLogout();
-            }}
-            style={({ pressed }) => [
-              styles.logoutButton,
-              {
-                backgroundColor: colors.critical + '12',
-                borderColor: colors.critical + '35',
-              },
-              pressed && { opacity: 0.75, backgroundColor: colors.critical + '22' },
-            ]}
-          >
-            <LogOut size={16} color={colors.critical} style={{ marginRight: 8 }} />
-            <Text style={[styles.logoutText, { color: colors.critical }]}>
-              Logout Sesi {isOperatorProduksi ? 'Operator' : 'Pengguna'}
-            </Text>
-          </Pressable>
+                <Pressable
+                  onPress={() => setTheme('dark')}
+                  style={[
+                    styles.segmentOption,
+                    isDark && [
+                      styles.segmentOptionActive,
+                      {
+                        backgroundColor: '#1E293B',
+                        borderColor: colors.warning + '60',
+                      },
+                    ],
+                  ]}
+                >
+                  <Moon
+                    size={14}
+                    color={isDark ? colors.warning : colors.textMuted}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      { color: isDark ? colors.warning : colors.textSecondary },
+                      isDark && { fontWeight: '800' },
+                    ]}
+                  >
+                    Gelap
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* 4. Action Button: Logout Sesi */}
+            <Pressable
+              onPress={() => {
+                onClose();
+                onOpenLogout();
+              }}
+              style={({ pressed }) => [
+                styles.logoutBtn,
+                {
+                  backgroundColor: colors.critical + '10',
+                  borderColor: colors.critical + '35',
+                },
+                pressed && {
+                  opacity: 0.85,
+                  backgroundColor: colors.critical + '20',
+                  transform: [{ scale: 0.99 }],
+                },
+              ]}
+            >
+              <LogOut size={17} color={colors.critical} style={{ marginRight: 8 }} />
+              <Text style={[styles.logoutBtnText, { color: colors.critical }]}>
+                Logout Sesi {isOperatorProduksi ? 'Operator' : 'Pengguna'}
+              </Text>
+            </Pressable>
+
+            {/* 5. App Footer Meta */}
+            <View style={styles.footerRow}>
+              <Smartphone size={12} color={colors.textMuted} style={{ marginRight: 5 }} />
+              <Text style={[styles.footerText, { color: colors.textMuted }]}>
+                MONIDA Quality Control System • v1.1.0 (GMP Plant)
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
@@ -258,173 +434,284 @@ export const OperatorProfileModal = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
+  },
+  overlayCentered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  overlayBottom: {
     justifyContent: 'flex-end',
   },
   backdropTouch: {
     ...StyleSheet.absoluteFillObject,
   },
-  drawerCard: {
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+  cardContainer: {
     borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    overflow: 'hidden',
     elevation: 24,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -8 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowRadius: 20,
+  },
+  cardTablet: {
+    width: '100%',
+    maxWidth: 520,
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 20,
+    paddingBottom: 22,
+  },
+  cardMobile: {
+    width: '100%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomWidth: 0,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
   },
   handleContainer: {
     alignItems: 'center',
-    paddingVertical: 5,
+    paddingVertical: 6,
+    marginBottom: 4,
   },
   dragHandle: {
-    width: 40,
+    width: 44,
     height: 4,
     borderRadius: 2,
   },
-  profileHeaderRow: {
+  headerSection: {
+    paddingBottom: 14,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 4,
-    paddingBottom: 12,
+    marginBottom: 14,
   },
-  avatarBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  avatarWrapper: {
+    position: 'relative',
+    marginRight: 14,
+  },
+  avatarBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   avatarText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  profileDetails: {
+  onlineStatusDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2.5,
+  },
+  userMetaCol: {
     flex: 1,
   },
-  nameRow: {
+  nameBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  userName: {
+  fullNameText: {
     fontSize: typography.sizes.cardHeading,
+    fontWeight: '800',
+    letterSpacing: 0.1,
+  },
+  verifiedIcon: {
+    marginLeft: 6,
+  },
+  roleChipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 3,
+  },
+  roleChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  roleChipText: {
+    fontSize: typography.sizes.micro - 0.5,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
-  roleUsernameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  rolePill: {
-    paddingHorizontal: 7,
-    paddingVertical: 1.5,
-    borderRadius: 5,
-    borderWidth: 1,
-  },
-  rolePillText: {
-    fontSize: typography.sizes.micro - 1,
-    fontWeight: '700',
-  },
   usernameText: {
-    fontSize: typography.sizes.micro,
+    fontSize: typography.sizes.micro + 0.5,
     fontWeight: '600',
   },
   plantRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 3,
+    marginTop: 4,
   },
   plantText: {
-    fontSize: typography.sizes.micro - 1,
+    fontSize: typography.sizes.micro,
     fontWeight: '500',
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  divider: {
-    height: 1,
-    marginBottom: 12,
-  },
-  sectionHeading: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-    paddingHorizontal: 2,
-  },
-  settingsGroupCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  innerDivider: {
-    height: 1,
-    marginLeft: 52,
-  },
-  iconBox: {
+  closeBtn: {
     width: 34,
     height: 34,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  settingTextCol: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: typography.sizes.body - 1,
-    fontWeight: '700',
-  },
-  settingDesc: {
-    fontSize: typography.sizes.micro,
-    marginTop: 1,
-  },
-  themeTogglePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 17,
     borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
   },
-  themeToggleText: {
-    fontSize: typography.sizes.micro,
-    fontWeight: '700',
+  statusGridRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  logoutButton: {
+  statusTile: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     borderRadius: 12,
     borderWidth: 1,
   },
-  logoutText: {
+  tileIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 9,
+  },
+  tileTextCol: {
+    flex: 1,
+  },
+  tileLabel: {
+    fontSize: typography.sizes.micro - 1,
+    fontWeight: '600',
+    marginBottom: 1,
+  },
+  tileValue: {
+    fontSize: typography.sizes.micro + 0.5,
+    fontWeight: '800',
+  },
+  sectionDivider: {
+    height: 1,
+    marginBottom: 14,
+  },
+  sectionBody: {
+    gap: 10,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.micro,
+    fontWeight: '800',
+    letterSpacing: 0.7,
+    marginBottom: 2,
+    paddingHorizontal: 2,
+  },
+  actionMenuCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  menuIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 13,
+  },
+  menuTextCol: {
+    flex: 1,
+  },
+  menuTitle: {
+    fontSize: typography.sizes.body - 1,
+    fontWeight: '700',
+  },
+  menuDesc: {
+    fontSize: typography.sizes.micro + 0.5,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  themeSelectorCard: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+  },
+  themeInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themeSegmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 3,
+    gap: 6,
+  },
+  segmentOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  segmentOptionActive: {
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  segmentText: {
+    fontSize: typography.sizes.micro + 1,
+    fontWeight: '700',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  logoutBtnText: {
     fontSize: typography.sizes.body - 1,
     fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    paddingBottom: 2,
+  },
+  footerText: {
+    fontSize: typography.sizes.micro - 0.5,
+    fontWeight: '600',
     letterSpacing: 0.2,
   },
 });

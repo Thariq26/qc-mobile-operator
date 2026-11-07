@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {
   Layers,
