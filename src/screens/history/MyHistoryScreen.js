@@ -38,6 +38,7 @@ import { defectService } from '../../api/services/defectService';
 import { getBaseUrl } from '../../api/endpoints';
 import { ProductionHistoryScreen } from '../production/ProductionHistoryScreen';
 import { CalendarRangeModal } from '../../components/common/CalendarRangeModal';
+import { PhotoViewerModal } from '../../components/common/PhotoViewerModal';
 import { formatIndonesianDate, getLocalDateString, formatPrettyRange } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
 import { spacing, isCompactScreen } from '../../theme/responsive';
@@ -76,35 +77,11 @@ export const MyHistoryScreen = ({ navigation }) => {
   const [calendarModalVisible, setCalendarModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // Fullscreen Interactive Photo Viewer Modal (Praktis & Dinamis)
+  const [selectedPhotoItem, setSelectedPhotoItem] = useState(null);
 
-  // Fullscreen Image Preview Modal
-  const [previewImageUri, setPreviewImageUri] = useState(null);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  // Helper untuk mengubah nama file atau relative path menjadi URL gambar yang valid
-  const resolvePhotoUri = (uri) => {
-    if (!uri) return null;
-    const trimmed = String(uri).trim();
-    if (
-      trimmed.startsWith('http://') ||
-      trimmed.startsWith('https://') ||
-      trimmed.startsWith('file://') ||
-      trimmed.startsWith('data:')
-    ) {
-      return trimmed;
-    }
-    const baseUrl = getBaseUrl();
-    const serverRoot = baseUrl.replace(/\/api\/?$/, '');
-    // Hapus awalan '/' atau 'uploads/' agar selalu tepat memanggil endpoint /api/upload/{filename}
-    const cleanFilename = trimmed.replace(/^\/+/, '').replace(/^uploads\//i, '');
-    return `${serverRoot}/api/upload/${cleanFilename}`;
-  };
-
-  const handleOpenPhoto = (uri) => {
-    setImageLoading(true);
-    setImageError(false);
-    setPreviewImageUri(uri);
+  const handleOpenPhoto = (defectItem) => {
+    setSelectedPhotoItem(defectItem);
   };
 
   const fetchHistory = useCallback(async () => {
@@ -326,7 +303,7 @@ export const MyHistoryScreen = ({ navigation }) => {
 
             {item.photoUrl ? (
               <Pressable
-                onPress={() => handleOpenPhoto(item.photoUrl)}
+                onPress={() => handleOpenPhoto(item)}
                 hitSlop={6}
                 style={[
                   styles.photoBtn,
@@ -786,67 +763,13 @@ export const MyHistoryScreen = ({ navigation }) => {
             }
           />
 
-          {/* Fullscreen Image Preview Modal */}
-          <Modal
-            visible={!!previewImageUri}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setPreviewImageUri(null)}
-          >
-            <View style={styles.imageModalRoot}>
-              <Pressable
-                onPress={() => setPreviewImageUri(null)}
-                style={styles.modalCloseButton}
-                hitSlop={12}
-              >
-                <X size={26} color="#FFFFFF" />
-              </Pressable>
-
-              {/* Loading Spinner */}
-              {imageLoading && !imageError && (
-                <View style={styles.imageLoadingBox}>
-                  <ActivityIndicator size="large" color="#38BDF8" />
-                  <Text style={styles.imageLoadingText}>Memuat foto bukti cacat...</Text>
-                </View>
-              )}
-
-              {/* Error State Fallback */}
-              {imageError ? (
-                <View style={styles.imageErrorBox}>
-                  <View style={styles.imageErrorIconCircle}>
-                    <AlertTriangle size={36} color="#F59E0B" />
-                  </View>
-                  <Text style={styles.imageErrorTitle}>Foto Bukti Tidak Tersedia</Text>
-                  <Text style={styles.imageErrorDesc}>
-                    File foto tidak ditemukan di server atau cache lokal perangkat telah dibersihkan.
-                  </Text>
-                  <Pressable
-                    style={styles.imageErrorCloseBtn}
-                    onPress={() => setPreviewImageUri(null)}
-                  >
-                    <Text style={styles.imageErrorCloseBtnText}>Tutup Preview</Text>
-                  </Pressable>
-                </View>
-              ) : (
-                previewImageUri && (
-                  <Image
-                    source={{
-                      uri: resolvePhotoUri(previewImageUri),
-                      headers: token ? { Authorization: `Bearer ${token}` } : {},
-                    }}
-                    style={[styles.fullImage, imageLoading && { opacity: 0 }]}
-                    resizeMode="contain"
-                    onLoadStart={() => setImageLoading(true)}
-                    onLoadEnd={() => setImageLoading(false)}
-                    onError={() => {
-                      setImageLoading(false);
-                      setImageError(true);
-                    }}
-                  />
-                )
-              )}
-            </View>
-          </Modal>
+          {/* Lightbox Preview Bukti Foto Cacat (Praktis & Dinamis) */}
+          <PhotoViewerModal
+            visible={Boolean(selectedPhotoItem)}
+            item={selectedPhotoItem}
+            token={token}
+            onClose={() => setSelectedPhotoItem(null)}
+          />
         </View>
       )}
 

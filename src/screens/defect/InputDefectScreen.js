@@ -31,12 +31,14 @@ import {
   Info,
   X,
   User,
+  Maximize2,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SpringButton } from '../../components/common/SpringButton';
 import { PhotoModal } from '../../components/common/PhotoModal';
+import { PhotoViewerModal } from '../../components/common/PhotoViewerModal';
 import { CalendarDateModal } from '../../components/common/CalendarDateModal';
 import { ConfirmDefectModal } from '../../components/common/ConfirmDefectModal';
 import { FloatingToast } from '../../components/common/FloatingToast';
@@ -210,6 +212,7 @@ export const InputDefectScreen = ({ navigation }) => {
 
   // UI State
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
+  const [photoPreviewVisible, setPhotoPreviewVisible] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -1653,7 +1656,13 @@ export const InputDefectScreen = ({ navigation }) => {
 
           {photoUri ? (
             <View style={[styles.previewContainer, { borderColor: colors.border }]}>
-              <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="cover" />
+              <Pressable onPress={() => setPhotoPreviewVisible(true)} style={{ position: 'relative' }}>
+                <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="cover" />
+                <View style={styles.previewZoomHintBadge}>
+                  <Maximize2 size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.previewZoomHintText}>Ketuk untuk Perbesar</Text>
+                </View>
+              </Pressable>
               <View style={styles.previewActions}>
                 <Pressable
                   onPress={() => setPhotoModalVisible(true)}
@@ -1758,7 +1767,29 @@ export const InputDefectScreen = ({ navigation }) => {
       />
 
       {/* Pop-up Modal Konfirmasi Sebelum Simpan Laporan Defect */}
-      <ConfirmDefectModal
+              {/* Lightbox Preview Foto Sebelum Submit */}
+        <PhotoViewerModal
+          visible={photoPreviewVisible}
+          onClose={() => setPhotoPreviewVisible(false)}
+          token={token}
+          item={{
+            photoUrl: photoUri,
+            defectName: selectedDefect?.name || 'Temuan Cacat',
+            quantity: Number(quantity) || 1,
+            partNumber: selectedPart?.partNumber,
+            partName: selectedPart?.partName,
+            proses: selectedProcess,
+            namaMesin: selectedMachine,
+            shift: selectedShift,
+            operatorName: operatorName,
+            createdBy: user?.username,
+            defectDate: defectDate,
+            remarks: remarks,
+            isOffline: false,
+          }}
+        />
+
+        <ConfirmDefectModal
         visible={confirmModalVisible}
         onClose={() => setConfirmModalVisible(false)}
         onConfirm={handleConfirmSubmit}
