@@ -148,8 +148,11 @@ export const SpcControlChart = ({
     : null;
 
   // Akumulasi total kuantitas cacat dan objek cacat aktif untuk tampilan dinamis
+  // Prioritaskan total cacat pabrik secara utuh (100% konsisten dengan kartu ringkasan KPI atas)
   const totalAllDefect =
-    spcData?.totalNg != null
+    spcData?.totalPlantDefect != null
+      ? Number(spcData.totalPlantDefect)
+      : spcData?.totalNg != null
       ? Number(spcData.totalNg)
       : topDefects.reduce((acc, d) => acc + Number(d.count || 0), 0);
 
@@ -158,7 +161,16 @@ export const SpcControlChart = ({
   );
 
   // Helper metadata rank & pewarnaan tingkat urgensi cacat
-  const getRankMeta = (index) => {
+  const getRankMeta = (index, defectItem) => {
+    if (defectItem?.name === 'Lainnya' || defectItem?.isOther) {
+      return {
+        rankLabel: '#LAINNYA',
+        accentColor: colors.textSecondary,
+        badgeBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+        badgeText: colors.textSecondary,
+        borderColor: colors.border,
+      };
+    }
     if (index === 0) {
       return {
         rankLabel: '#1 UTAMA',
@@ -669,7 +681,7 @@ export const SpcControlChart = ({
             {/* Top 5 Defect Individual Cards */}
             {topDefects.map((defect, idx) => {
               const isSelected = activeDefect.toLowerCase() === (defect.name || '').toLowerCase();
-              const meta = getRankMeta(idx);
+              const meta = getRankMeta(idx, defect);
               const pVal = Math.min(100, Math.max(0, defect.percentage || 0));
 
               return (

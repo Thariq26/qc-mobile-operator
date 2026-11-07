@@ -128,6 +128,12 @@ const RF_KNOWLEDGE_BASE = {
     sopStep: 'SOP-WELD-008 Rev 3',
     rootCause: 'Arus pengelasan terlalu tinggi dan permukaan plat terkontaminasi minyak atau debu.',
   },
+  Lainnya: {
+    action: 'Lakukan audit visual menyeluruh dan sortir part sesuai batas toleransi gambar teknik.',
+    confidence: '92.5%',
+    sopStep: 'SOP-QC-GEN-002 Rev 1',
+    rootCause: 'Akumulasi cacat minor terdistribusi pada beberapa stasiun kerja non-kritis.',
+  },
 };
 
 export const aiService = {

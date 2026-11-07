@@ -269,15 +269,30 @@ export const dashboardService = {
 
       const totalDefectQty = Object.values(defectCounts).reduce((acc, q) => acc + q, 0);
 
-      const topDefects = Object.entries(defectCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, count], idx) => ({
-          id: `defect-${idx + 1}`,
-          name,
-          count,
-          percentage: totalDefectQty > 0 ? Number(((count / totalDefectQty) * 100).toFixed(1)) : 0,
-        }));
+      const sortedDefectEntries = Object.entries(defectCounts).sort((a, b) => b[1] - a[1]);
+      const topEntries = sortedDefectEntries.slice(0, 5);
+      const remainderEntries = sortedDefectEntries.slice(5);
+      const remainderCount = remainderEntries.reduce((acc, [, count]) => acc + count, 0);
+
+      const topDefects = topEntries.map(([name, count], idx) => ({
+        id: `defect-${idx + 1}`,
+        name,
+        count,
+        percentage: totalDefectQty > 0 ? Number(((count / totalDefectQty) * 100).toFixed(1)) : 0,
+      }));
+
+      // Kategori '#Lainnya' untuk mengakomodasi seluruh cacat minor (Pareto complete coverage)
+      // Ini memastikan akumulasi seluruh chip = 100% (persis 296 pcs sesuai Total NG di kartu KPI)
+      if (remainderCount > 0) {
+        topDefects.push({
+          id: 'defect-other',
+          name: 'Lainnya',
+          count: remainderCount,
+          percentage: totalDefectQty > 0 ? Number(((remainderCount / totalDefectQty) * 100).toFixed(1)) : 0,
+          isOther: true,
+          otherDefects: remainderEntries.map(([n]) => n.toLowerCase()),
+        });
+      }
 
       // 2. Filter Subgroup Valid (Wajib Ada Produksi > 0)
       // Jika tidak ada laporan produksi valid dalam periode aktif, kembalikan Empty State
@@ -289,6 +304,7 @@ export const dashboardService = {
           daysCount,
           topDefects,
           selectedDefect,
+          totalPlantDefect: totalDefectQty,
         };
       }
 
@@ -297,6 +313,11 @@ export const dashboardService = {
 
       const isStratified = Boolean(selectedDefect && selectedDefect !== 'ALL');
       const targetDefectLower = isStratified ? selectedDefect.trim().toLowerCase() : '';
+      const otherDefectObj = topDefects.find((d) => d.isOther);
+      const isOtherBucket = isStratified && (targetDefectLower === 'lainnya' || targetDefectLower === 'lain-lain');
+      const otherBucketNames = isOtherBucket && otherDefectObj?.otherDefects
+        ? otherDefectObj.otherDefects
+        : [];
 
       // Kelompokkan data produksi per Mesin agar data teragregasi bersih & tidak menduplikasi 59 baris
       const machineSubgroupMap = new Map();
@@ -324,10 +345,17 @@ export const dashboardService = {
         mData.defects.push(...matchingDefects);
 
         if (isStratified) {
-          // Hanya hitung cacat sesuai jenis cacat yang dipilih pada chip filter
-          const matchedSpecific = matchingDefects.filter(
-            (d) => (d.defectName || '').trim().toLowerCase() === targetDefectLower
-          );
+          // Hanya hitung cacat sesuai jenis cacat yang dipilih pada chip filter (termasuk bucket 'Lainnya')
+          let matchedSpecific = [];
+          if (isOtherBucket && otherBucketNames.length > 0) {
+            matchedSpecific = matchingDefects.filter((d) =>
+              otherBucketNames.includes((d.defectName || '').trim().toLowerCase())
+            );
+          } else {
+            matchedSpecific = matchingDefects.filter(
+              (d) => (d.defectName || '').trim().toLowerCase() === targetDefectLower
+            );
+          }
           const specificNg = matchedSpecific.reduce((sum, d) => sum + Number(d.quantity || 0), 0);
           mData.ng += specificNg;
         } else {
@@ -402,6 +430,7 @@ export const dashboardService = {
         daysCount,
         topDefects,
         selectedDefect,
+        totalPlantDefect: totalDefectQty,
       };
     } catch (err) {
       console.warn('getSpcData error, returning fallback:', err);
@@ -528,6 +557,17 @@ export const dashboardService = {
 
       const isStratified = Boolean(selectedDefect && selectedDefect !== 'ALL');
       const targetDefectLower = isStratified ? selectedDefect.trim().toLowerCase() : '';
+      const isOtherBucket = isStratified && (targetDefectLower === 'lainnya' || targetDefectLower === 'lain-lain');
+      let otherBucketNames = [];
+      if (isOtherBucket) {
+        const counts = {};
+        filteredDefects.forEach((d) => {
+          const n = (d.defectName || 'Lain-lain').trim();
+          counts[n] = (counts[n] || 0) + Number(d.quantity || 0);
+        });
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        otherBucketNames = sorted.slice(5).map(([n]) => n.toLowerCase());
+      }
 
       // Agregasi total produksi dan total cacat per Mesin sesuai rentang periode yang aktif
       const machineMap = new Map();
@@ -561,10 +601,17 @@ export const dashboardService = {
         mData.defects.push(...matchingDefects);
 
         if (isStratified) {
-          // Hanya hitung temuan cacat khusus untuk jenis defect yang dipilih!
-          const matchedSpecific = matchingDefects.filter(
-            (d) => (d.defectName || '').trim().toLowerCase() === targetDefectLower
-          );
+          // Hanya hitung temuan cacat khusus untuk jenis defect yang dipilih (termasuk bucket 'Lainnya')!
+          let matchedSpecific = [];
+          if (isOtherBucket && otherBucketNames.length > 0) {
+            matchedSpecific = matchingDefects.filter((d) =>
+              otherBucketNames.includes((d.defectName || '').trim().toLowerCase())
+            );
+          } else {
+            matchedSpecific = matchingDefects.filter(
+              (d) => (d.defectName || '').trim().toLowerCase() === targetDefectLower
+            );
+          }
           const specificNg = matchedSpecific.reduce((sum, d) => sum + Number(d.quantity || 0), 0);
           mData.totalNg += specificNg;
         } else {
