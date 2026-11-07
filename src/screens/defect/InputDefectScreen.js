@@ -42,6 +42,7 @@ import { PhotoViewerModal } from '../../components/common/PhotoViewerModal';
 import { CalendarDateModal } from '../../components/common/CalendarDateModal';
 import { ConfirmDefectModal } from '../../components/common/ConfirmDefectModal';
 import { FloatingToast } from '../../components/common/FloatingToast';
+import { handleTabScrollOffset } from '../../navigation/tabBarScrollState';
 import { defectService } from '../../api/services/defectService';
 import { getLocalDateString, formatIndonesianDate } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
@@ -473,6 +474,8 @@ export const InputDefectScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => handleTabScrollOffset('InputDefect', e.nativeEvent.contentOffset.y)}
       >
         <View style={styles.titleRow}>
           <View
@@ -621,7 +624,7 @@ export const InputDefectScreen = ({ navigation }) => {
           <View style={[styles.dateActiveCard, { backgroundColor: colors.card, borderColor: dateError ? colors.critical : colors.border }]}>
             <View style={styles.dateActiveLeft}>
               <View style={[styles.dateIconWrapper, { backgroundColor: colors.primary + '15' }]}>
-                <Calendar size={14} color={colors.primary} />
+                <Calendar size={16} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.dateActiveText, { color: colors.textPrimary }]}>
@@ -673,7 +676,7 @@ export const InputDefectScreen = ({ navigation }) => {
         {/* ========================================================================= */}
         <View style={styles.formSection}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            PILIH SHIFT KERJA OPERASIONAL *
+            PILIH SHIFT KERJA OPERASIONAL °
           </Text>
           <View style={styles.shiftGrid}>
             {SHIFTS.map((shiftItem) => {
@@ -694,7 +697,7 @@ export const InputDefectScreen = ({ navigation }) => {
                   ]}
                 >
                   <Clock
-                    size={13}
+                    size={15}
                     color={isSelected ? '#FFFFFF' : colors.textSecondary}
                     style={{ marginRight: 6 }}
                   />
@@ -1828,8 +1831,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing(12),
-    paddingBottom: 28,
+    padding: spacing(16),
+    paddingTop: spacing(12),
+    paddingBottom: 92,
   },
   titleRow: {
     flexDirection: 'row',
@@ -1856,13 +1860,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   formSection: {
-    marginBottom: spacing(10),
+    marginBottom: 12,
   },
   fieldLabel: {
-    fontSize: 11,
+    fontSize: typography.sizes.micro,
     fontWeight: '800',
-    letterSpacing: 0.4,
-    marginBottom: 5,
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -1905,30 +1909,30 @@ const styles = StyleSheet.create({
   },
   shiftGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   shiftButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 7,
-    minHeight: 36,
-    borderRadius: 9,
+    paddingVertical: 10,
+    minHeight: 42,
+    borderRadius: 12,
     borderWidth: 1.5,
   },
   shiftButtonText: {
-    fontSize: 12.5,
+    fontSize: typography.sizes.body,
     fontWeight: '700',
   },
   dropdownSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
-    minHeight: 46,
+    minHeight: 52,
   },
   selectorIconBadge: {
     width: 36,
@@ -1936,25 +1940,25 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   selectedOptionText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
     letterSpacing: 0.2,
   },
   optionMetaText: {
-    fontSize: typography.sizes.caption,
+    fontSize: typography.sizes.caption - 1,
     marginTop: 2,
     fontWeight: '500',
   },
   partNumberTitle: {
-    fontSize: 14.5,
+    fontSize: typography.sizes.body,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
   partNameSub: {
-    fontSize: 12,
+    fontSize: typography.sizes.caption - 1,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -1968,9 +1972,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   opAvatarBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -2125,20 +2129,21 @@ const styles = StyleSheet.create({
   },
   dualFieldRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   compactDropdownSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
-    minHeight: 56,
+    minHeight: 52,
   },
   compactIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -2148,7 +2153,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   compactMetaText: {
-    fontSize: typography.sizes.micro,
+    fontSize: typography.sizes.caption - 1,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -2307,12 +2312,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
-    minHeight: 42,
-    marginBottom: 6,
+    minHeight: 52,
+    marginBottom: 4,
   },
   dateActiveLeft: {
     flexDirection: 'row',
@@ -2321,47 +2326,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateIconWrapper: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   dateActiveText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
     letterSpacing: 0.2,
   },
   dateActiveSub: {
-    fontSize: 10.5,
-    marginTop: 1,
+    fontSize: typography.sizes.caption - 1,
+    marginTop: 2,
     fontWeight: '500',
   },
   dateStatusPill: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
   },
   dateStatusPillText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
   },
   dateSegmentedTrack: {
     flexDirection: 'row',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
     padding: 3,
     gap: 4,
-    minHeight: 36,
-    marginBottom: 6,
+    minHeight: 40,
+    marginBottom: 8,
   },
   dateSegmentedPill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    minHeight: 30,
-    borderRadius: 8,
+    paddingVertical: 6,
+    minHeight: 32,
+    borderRadius: 9,
   },
   dateSegmentedPillActive: {
     shadowOffset: { width: 0, height: 2 },
@@ -2370,7 +2375,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   dateSegmentedPillText: {
-    fontSize: 11.5,
+    fontSize: 12,
     textAlign: 'center',
   },
 });

@@ -29,6 +29,7 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { productionService } from '../../api/services/productionService';
 import { CalendarRangeModal } from '../../components/common/CalendarRangeModal';
+import { handleTabScrollOffset } from '../../navigation/tabBarScrollState';
 import { formatIndonesianDate, formatTime, getLocalDateString, formatPrettyRange } from '../../utils/dateFormatter';
 import { typography } from '../../theme/typography';
 
@@ -354,6 +355,8 @@ export const ProductionHistoryScreen = ({ navigation, hideHeader = false }) => {
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          onScroll={(e) => handleTabScrollOffset(hideHeader ? 'History' : 'ProductionHistory', e.nativeEvent.contentOffset.y)}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -778,7 +781,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   listContainer: {
-    paddingBottom: 36,
+    paddingBottom: 92,
     gap: 12,
   },
   card: {

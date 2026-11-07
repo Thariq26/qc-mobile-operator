@@ -39,6 +39,7 @@ import { SpringButton } from '../../components/common/SpringButton';
 import { AchievementMeter } from '../../components/production/AchievementMeter';
 import { ConfirmProductionModal } from '../../components/common/ConfirmProductionModal';
 import { FloatingToast } from '../../components/common/FloatingToast';
+import { handleTabScrollOffset } from '../../navigation/tabBarScrollState';
 import { defectService } from '../../api/services/defectService';
 import { productionService } from '../../api/services/productionService';
 import { formatIndonesianDate, getLocalDateString } from '../../utils/dateFormatter';
@@ -682,6 +683,8 @@ export const InputProductionScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => handleTabScrollOffset('InputProduction', e.nativeEvent.contentOffset.y)}
       >
         {/* A. Header & Shift Context Card */}
         <View style={styles.headerContextContainer}>
@@ -707,14 +710,23 @@ export const InputProductionScreen = ({ navigation }) => {
           {/* Date Context Card */}
           <View style={[styles.dateContextCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.dateRow}>
-              <Calendar size={16} color={colors.primary} style={{ marginRight: 8 }} />
-              <Text style={[styles.dateText, { color: colors.textPrimary }]}>
-                {formatIndonesianDate(productionDate)}
+              <View style={[styles.dateIconWrapper, { backgroundColor: colors.primary + '15' }]}>
+                <Calendar size={16} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dateText, { color: colors.textPrimary }]}>
+                  {formatIndonesianDate(productionDate)}
+                </Text>
+                <Text style={[styles.dateMeta, { color: colors.textSecondary }]}>
+                  Tanggal Pencatatan Shift Kerja Pabrik
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.dateStatusPill, { backgroundColor: colors.success + '20' }]}>
+              <Text style={[styles.dateStatusPillText, { color: colors.success }]}>
+                Hari Ini
               </Text>
             </View>
-            <Text style={[styles.dateMeta, { color: colors.textSecondary }]}>
-              Tanggal Pencatatan Shift Kerja Pabrik
-            </Text>
           </View>
         </View>
 
@@ -1869,10 +1881,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing(16),
     paddingTop: spacing(12),
-    paddingBottom: 20,
+    paddingBottom: 92,
   },
   headerContextContainer: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   titleRow: {
     flexDirection: 'row',
@@ -1899,21 +1911,46 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   dateContextCard: {
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    minHeight: 52,
   },
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  dateIconWrapper: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dateText: {
-    fontSize: typography.sizes.body + 1,
+    fontSize: typography.sizes.body,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
   dateMeta: {
     fontSize: typography.sizes.caption - 1,
-    marginTop: 3,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  dateStatusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  dateStatusPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
   },
   errorBanner: {
     flexDirection: 'row',
@@ -1933,9 +1970,9 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: typography.sizes.micro,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: 0.5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   sectionHint: {
     fontSize: typography.sizes.caption - 1,
@@ -1943,19 +1980,21 @@ const styles = StyleSheet.create({
   },
   shiftGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   shiftButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
+    minHeight: 42,
     borderRadius: 12,
     borderWidth: 1.5,
   },
   shiftButtonText: {
     fontSize: typography.sizes.body,
+    fontWeight: '700',
   },
   itemsHeaderRow: {
     flexDirection: 'row',
@@ -2025,7 +2064,7 @@ const styles = StyleSheet.create({
   subFieldLabel: {
     fontSize: typography.sizes.micro,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
     marginBottom: 6,
   },
   selectorTriggerCard: {

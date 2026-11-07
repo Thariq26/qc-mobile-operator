@@ -33,6 +33,7 @@ import { SpcControlChart } from '../../components/dashboard/SpcControlChart';
 import { RfModal } from '../../components/dashboard/RfModal';
 import { CalendarRangeModal } from '../../components/common/CalendarRangeModal';
 import { SpringButton } from '../../components/common/SpringButton';
+import { handleTabScrollOffset } from '../../navigation/tabBarScrollState';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { dashboardService } from '../../api/services/dashboardService';
 import { defectService } from '../../api/services/defectService';
@@ -287,6 +288,8 @@ export const DashboardScreen = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => handleTabScrollOffset('Dashboard', e.nativeEvent.contentOffset.y)}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -921,7 +924,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing(12),
-    paddingBottom: 20,
+    paddingBottom: 90,
   },
   sectionHeader: {
     marginBottom: 8,

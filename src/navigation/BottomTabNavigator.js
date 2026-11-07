@@ -1,5 +1,4 @@
 import React from 'react';
-import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   LayoutGrid,
@@ -9,7 +8,6 @@ import {
   ClipboardList,
   Building2,
 } from 'lucide-react-native';
-import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
 import { InputProductionScreen } from '../screens/production/InputProductionScreen';
@@ -17,7 +15,6 @@ import { ProductionHistoryScreen } from '../screens/production/ProductionHistory
 import { InputDefectScreen } from '../screens/defect/InputDefectScreen';
 import { MyHistoryScreen } from '../screens/history/MyHistoryScreen';
 import { ComplaintsScreen } from '../screens/complaints/ComplaintsScreen';
-import { typography } from '../theme/typography';
 import { CustomTabBar } from './CustomTabBar';
 
 const Tab = createBottomTabNavigator();
@@ -29,14 +26,14 @@ const Tab = createBottomTabNavigator();
  * - ADMIN: Full access to all production and QC modules (Dashboard, Input Prod, Catat NG, Riwayat, Komplain - 5 tab)
  */
 export const BottomTabNavigator = () => {
-  const { colors, isDark } = useTheme();
-  const { user, isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
+  const { isOperatorProduksi, isStaffQc, isAdmin } = useAuth();
 
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        animation: 'shift',
       }}
     >
       {/* 1. Dashboard (Semua Role) */}
@@ -45,8 +42,8 @@ export const BottomTabNavigator = () => {
         component={DashboardScreen}
         options={{
           tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ color, size, focused }) => (
-            <LayoutGrid size={focused ? 21 : 19} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <LayoutGrid size={18} strokeWidth={focused ? 2.4 : 1.9} color={color} />
           ),
         }}
       />
@@ -58,8 +55,8 @@ export const BottomTabNavigator = () => {
           component={InputProductionScreen}
           options={{
             tabBarLabel: 'Input Prod',
-            tabBarIcon: ({ color, size, focused }) => (
-              <Factory size={focused ? 20 : 18} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <Factory size={18} strokeWidth={focused ? 2.4 : 1.9} color={color} />
             ),
           }}
         />
@@ -72,8 +69,8 @@ export const BottomTabNavigator = () => {
           component={InputDefectScreen}
           options={{
             tabBarLabel: 'Catat NG',
-            tabBarIcon: ({ color, size, focused }) => (
-              <PlusCircle size={focused ? 21 : 19} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <PlusCircle size={18} strokeWidth={focused ? 2.4 : 1.9} color={color} />
             ),
           }}
         />
@@ -86,8 +83,8 @@ export const BottomTabNavigator = () => {
           component={MyHistoryScreen}
           options={{
             tabBarLabel: 'Riwayat',
-            tabBarIcon: ({ color, size, focused }) => (
-              <ClipboardCheck size={focused ? 20 : 18} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <ClipboardCheck size={18} strokeWidth={focused ? 2.4 : 1.9} color={color} />
             ),
           }}
         />
@@ -102,8 +99,8 @@ export const BottomTabNavigator = () => {
           component={ProductionHistoryScreen}
           options={{
             tabBarLabel: 'Riwayat',
-            tabBarIcon: ({ color, size, focused }) => (
-              <ClipboardList size={focused ? 20 : 18} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <ClipboardList size={18} strokeWidth={focused ? 2.4 : 1.9} color={color} />
             ),
           }}
         />
@@ -126,8 +123,8 @@ export const BottomTabNavigator = () => {
           component={ComplaintsScreen}
           options={{
             tabBarLabel: 'Komplain',
-            tabBarIcon: ({ color, size, focused }) => (
-              <Building2 size={focused ? 20 : 18} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <Building2 size={18} strokeWidth={focused ? 2.4 : 1.9} color={color} />
             ),
           }}
         />

@@ -19,6 +19,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { SkeletonLoader } from '../../components/common/SkeletonLoader';
+import { handleTabScrollOffset } from '../../navigation/tabBarScrollState';
 import { complaintService } from '../../api/services/complaintService';
 import { typography } from '../../theme/typography';
 import { spacing, isCompactScreen } from '../../theme/responsive';
@@ -198,6 +199,8 @@ export const ComplaintsScreen = () => {
           renderItem={renderComplaintItem}
           contentContainerStyle={[styles.listContent, complaints.length === 0 && { flexGrow: 1 }]}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(e) => handleTabScrollOffset('Complaints', e.nativeEvent.contentOffset.y)}
           ListEmptyComponent={
             <View style={[styles.emptyContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <CheckCircle2 size={44} color={colors.success} style={{ marginBottom: 12 }} />
@@ -264,7 +267,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing(16),
-    paddingBottom: 32,
+    paddingBottom: 90,
   },
   loaderContainer: {
     padding: 16,

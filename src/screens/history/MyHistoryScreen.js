@@ -37,6 +37,7 @@ import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { defectService } from '../../api/services/defectService';
 import { getBaseUrl } from '../../api/endpoints';
 import { ProductionHistoryScreen } from '../production/ProductionHistoryScreen';
+import { handleTabScrollOffset, setRouteScrolled } from '../../navigation/tabBarScrollState';
 import { CalendarRangeModal } from '../../components/common/CalendarRangeModal';
 import { PhotoViewerModal } from '../../components/common/PhotoViewerModal';
 import { formatIndonesianDate, getLocalDateString, formatPrettyRange } from '../../utils/dateFormatter';
@@ -415,7 +416,7 @@ export const MyHistoryScreen = ({ navigation }) => {
           ]}
         >
           <Pressable
-            onPress={() => setAdminTab('production')}
+            onPress={() => { setRouteScrolled('History', false); setAdminTab('production'); }}
             accessibilityRole="tab"
             accessibilityState={{ selected: adminTab === 'production' }}
             style={[
@@ -445,7 +446,7 @@ export const MyHistoryScreen = ({ navigation }) => {
           </Pressable>
 
           <Pressable
-            onPress={() => setAdminTab('defect')}
+            onPress={() => { setRouteScrolled('History', false); setAdminTab('defect'); }}
             accessibilityRole="tab"
             accessibilityState={{ selected: adminTab === 'defect' }}
             style={[
@@ -488,6 +489,8 @@ export const MyHistoryScreen = ({ navigation }) => {
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            scrollEventThrottle={16}
+            onScroll={(e) => handleTabScrollOffset('History', e.nativeEvent.contentOffset.y)}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -929,7 +932,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   listContainer: {
-    paddingBottom: 36,
+    paddingBottom: 92,
     gap: 12,
   },
   card: {
