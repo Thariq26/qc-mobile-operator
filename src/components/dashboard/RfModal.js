@@ -171,7 +171,7 @@ export const RfModal = ({
                   Acuan Dokumen Standar:
                 </Text>
                 <Text style={[styles.metaValue, { color: colors.textPrimary }]}>
-                  {sopStep} (Toleransi Die Stamping)
+                  {sopStep}
                 </Text>
               </View>
             </View>

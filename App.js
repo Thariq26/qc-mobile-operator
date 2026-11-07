@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
 
 // Tahan splash screen selama inisialisasi awal autentikasi aplikasi
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -43,6 +44,22 @@ function NavigationWrapper() {
 }
 
 export default function App() {
+  useEffect(() => {
+    async function onFetchUpdateAsync() {
+      try {
+        if (__DEV__) return;
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch (error) {
+        // Mode offline atau dev environment, abaikan
+      }
+    }
+    onFetchUpdateAsync();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
